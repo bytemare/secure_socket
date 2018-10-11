@@ -1,0 +1,15 @@
+# Scripts #
+run.sh
+clean.sh
+
+# cmake stuff #
+cmake-build-debug/*
+
+# Build directories
+bin
+Debug
+Release
+
+# other
+.old
+.idea
