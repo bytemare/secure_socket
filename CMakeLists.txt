@@ -4,7 +4,7 @@
 cmake_minimum_required(VERSION 3.7.2)
 project(secure_broker)
 
-set(COMPILATION_WARNINGS "-W -Wall -Wextra -Werror -ansi -pedantic -Wuninitialized -Wcast-align -Wpointer-arith -Wmissing-braces -Wunused-result -Wl,-z,relro -Wl,-z,now -Wformat -Wformat-security -Wstrict-aliasing -Wunused-parameter")
+set(COMPILATION_WARNINGS "-W -Wall -Wextra -Werror -ansi -pedantic -Wuninitialized -Wcast-align -Wpointer-arith -Wmissing-braces -Wunused-result -Wl,-z,relro -Wl,-z,now -Wformat -Wformat-security -Wstrict-aliasing -Wunused-parameter -Wchkp")
 
 set(LINKER_LIBRARIES "-lrt -pthread -lm")
 
@@ -16,7 +16,7 @@ set(SOURCE_FILES
         src/main.c
         src/ipc_socket.c
         src/context.c
-        src/threaded_server.c)
+        src/threaded_server.c src/handler.c src/tools_file_ops.c src/tools_file_ops.h)
 
 
 include_directories(include/ src/)

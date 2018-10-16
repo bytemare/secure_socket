@@ -51,7 +51,7 @@ char *read_data_from_source (const char *filename, int *size, const mqd_t *mq){
     size_t length;
     struct stat file_info;
 
-    char log_buffer[LOG_MAX_LOG_LENGTH];
+    char log_buffer[LOG_DEBUG_MAX_LOG_LENGTH];
 
     LOG_INIT;
 
@@ -59,7 +59,7 @@ char *read_data_from_source (const char *filename, int *size, const mqd_t *mq){
      *
      */
 
-    snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "Attempting to read data from file '%s' ", filename);
+    snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "Attempting to read data from file '%s' ", filename);
     LOG(LOG_INFO, log_buffer, *mq, errno);
 
 
@@ -70,21 +70,21 @@ char *read_data_from_source (const char *filename, int *size, const mqd_t *mq){
         return NULL;
     }
 
-    snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "Successfully opened file for reading.");
+    snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "Successfully opened file for reading.");
     LOG(LOG_INFO, log_buffer, *mq, errno);
 
     fstat(file, &file_info);
-    length = (size_t) file_info.st_size;
 
     if (!S_ISREG(file_info.st_mode)) {
-        snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "Error : '%s' is not a regular file !", filename);
+        snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "Error : '%s' is not a regular file !", filename);
         LOG(LOG_ERROR, log_buffer, *mq, errno);
         close(file);
         return NULL;
     }
 
+    length = (size_t) file_info.st_size;
 
-    snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "File '%s' is '%d' bytes long.", filename, (int)length);
+    snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "File '%s' is '%d' bytes long.", filename, (int)length);
     LOG(LOG_INFO, log_buffer, *mq, errno);
 
 
@@ -96,7 +96,7 @@ char *read_data_from_source (const char *filename, int *size, const mqd_t *mq){
 
     length = (size_t) read(file, destination, length);
 
-    snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "Read '%d' bytes from '%s'", (int)length, filename);
+    snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "Read '%d' bytes from '%s'", (int)length, filename);
     LOG(LOG_INFO, log_buffer, *mq, errno);
     close(file);
 
@@ -165,12 +165,12 @@ int get_mq_max_message_size(server_context *ctx){
     FILE *fp;
     int max_size = 0, ret;
     char strerror_ret[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
-    char log_buffer[LOG_MAX_LOG_LENGTH] = {0};
+    char log_buffer[LOG_DEBUG_MAX_LOG_LENGTH] = {0};
     char *mq_max_message_size_source = "/proc/sys/fs/mqueue/msgsize_max";
     time_t t = time(NULL);
     struct tm timer = *localtime(&t);
 
-    snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "%04d-%d-%d - %02d:%02d:%02d [%s] pid %d - pthread %lu ::: Logging Thread : getting maximum message size from system ...\n",
+    snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "%04d-%d-%d - %02d:%02d:%02d [%s] pid %d - pthread %lu ::: Logging Thread : getting maximum message size from system ...\n",
              timer.tm_year + 1900, timer.tm_mon + 1, timer.tm_mday, timer.tm_hour, timer.tm_min,
              timer.tm_sec, LOG_INFO, (int) getpid(), (unsigned long int)pthread_self());
     log_write(ctx, log_buffer);
@@ -181,7 +181,7 @@ int get_mq_max_message_size(server_context *ctx){
         t = time(NULL);
         timer = *localtime(&t);
 
-        snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "%04d-%d-%d - %02d:%02d:%02d [%s] pid %d - pthread %lu ::: Could not open '%s'. Taking default max value %d.\n",
+        snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "%04d-%d-%d - %02d:%02d:%02d [%s] pid %d - pthread %lu ::: Could not open '%s'. Taking default max value %d.\n",
                  timer.tm_year + 1900, timer.tm_mon + 1, timer.tm_mday, timer.tm_hour, timer.tm_min,
                  timer.tm_sec, LOG_ERROR, (int) getpid(), (unsigned long int)pthread_self(), mq_max_message_size_source, max_size);
     }
@@ -193,25 +193,25 @@ int get_mq_max_message_size(server_context *ctx){
             fclose(fp);
             t = time(NULL);
             timer = *localtime(&t);
-            snprintf(log_buffer, LOG_MAX_LOG_LENGTH,
+            snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH,
                      "%04d-%d-%d - %02d:%02d:%02d [%s] pid %d - pthread %lu ::: Maximum size message for messaging queue is %d.\n",
                      timer.tm_year + 1900, timer.tm_mon + 1, timer.tm_mday, timer.tm_hour, timer.tm_min,
                      timer.tm_sec, LOG_INFO, (int) getpid(), (unsigned long int) pthread_self(), max_size);
         }
         else if ( errno != 0){
             if( strerror_r(errno, strerror_ret, LOG_MAX_ERRNO_LENGTH) ) {
-                snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "%04d-%d-%d - %02d:%02d:%02d [%s] Error in fscanf() : %s\n",
+                snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "%04d-%d-%d - %02d:%02d:%02d [%s] Error in fscanf() : %s\n",
                          timer.tm_year + 1900, timer.tm_mon + 1, timer.tm_mday, timer.tm_hour, timer.tm_min,
                          timer.tm_sec, LOG_ERROR, strerror_ret);
             }
             else{
-                snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "%04d-%d-%d - %02d:%02d:%02d [%s] Error in strerror_r() : cannot interprete errno from fscanf (errno = %d).\n",
+                snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "%04d-%d-%d - %02d:%02d:%02d [%s] Error in strerror_r() : cannot interprete errno from fscanf (errno = %d).\n",
                          timer.tm_year + 1900, timer.tm_mon + 1, timer.tm_mday, timer.tm_hour, timer.tm_min,
                          timer.tm_sec, LOG_ERROR, errno);
             }
         }
         else{
-            snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "%04d-%d-%d - %02d:%02d:%02d [%s] pid %d - pthread %lu ::: No matching pattern in file for message size.\n",
+            snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "%04d-%d-%d - %02d:%02d:%02d [%s] pid %d - pthread %lu ::: No matching pattern in file for message size.\n",
                      timer.tm_year + 1900, timer.tm_mon + 1, timer.tm_mday, timer.tm_hour, timer.tm_min,
                      timer.tm_sec, LOG_INFO, (int) getpid(), (unsigned long int)pthread_self());
         }
@@ -232,7 +232,7 @@ void* logging_thread(void *args){
 
     server_context *ctx;
     char strerror_ret[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
-    char log_buffer[LOG_MAX_LOG_LENGTH] = {0};
+    char log_buffer[LOG_DEBUG_MAX_LOG_LENGTH] = {0};
     time_t t;
     struct tm timer;
     int nb_bytes;
@@ -246,7 +246,7 @@ void* logging_thread(void *args){
     t = time(NULL);
     timer = *localtime(&t);
 
-    snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "%04d-%d-%d - %02d:%02d:%02d [%s] pid %d - pthread %lu ::: Logging thread started.\n",
+    snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "%04d-%d-%d - %02d:%02d:%02d [%s] pid %d - pthread %lu ::: Logging thread started.\n",
              timer.tm_year + 1900, timer.tm_mon + 1, timer.tm_mday, timer.tm_hour, timer.tm_min,
              timer.tm_sec, LOG_INFO, (int) getpid(), (unsigned long int)pthread_self());
     log_write(ctx, log_buffer);
@@ -259,7 +259,7 @@ void* logging_thread(void *args){
         t = time(NULL);
         timer = *localtime(&t);
 
-        snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "%04d-%d-%d - %02d:%02d:%02d [%s] pid %d - pthread %lu ::: calloc() failed for buffer. Logging thread is not working !!! Exiting now.\n",
+        snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "%04d-%d-%d - %02d:%02d:%02d [%s] pid %d - pthread %lu ::: calloc() failed for buffer. Logging thread is not working !!! Exiting now.\n",
                  timer.tm_year + 1900, timer.tm_mon + 1, timer.tm_mday, timer.tm_hour, timer.tm_min,
                  timer.tm_sec, LOG_CRITICAL, (int) getpid(), (unsigned long int)pthread_self());
         log_write(ctx, log_buffer);
@@ -269,7 +269,7 @@ void* logging_thread(void *args){
         t = time(NULL);
         timer = *localtime(&t);
 
-        snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "%04d-%d-%d - %02d:%02d:%02d [%s] pid %d - pthread %lu ::: %s\n",
+        snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "%04d-%d-%d - %02d:%02d:%02d [%s] pid %d - pthread %lu ::: %s\n",
                  timer.tm_year + 1900, timer.tm_mon + 1, timer.tm_mday, timer.tm_hour, timer.tm_min,
                  timer.tm_sec, LOG_INFO, (int) getpid(), (unsigned long int)pthread_self(), "Logging thread awaiting new messages.");
         log_write(ctx, buffer);
@@ -288,13 +288,13 @@ void* logging_thread(void *args){
                 timer = *localtime(&t);
 
                 if( strerror_r(errno, strerror_ret, LOG_MAX_ERRNO_LENGTH) ) {
-                    snprintf(log_buffer, LOG_MAX_LOG_LENGTH,
+                    snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH,
                              "%04d-%d-%d - %02d:%02d:%02d [%s] Error in mq_receive : %s\n",
                              timer.tm_year + 1900, timer.tm_mon + 1, timer.tm_mday, timer.tm_hour, timer.tm_min,
                              timer.tm_sec, LOG_ERROR, strerror_ret);
                 }
                 else{
-                    snprintf(log_buffer, LOG_MAX_LOG_LENGTH,
+                    snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH,
                              "%04d-%d-%d - %02d:%02d:%02d [%s] Error in strerror_r() for mq_receive (errno = %d).\n",
                              timer.tm_year + 1900, timer.tm_mon + 1, timer.tm_mday, timer.tm_hour, timer.tm_min,
                              timer.tm_sec, LOG_ERROR, errno);
@@ -317,7 +317,7 @@ void* logging_thread(void *args){
     t = time(NULL);
     timer = *localtime(&t);
 
-    snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "%04d-%d-%d - %02d:%02d:%02d [%s] pid %d - pthread %lu ::: %s\n",
+    snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "%04d-%d-%d - %02d:%02d:%02d [%s] pid %d - pthread %lu ::: %s\n",
              timer.tm_year + 1900, timer.tm_mon + 1, timer.tm_mday, timer.tm_hour, timer.tm_min,
              timer.tm_sec, LOG_INFO, (int) getpid(), (unsigned long int)pthread_self(), "Logging thread now quitting.");
     log_write(ctx, log_buffer);

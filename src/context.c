@@ -98,7 +98,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
     char *p, *q;
     time_t t;
     struct tm timer;
-    char log_buffer[LOG_MAX_LOG_LENGTH] = {0};
+    char log_buffer[LOG_DEBUG_MAX_LOG_LENGTH] = {0};
 
     LOG_INIT;
 
@@ -118,7 +118,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         if (strcmp(p, "mq_name") == 0) {
             uint8_t mq_name_max_size = sizeof(options->mq_name);
             if( q[0] != '/' && strlen(q) >= mq_name_max_size ){
-                snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "Invalid name for message queue. First character must be '/' and must be shorter than %d characters.", mq_name_max_size);
+                snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "Invalid name for message queue. First character must be '/' and must be shorter than %d characters.", mq_name_max_size);
                 LOG_TTY(LOG_INFO, log_buffer, errno);
                 return false;
             }
@@ -131,7 +131,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         if (strcmp(p, "socket_path") == 0) {
             uint8_t socket_name_max_size = sizeof(options->socket_path);
             if( strlen(q) >= socket_name_max_size ){
-                snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "Invalid name for socket path. Must be shorter than %d characters.", socket_name_max_size);
+                snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "Invalid name for socket path. Must be shorter than %d characters.", socket_name_max_size);
                 LOG_TTY(LOG_INFO, log_buffer, errno);
                 return false;
             }
@@ -145,7 +145,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         if (strcmp(p, "log_file") == 0) {
             uint8_t log_name_max_size = sizeof(options->log_file);
             if( strlen(q) >= log_name_max_size ){
-                snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "Invalid name for log file. Must be shorter than %d characters.", log_name_max_size);
+                snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "Invalid name for log file. Must be shorter than %d characters.", log_name_max_size);
                 LOG_TTY(LOG_INFO, log_buffer, errno);
                 return false;
             }

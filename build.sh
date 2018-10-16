@@ -40,6 +40,14 @@ CREAT="$RELEASE $DEBUG $LINK $RUNNER $SOCKET_PATH $CLEANER"
 rm --force -rf $CREAT
 
 
+# Build cleaner script
+s="rm --force -rf $CREAT"
+
+echo $SHELL_H > $CLEANER
+echo $s >> $CLEANER
+chmod 500 $CLEANER
+
+
 # Build Release
 mkdir -p $RELEASE
 cd $RELEASE
@@ -80,11 +88,3 @@ s=$s"authorised_peer_username=$AUTHORISED_PEER_NAME "
 echo $SHELL_H > $RUNNER
 echo $s >> $RUNNER
 chmod 500 $RUNNER
-
-
-# Build cleaner script
-s="rm --force -rf $CREAT"
-
-echo $SHELL_H > $CLEANER
-echo $s >> $CLEANER
-chmod 500 $CLEANER

@@ -71,8 +71,8 @@ typedef struct _server_context{
     pthread_attr_t attr;
     pthread_mutex_t mutex;
     pthread_cond_t cond;
-    pthread_mutexattr_t mattr;
-    pthread_condattr_t cattr;
+    /*pthread_mutexattr_t mattr;
+    pthread_condattr_t cattr;*/
 
     /* Socket related data */
     ipc_socket *socket;

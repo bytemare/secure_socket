@@ -13,3 +13,4 @@ Release
 # other
 .old
 .idea
+sonar-project.properties

@@ -133,9 +133,13 @@ bool ipc_server_bind(in_addr_t address, server_context *ctx){
 
     LOG_INIT;
 
-    if ( ctx->options.domain != AF_UNIX && ctx->options.domain != AF_LOCAL && ctx->options.domain != AF_INET){
-        LOG_TTY(LOG_CRITICAL, "This server does not support other socket types than Unix Sockets, yet. Please use AF_UNIX.", errno);
-        return false;
+    if (ctx->options.domain != AF_UNIX) {
+        if (ctx->options.domain != AF_LOCAL && ctx->options.domain != AF_INET) {
+            LOG_TTY(LOG_CRITICAL,
+                    "This server does not support other socket types than Unix Sockets, yet. Please use AF_UNIX.",
+                    errno);
+            return false;
+        }
     }
 
     ctx->socket = new_socket(ctx);
@@ -301,11 +305,11 @@ bool ipc_send(ipc_socket *sock, int length, char *data, thread_context *ctx){
 
     /* unsigned const int length = (unsigned const int ) strlen(data); */
     int sent;
-    char log_buffer[LOG_MAX_LOG_LENGTH] = {0};
+    char log_buffer[LOG_DEBUG_MAX_LOG_LENGTH] = {0};
 
     LOG_INIT;
 
-    snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "Attempting to send %d bytes.", length);
+    snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "Attempting to send %d bytes.", length);
     LOG(LOG_INFO, log_buffer, ctx->mq, errno);
 
     if ( data == NULL || length <= 0 ){
@@ -320,7 +324,7 @@ bool ipc_send(ipc_socket *sock, int length, char *data, thread_context *ctx){
             LOG(LOG_ERROR, "send() failed : ", ctx->mq, errno);
 	        return false;
 	    }
-       snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "Send %d bytes.", sent);
+       snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "Send %d bytes.", sent);
        LOG(LOG_INFO, log_buffer, ctx->mq, errno);
 
 	data += sent;
@@ -342,7 +346,7 @@ bool ipc_send(ipc_socket *sock, int length, char *data, thread_context *ctx){
 int ipc_recv(ipc_socket *sock, char *data, unsigned int length, thread_context *ctx){
 
     int received;
-    char log_buffer[LOG_MAX_LOG_LENGTH] = {0};
+    char log_buffer[LOG_DEBUG_MAX_LOG_LENGTH] = {0};
 
     LOG_INIT;
 
@@ -355,7 +359,7 @@ int ipc_recv(ipc_socket *sock, char *data, unsigned int length, thread_context *
         return -1;
     }
 
-    snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "Received %d bytes.", received);
+    snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "Received %d bytes.", received);
     LOG(LOG_INFO, log_buffer, ctx->mq, errno);
 
     if (received <= (int) length) {
@@ -484,13 +488,13 @@ void set_socket_owner_and_permissions(server_context *ctx, gid_t real_gid, mode_
  * Given the peer pid, retrieves the corresponding binary name and returns whether it is accepted or not
  * @param ctx
  * @param peer_pid
- * @return
+ * @return bool
  */
 bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
 
     int peer_name_length;
     char proc_file[NAME_MAX];
-    char log_buffer[LOG_MAX_LOG_LENGTH] = {0};
+    char log_buffer[LOG_DEBUG_MAX_LOG_LENGTH] = {0};
     char *peer_binary;
     size_t authorised_length;
     size_t peer_binary_length;
@@ -502,7 +506,7 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
 
     peer_binary = read_data_from_source(proc_file, &peer_name_length, &ctx->mq);
     if( peer_binary == NULL ){
-        snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "Could not read process file '%s'. Process not authenticated.", proc_file);
+        snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "Could not read process file '%s'. Process not authenticated.", proc_file);
         return false;
     }
 
@@ -511,7 +515,7 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
 
     if (peer_binary_length != authorised_length + 1){
         free(peer_binary);
-        LOG(LOG_ERROR, "Peer process name does not match the authorised one .Process not authenticated.", ctx->mq, errno);
+        LOG(LOG_ERROR, "Peer process name does not match the authorised one. Process not authenticated.", ctx->mq, errno);
         return false;
     }
 
@@ -541,7 +545,7 @@ bool ipc_validate_peer(server_context *ctx){
     uid_t peer_uid = creds->uid;
     gid_t peer_gid = creds->gid;
 
-    char log_buffer[LOG_MAX_LOG_LENGTH] = {0};
+    char log_buffer[LOG_DEBUG_MAX_LOG_LENGTH] = {0};
 
     LOG_INIT;
 
@@ -551,7 +555,7 @@ bool ipc_validate_peer(server_context *ctx){
             return false;
         }
 
-        snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "Peer authenticated by pid %d.", peer_pid);
+        snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "Peer authenticated by pid %d.", peer_pid);
         LOG(LOG_INFO, log_buffer, ctx->mq, errno);
     }
 
@@ -560,7 +564,7 @@ bool ipc_validate_peer(server_context *ctx){
             return false;
         }
 
-        snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "Peer authenticated by uid %d.", peer_uid);
+        snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "Peer authenticated by uid %d.", peer_uid);
         LOG(LOG_INFO, log_buffer, ctx->mq, errno);
     }
 
@@ -569,7 +573,7 @@ bool ipc_validate_peer(server_context *ctx){
             return false;
         }
 
-        snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "Peer authenticated by gid %d.", peer_gid);
+        snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "Peer authenticated by gid %d.", peer_gid);
         LOG(LOG_INFO, log_buffer, ctx->mq, errno);
     }
 
@@ -579,7 +583,7 @@ bool ipc_validate_peer(server_context *ctx){
             return false;
         }
 
-        snprintf(log_buffer, LOG_MAX_LOG_LENGTH, "Peer authenticated by process name '%s'.", ctx->options.authorised_peer_process_name);
+        snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "Peer authenticated by process name '%s'.", ctx->options.authorised_peer_process_name);
         LOG(LOG_INFO, log_buffer, ctx->mq, errno);
     }
 
