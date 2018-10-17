@@ -27,8 +27,9 @@
 
 ### Todo :
 
-- Create socket under a dedicated directory
 - separate debug and logs : look for ordinary debug code and put it under DEBUG condition ( like printf )
+- check logging for snprintf return value
+- Create socket under a dedicated directory
 - Graceful stop via signal handling from outside : take care of threads etc.
 - Explore necessity of always_inline'ing functions
 
