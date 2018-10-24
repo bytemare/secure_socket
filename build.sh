@@ -52,7 +52,7 @@ cd ..
 # Build Debug
 mkdir -p $DEBUG
 cd $DEBUG
-cmake -DCMAKE_BUILD_TYPE=$DEBUG ..
+cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
 make
 
 
