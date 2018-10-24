@@ -27,7 +27,7 @@ struct ucred* ipc_get_ucred(ipc_socket *sock);
 
 void ipc_close_socket(int socket_fd);
 
-void ipc_socket_free(ipc_socket *com, const mqd_t *mq);
+void ipc_socket_free(ipc_socket *com, logging *log);
 
 void set_socket_owner_and_permissions(server_context *ctx, gid_t real_gid, mode_t perms);
 

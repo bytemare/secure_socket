@@ -12,12 +12,14 @@
 #include <sys/un.h>
 #include <stdbool.h>
 #include <values.h>
+#include <log.h>
 
 typedef struct ipc_options{
 
-
-    char mq_name[NAME_MAX];
-    char log_file[NAME_MAX];
+    /* Logging related parameters */
+    uint8_t verbosity;
+    char mq_name[PATH_MAX];
+    char log_file[PATH_MAX];
 
 
     /* Socket related data */
@@ -57,12 +59,13 @@ typedef struct _ipc_socket{
     socklen_t addrlen; /* size of choosen address type */
 
     /* For logging */
-    mqd_t mq;
+    //mqd_t mq;
+    //logging log;
 } ipc_socket;
 
 typedef struct _thread_context{
     ipc_socket *socket;
-    mqd_t mq;
+    logging *log;
 } thread_context;
 
 typedef struct _server_context{
@@ -78,13 +81,16 @@ typedef struct _server_context{
     ipc_socket *socket;
 
     /* For logging */
-    mqd_t mq;
+
+    logging log;
+
+    /*mqd_t mq;
     int fd;
     struct aiocb *aio;
-    bool quit_logging; /* Syncing with logging thread */
+    bool quit_logging;*/ /* Syncing with logging thread */
 
     /* Instance options and parameters */
-    ipc_options options;
+    ipc_options *options;
 } server_context;
 
 #endif /*secure_broker_broker_TSM_TYPES_H*/

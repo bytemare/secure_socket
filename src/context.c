@@ -34,12 +34,12 @@ thread_context* make_thread_context(ipc_socket *socket, server_context *s_ctx){
     ctx = malloc(sizeof(thread_context));
 
     if(!ctx){
-        LOG(LOG_ERROR, "Error in malloc for context", s_ctx->mq, errno);
+        LOG_STDOUT(LOG_FATAL, "Error in malloc for context", errno, 3);
         return NULL;
     }
 
     ctx->socket = socket;
-    ctx->mq = s_ctx->mq;
+    ctx->log = &s_ctx->log;
 
     return ctx;
 }
@@ -50,8 +50,8 @@ thread_context* make_thread_context(ipc_socket *socket, server_context *s_ctx){
  */
 void initialise_options(ipc_options *options){
 
-    uint8_t mq_name_max_size;
-    uint8_t log_name_max_size;
+    uint16_t mq_name_max_size;
+    uint16_t log_name_max_size;
     uint8_t socket_name_max_size;
 
     /* Set message queue name */
@@ -96,30 +96,23 @@ bool parse_options(ipc_options *options, int argc, char **argv){
 
     int i;
     char *p, *q;
-    time_t t;
-    struct tm timer;
-    char log_buffer[LOG_DEBUG_MAX_LOG_LENGTH] = {0};
+    char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH];
 
     LOG_INIT;
-
-    t = time(NULL);
-    timer = *localtime(&t);
-    printf("%04d-%d-%d - %02d:%02d:%02d : Parsing arguments ...\n", timer.tm_year + 1900, timer.tm_mon + 1, timer.tm_mday, timer.tm_hour, timer.tm_min, timer.tm_sec);
-
 
     for( i = 1; i < argc; i++ ) {
         p = argv[i];
         if ((q = strchr(p, '=')) == NULL) {
-            LOG_TTY(LOG_ERROR, "Invalid argument entry format. USAGE : [option]=[value].", errno);
+            LOG_STDOUT(LOG_FATAL, "Invalid argument entry format. USAGE : [option]=[value].", -1, 1);
             return false;
         }
         *q++ = '\0';
 
         if (strcmp(p, "mq_name") == 0) {
-            uint8_t mq_name_max_size = sizeof(options->mq_name);
+            uint16_t mq_name_max_size = sizeof(options->mq_name);
             if( q[0] != '/' && strlen(q) >= mq_name_max_size ){
-                snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "Invalid name for message queue. First character must be '/' and must be shorter than %d characters.", mq_name_max_size);
-                LOG_TTY(LOG_INFO, log_buffer, errno);
+                snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Invalid name for message queue. First character must be '/' and must be shorter than %d characters.", mq_name_max_size);
+                LOG_STDOUT(LOG_FATAL, log_buffer, -1, 2);
                 return false;
             }
 
@@ -131,8 +124,8 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         if (strcmp(p, "socket_path") == 0) {
             uint8_t socket_name_max_size = sizeof(options->socket_path);
             if( strlen(q) >= socket_name_max_size ){
-                snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "Invalid name for socket path. Must be shorter than %d characters.", socket_name_max_size);
-                LOG_TTY(LOG_INFO, log_buffer, errno);
+                snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Invalid name for socket path. Must be shorter than %d characters.", socket_name_max_size);
+                LOG_STDOUT(LOG_FATAL, log_buffer, -1, 2);
                 return false;
             }
 
@@ -143,10 +136,10 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         }
 
         if (strcmp(p, "log_file") == 0) {
-            uint8_t log_name_max_size = sizeof(options->log_file);
+            uint16_t log_name_max_size = sizeof(options->log_file);
             if( strlen(q) >= log_name_max_size ){
-                snprintf(log_buffer, LOG_DEBUG_MAX_LOG_LENGTH, "Invalid name for log file. Must be shorter than %d characters.", log_name_max_size);
-                LOG_TTY(LOG_INFO, log_buffer, errno);
+                snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Invalid name for log file. Must be shorter than %d characters.", log_name_max_size);
+                LOG_STDOUT(LOG_FATAL, log_buffer, -1, 2);
                 return false;
             }
 
@@ -166,7 +159,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 continue;
             }
 
-            LOG_TTY(LOG_ERROR, "Invalid value for domain type. Supported values are AF_UNIX/AF_LOCAL or AF_INET.", errno);
+            LOG_STDOUT(LOG_FATAL, "Invalid value for domain type. Supported values are AF_UNIX/AF_LOCAL or AF_INET.", errno, 9);
             return false;
         }
 
@@ -176,7 +169,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 continue;
             }
 
-            LOG_TTY(LOG_ERROR, "Invalid value for protocol type. Only SOCKET_STREAM is supported for now.", errno);
+            LOG_STDOUT(LOG_FATAL, "Invalid value for protocol type. Only SOCKET_STREAM is supported for now.", errno, 5);
             return false;
         }
 
@@ -187,7 +180,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 continue;
             }
 
-            LOG_TTY(LOG_ERROR, "Invalid value for port. Must be between 1 and 65635.", errno);
+            LOG_STDOUT(LOG_FATAL, "Invalid value for port. Must be between 1 and 65635.", errno, 5);
             return false;
         }
 
@@ -198,7 +191,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 continue;
             }
 
-            LOG_TTY(LOG_ERROR, "Invalid value for max_connections. Must be a positive number.", errno);
+            LOG_STDOUT(LOG_FATAL, "Invalid value for max_connections. Must be a positive number.", errno, 5);
             return false;
         }
 
@@ -222,7 +215,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 }
             }
 
-            LOG_TTY(LOG_ERROR, "Invalid value for socket_permissions. Use '0660'.", errno);
+            LOG_STDOUT(LOG_FATAL, "Invalid value for socket_permissions. Use '0660'.", errno, 18);
             return false;
         }
 
@@ -234,7 +227,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 continue;
             }
 
-            LOG_TTY(LOG_ERROR, "Invalid username : too long.", errno);
+            LOG_STDOUT(LOG_FATAL, "Invalid username : too long.", errno, 6);
             return false;
         }
 
@@ -251,7 +244,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 continue;
             }
 
-            LOG_TTY(LOG_ERROR, "Invalid uid.", errno);
+            LOG_STDOUT(LOG_FATAL, "Invalid uid.", errno, 5);
             return false;
 
         }
@@ -269,7 +262,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 continue;
             }
 
-            LOG_TTY(LOG_ERROR, "Invalid uid.", errno);
+            LOG_STDOUT(LOG_FATAL, "Invalid gid.", errno, 5);
             return false;
         }
 
@@ -286,7 +279,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 continue;
             }
 
-            LOG_TTY(LOG_ERROR, "Invalid uid.", errno);
+            LOG_STDOUT(LOG_FATAL, "Invalid pid.", errno, 5);
             return false;
         }
 
@@ -297,7 +290,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 continue;
             }
 
-            LOG_TTY(LOG_ERROR, "Invalid process name : too long.", errno);
+            LOG_STDOUT(LOG_FATAL, "Invalid process name : too long.", errno, 6);
             return false;
         }
 
@@ -308,24 +301,22 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 continue;
             }
 
-            LOG_TTY(LOG_ERROR, "Invalid command line arguments : too long.", errno);
+            LOG_STDOUT(LOG_FATAL, "Invalid peer command line arguments : too long.", errno, 6);
             return false;
         }
 
-
-        LOG_TTY(LOG_ERROR, "Invalid argument.", errno);
+        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Invalid argument : %s", p);
+        LOG_STDOUT(LOG_FATAL, log_buffer, -1, 1);
         return false;
     }
 
-    t = time(NULL);
-    timer = *localtime(&t);
-    printf("%04d-%d-%d - %02d:%02d:%02d : All arguments parsed and validated.\n", timer.tm_year + 1900, timer.tm_mon + 1, timer.tm_mday, timer.tm_hour, timer.tm_min, timer.tm_sec);
+    LOG_STDOUT(LOG_INFO, "Arguments parsed and validated.", errno, 0);
 
     return true;
 }
 
 
-server_context* make_server_context(int argc, char **argv){
+server_context* make_server_context(ipc_options *params){
 
     /*
     time_t t;
@@ -337,59 +328,54 @@ server_context* make_server_context(int argc, char **argv){
 
     ctx = malloc(sizeof(server_context));
 
-    /* Build Context */
     if( !ctx ){
+        LOG_STDOUT(LOG_FATAL, "malloc failed for server context", errno, 3);
         perror("Error in malloc for server context : ");
         exit(errno);
     }
 
-    /* Initialise options with default values from var.h */
-    initialise_options(&ctx->options);
+    if ( log_initialise_logging_s(&ctx->log, params->verbosity, params->mq_name, params->log_file) ) {
+        free(ctx);
+        return NULL;
+    }
 
+    ctx->options = params;
 
-    if( argc >= 1 && !parse_options(&ctx->options, argc, argv) ){
+    LOG_FILE(LOG_TRACE, "Server context initialised", 0, 0, &ctx->log);
+
+    /*ctx->log.fd = open(ctx->options.log_file, O_CREAT|O_WRONLY|O_APPEND|O_SYNC, S_IRUSR|S_IWUSR);
+    if( ctx->log.fd == -1 ){
+        LOG_TTY(LOG_LVL_CRITICAL, "Error in opening log file.", errno);
         free_server_context(ctx);
         exit(1);
     }
 
-    ctx->fd = open(ctx->options.log_file, O_CREAT|O_WRONLY|O_APPEND|O_SYNC, S_IRUSR|S_IWUSR);
-    if( ctx->fd == -1 ){
-        /*perror("Error in opening log file : "); */
-        LOG_TTY(LOG_CRITICAL, "Error in opening log file.", errno);
-        free_server_context(ctx);
-        exit(1);
-    }
-
-    ctx->aio = malloc(sizeof(struct aiocb));
-    if(!ctx->aio){
-        if( write(ctx->fd, "malloc failed allocation space for the aiocb structure.", (int)strlen("malloc failed allocation space for the aiocb structure.")) < 0){
-            LOG_TTY(LOG_CRITICAL, "Malloc fails for aiocb structure and write to log file failed.", errno);
+    ctx->log.aio = malloc(sizeof(struct aiocb));
+    if(!ctx->log.aio){
+        if( write(ctx->log.fd, "malloc failed allocation space for the aiocb structure.", (int)strlen("malloc failed allocation space for the aiocb structure.")) < 0){
+            LOG_TTY(LOG_LVL_CRITICAL, "Malloc fails for aiocb structure and write to log file failed.", errno);
         }
         free_server_context(ctx);
         exit(1);
     }
 
-    ctx->aio->aio_fildes = ctx->fd;
-    ctx->aio->aio_buf = NULL;
-    ctx->aio->aio_nbytes = 0;
+    ctx->log.aio->aio_fildes = ctx->log.fd;
+    ctx->log.aio->aio_buf = NULL;
+    ctx->log.aio->aio_nbytes = 0;
 
     mq_unlink(ctx->options.mq_name);
 
-    /* Opening Message Queue */
-    if( (ctx->mq = mq_open(ctx->options.mq_name, O_RDWR | O_CREAT | O_EXCL, 0600, NULL)) == (mqd_t)-1){
-        /*
-        t = time(NULL);
-        timer = *localtime(&t);
-        printf("%04d-%d-%d - %02d:%02d:%02d : Error in opening a messaging queue : '%s'\n", timer.tm_year + 1900, timer.tm_mon + 1, timer.tm_mday, timer.tm_hour, timer.tm_min, timer.tm_sec, strerror(errno));
-        */
-        LOG_TTY(LOG_CRITICAL, "Error in opening a messaging queue.", errno)
+    // Opening Message Queue
+    if( (ctx->log.mq = mq_open(ctx->options.mq_name, O_RDWR | O_CREAT | O_EXCL, 0600, NULL)) == (mqd_t)-1){
+        LOG_TTY(LOG_LVL_CRITICAL, "Error in opening a messaging queue.", errno)
         free_server_context(ctx);
         exit(1);
     }
 
     set_thread_attributes(ctx);
 
-    ctx->quit_logging = false;
+    ctx->log.quit_logging = false;
+     */
 
     return ctx;
 
@@ -402,7 +388,7 @@ server_context* make_server_context(int argc, char **argv){
  */
 void free_thread_context(thread_context *ctx){
     if(ctx->socket){
-        ipc_socket_free(ctx->socket, &ctx->mq);
+        ipc_socket_free(ctx->socket, ctx->log);
     }
 
     free(ctx);
@@ -410,15 +396,10 @@ void free_thread_context(thread_context *ctx){
 
 void free_server_context(server_context *ctx){
     if(ctx->socket){
-        ipc_socket_free(ctx->socket, &ctx->mq);
+        ipc_socket_free(ctx->socket, &ctx->log);
     }
 
-    close(ctx->fd);
-
-    if(ctx->mq != -1){
-        mq_close(ctx->mq);
-        mq_unlink(ctx->options.mq_name);
-    }
+    log_free_logging(&ctx->log);
 
     free(ctx);
 }

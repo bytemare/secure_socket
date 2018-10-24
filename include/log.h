@@ -76,7 +76,7 @@ typedef struct _logging{
     char mq_name[NAME_MAX];
     int fd;
     struct aiocb *aio;
-    //bool quit_logging; /* Syncing with logging thread */
+    bool quit_logging; /* Syncing with logging thread */
 } logging;
 
 
@@ -205,7 +205,8 @@ __always_inline void log_debug_get_process_thread_id(char *log_debug_prefix_buff
 
 __always_inline void log_debug_get_bug_location(char *log_debug_suffix_buffer, const char *file, const char *function,
                                                 const int line, const int message_level, const int verbosity){
-    if(message_level <= verbosity){
+    //if(message_level <= verbosity){
+    if( message_level <= LOG_ALERT && message_level <= verbosity){
         memset(log_debug_suffix_buffer, '\0', LOG_DEBUG_SUFFIX_MAX_LENGTH);
         snprintf(log_debug_suffix_buffer, LOG_DEBUG_SUFFIX_MAX_LENGTH - 1, LOG_DEBUG_SUFFIX_FORMAT, file, function, line);
     }

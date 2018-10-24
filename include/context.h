@@ -11,10 +11,13 @@
 #include <unistd.h>
 #include <broker_types.h>
 
+void initialise_options(ipc_options *options);
+
+bool parse_options(ipc_options *options, int argc, char **argv);
 
 thread_context* make_thread_context(ipc_socket *socket, server_context *ctx);
 
-server_context* make_server_context(int argc, char **argv);
+server_context* make_server_context(ipc_options *params);
 
 void free_thread_context(thread_context *ctx);
 
