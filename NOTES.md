@@ -19,19 +19,37 @@
 - [+] [Logging] refactoring log macros : short and concise.
 - [+] corrected a buffer overflow vulnerability : macro for maximal length of script name was wrong
 - [+] use of strtol instead of atoi in context.c
-- [+] [Logging] corrected data disclosure : hash id was fully written to log. Now only the first n caracters a are shown (see in commander.c)
+- [+] [Logging] corrected data disclosure : hash id was fully written to log. Now only the first n characters a are shown.
+- [+] [Logging] Enhanced logging usability : Logging to stdout, directly to file, or to message queue.
+- [+] [Logging] Introduced leveled verbosity of logging, set in parameters file. 
 
 ### Doing :
 
+- [>] separate debug and logs : leveled logging. Rewrite all logging.
 - [>] ucreds insertion in php socket : bypass php api macros and directly address underlying C socket
+
 
 ### Todo :
 
-- separate debug and logs : look for ordinary debug code and put it under DEBUG condition ( like printf )
+- separate logging macros from code for thread with mq, to enable genericity
+- add mode to be completely silent and not print to stdout
+- add mode to log everything to stdout
+
+- if logging is off, don't launch a logging thread, don't allocate stuff etc.
+- avoid use of exit(), and do proper error catching and termination
+- if default values are used, add a random value at end of filename
+
+
+
+- benchmark performance differences between -fstack-protector-strong and -fstack-protector-all
 - check logging for snprintf return value
 - Create socket under a dedicated directory
 - Graceful stop via signal handling from outside : take care of threads etc.
 - Explore necessity of always_inline'ing functions
+- check which option of fsanitize is better suited : adress, thread or leak ?
+- gcc options not recognised, why ? fsanitize-address-use-after-scope, fstack-clash-protection, -fcf-protection=full
+- check if these are useful : -fsanitize-coverage=trace-pc-guard
+- Lookup what -D_POSIX_C_SOURCE=200112L is
 
 ###### Later :
 
@@ -39,3 +57,9 @@
 - Check why aio writes do not work
 - Signal handling. Protect against all signal and keep unavoidable for shutdown.
 - Check/analyse for eventual memory leaks (valgrind)
+
+
+
+### Notes
+
+- compilation flag D_GNU_SOURCE (glibc manual) : "everything is included: ISO C89, ISO C99, POSIX.1, POSIX.2, BSD, SVID, X/Open, LFS, and GNU extensions."
