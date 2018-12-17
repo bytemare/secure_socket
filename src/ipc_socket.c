@@ -65,7 +65,7 @@ int set_bind_address(server_context *ctx, in_addr_t address){
 
     LOG(LOG_TRACE, "Setting up address to bind on ...", errno, 0, &ctx->log);
 
-    switch(ctx->options.domain){
+    switch(ctx->options->domain){
 
         case AF_UNIX:{
             /*
@@ -78,10 +78,10 @@ int set_bind_address(server_context *ctx, in_addr_t address){
         */
 
             /* Destroy ancient socket if interrupted abruptly*/
-            unlink(ctx->options.socket_path);
+            unlink(ctx->options->socket_path);
 
             /* Make sure we do not overflow the path buffer */
-            if( strlen(ctx->options.socket_path) >= sizeof(server->address.un.sun_path)){
+            if( strlen(ctx->options->socket_path) >= sizeof(server->address.un.sun_path)){
                 LOG(LOG_CRITICAL, "Socket path is too long : overflow avoided !", errno, 1, &ctx->log);
                 len = -1;
                 break;
@@ -90,7 +90,7 @@ int set_bind_address(server_context *ctx, in_addr_t address){
             server->address.un.sun_family = AF_UNIX;
 
             bzero((char*)server->address.un.sun_path, sizeof(server->address.un.sun_path));
-            strncpy(server->address.un.sun_path, ctx->options.socket_path, sizeof(server->address.un.sun_path) - 1);
+            strncpy(server->address.un.sun_path, ctx->options->socket_path, sizeof(server->address.un.sun_path) - 1);
 
             len = (socklen_t ) (strlen(server->address.un.sun_path) + sizeof(server->address.un.sun_family));
 
@@ -99,8 +99,8 @@ int set_bind_address(server_context *ctx, in_addr_t address){
         }
 
         case AF_INET:{
-            server->address.in.sin_family = (sa_family_t) ctx->options.domain;
-            server->address.in.sin_port = htons(ctx->options.port);
+            server->address.in.sin_family = (sa_family_t) ctx->options->domain;
+            server->address.in.sin_port = htons(ctx->options->port);
             server->address.in.sin_addr.s_addr = address;
 
             len = sizeof(struct sockaddr_in);
@@ -155,7 +155,7 @@ bool ipc_server_bind(in_addr_t address, server_context *ctx){
 
 
     /* Socket creation */
-    ctx->socket->socket_fd = socket(ctx->options.domain, ctx->options.protocol, 0);
+    ctx->socket->socket_fd = socket(ctx->options->domain, ctx->options->protocol, 0);
     if( ctx->socket->socket_fd < 0 ){
         LOG(LOG_FATAL, "socket() failed : ", errno, 2, &ctx->log);
         ipc_socket_free(ctx->socket, &ctx->log);
@@ -258,7 +258,7 @@ ipc_socket* ipc_accept_connection(server_context *ctx){
     LOG(LOG_INFO, "Allocated memory for communication ipc_socket : ", errno, 0, &ctx->log);
 
 
-    switch(ctx->options.domain){
+    switch(ctx->options->domain){
 
         case AF_UNIX:{
             client->address.un.sun_family = AF_UNIX;
@@ -470,14 +470,14 @@ void set_socket_owner_and_permissions(server_context *ctx, gid_t real_gid, mode_
         }
     }
 
-    if (real_gid && chown(ctx->options.socket_path, uid, real_gid) == -1) {
+    if (real_gid && chown(ctx->options->socket_path, uid, real_gid) == -1) {
         LOG(LOG_ALERT, "chown() on socket failed.", errno, 1, &ctx->log);
     }
 
     /**
      * Change file permissions
      */
-    if( chmod(ctx->options.socket_path, perms) < 0){
+    if( chmod(ctx->options->socket_path, perms) < 0){
         LOG(LOG_ALERT, "chmod() on socket failed.", errno, 1, &ctx->log);
     }
 
@@ -504,14 +504,14 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
 
     snprintf(proc_file, NAME_MAX, IPC_PEER_BINARY_NAME_FILE_FORMAT, (int)peer_pid, IPC_PEER_BINARY_NAME_FILE);
 
-    peer_binary = read_data_from_source(proc_file, &peer_name_length, &ctx->log.mq);
+    peer_binary = read_data_from_source(proc_file, &peer_name_length, &ctx->log);
     if( peer_binary == NULL ){
         snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not read process file '%s'. Process not authenticated.", proc_file);
         LOG(LOG_INFO, log_buffer, errno, 3, &ctx->log);
         return false;
     }
 
-    authorised_length = strlen(ctx->options.authorised_peer_process_name);
+    authorised_length = strlen(ctx->options->authorised_peer_process_name);
     peer_binary_length = strlen(peer_binary);
 
     if (peer_binary_length != authorised_length + 1){
@@ -551,8 +551,8 @@ bool ipc_validate_peer(server_context *ctx){
     LOG_INIT;
 
 
-    if(ctx->options.authorised_peer_pid){
-        if( ctx->options.authorised_peer_pid != peer_pid) {
+    if(ctx->options->authorised_peer_pid){
+        if( ctx->options->authorised_peer_pid != peer_pid) {
             snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer pid %d is not authorised.", peer_pid);
             LOG(LOG_INFO, log_buffer, errno, 2, &ctx->log);
             return false;
@@ -562,8 +562,8 @@ bool ipc_validate_peer(server_context *ctx){
         LOG(LOG_INFO, log_buffer, errno, 0, &ctx->log);
     }
 
-    if(ctx->options.authorised_peer_uid){
-        if( ctx->options.authorised_peer_uid != peer_uid) {
+    if(ctx->options->authorised_peer_uid){
+        if( ctx->options->authorised_peer_uid != peer_uid) {
             snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer uid %d, is not authorised.", peer_uid);
             LOG(LOG_INFO, log_buffer, errno, 2, &ctx->log);
             return false;
@@ -573,8 +573,8 @@ bool ipc_validate_peer(server_context *ctx){
         LOG(LOG_INFO, log_buffer, errno, 0, &ctx->log);
     }
 
-    if(ctx->options.authorised_peer_gid){
-        if( ctx->options.authorised_peer_gid != peer_gid){
+    if(ctx->options->authorised_peer_gid){
+        if( ctx->options->authorised_peer_gid != peer_gid){
             snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer gid %d is not authorised.", peer_gid);
             LOG(LOG_INFO, log_buffer, errno, 2, &ctx->log);
             return false;
@@ -585,13 +585,13 @@ bool ipc_validate_peer(server_context *ctx){
     }
 
 
-    if(strlen(ctx->options.authorised_peer_process_name) > 0){
+    if(strlen(ctx->options->authorised_peer_process_name) > 0){
         if(!ipc_validate_proc(ctx, peer_pid)){
             LOG(LOG_ERROR, "Peer process name does not match the authorised one. Process not authenticated.", errno, 3, &ctx->log);
             return false;
         }
 
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer authenticated by process name '%s'.", ctx->options.authorised_peer_process_name);
+        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer authenticated by process name '%s'.", ctx->options->authorised_peer_process_name);
         LOG(LOG_INFO, log_buffer, errno, 0, &ctx->log);
     }
 

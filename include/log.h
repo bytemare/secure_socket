@@ -103,10 +103,13 @@ typedef struct _logging{
  * Prefix with pid and pthreadid, and suffix with filename, function and line of log call should only be used in debug mode
  *
  */
-#define LOG_LINE_FORMAT "%s - [%s] %s%s%s%s.\n" /* datetime + log level + message */
+#define LOG_LINE_FORMAT "%s - [%s] %s%s%s%s.\n" /* datetime + log level + debug prefix + message + errno + debug suffix*/
 
 #define LOG_DEBUG_PREFIX_FORMAT "pid %d - pthread %lu ::: " /* 21 chars */
 #define LOG_DEBUG_SUFFIX_FORMAT " - in file %s, function %s at line %d." /* Length of 33 characters without inserted strings */
+
+#define LOG_MQ_MAX_MESSAGE_SIZE         8192
+#define LOG_MQ_SOURCE_MAX_MESSAGE_SIZE "/proc/sys/fs/mqueue/msgsize_max"
 
 
 #define LOG_MAX_LVL_LENGTH              8
@@ -154,14 +157,34 @@ typedef struct _logging_buffs{
 } logging_buffs;
 
 
-
+/**
+ * Initialises variables and buffers for building the log line in the scope of calling function
+ */
 /*#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"*/
 #define LOG_INIT\
     logging_buffs log_buffs;
 /*#pragma GCC diagnostic pop*/
 
+/**
+ * Logs the given message and errno according to the indicated message level and verbosity,
+ * by sending it to the message queue
+ */
+#define LOG(message_level, message, error_number, error_delta, log)\
+    log_to_mq(&log_buffs, message_level, message, error_number, __FILE__, __func__, __LINE__ - (error_delta), log);\
 
+/**
+ * Same as LOG, but writes directly to log file
+ */
+#define LOG_FILE(message_level, message, error_number, error_delta, log)\
+    log_to_file(&log_buffs, message_level, message, error_number, __FILE__, __func__, __LINE__ - (error_delta), log);\
+
+/**
+ * Same as LOG, but prints out to standard ouput
+ */
+#define LOG_STDOUT(message_level, message, error_number, error_delta)\
+    log_build(&log_buffs, LOG_ALERT, message, error_number, __FILE__, __func__, __LINE__ - (error_delta), LOG_TRACE);\
+    log_to_stdout(&log_buffs);\
 
 
 
@@ -175,12 +198,12 @@ typedef struct _logging_buffs{
  * @param log_t
  * @param log_timer
  */
-__always_inline void log_reset(logging_buffs *log){
-    memset(log->log_err, '\0', LOG_MAX_ERRNO_LENGTH);
-    memset(log->log_entry_buffer, '\0', LOG_MAX_DEBUG_LINE_LENGTH );
-    memset(log->log_date_buffer, '\0', LOG_MAX_TIMESTAMP_LENGTH);
-    log->log_t = time(NULL);
-    log->log_timer = *localtime(&log->log_t);
+__always_inline void log_reset(logging_buffs *log_buffs){
+    memset(log_buffs->log_err, '\0', LOG_MAX_ERRNO_LENGTH);
+    memset(log_buffs->log_entry_buffer, '\0', LOG_MAX_DEBUG_LINE_LENGTH );
+    memset(log_buffs->log_date_buffer, '\0', LOG_MAX_TIMESTAMP_LENGTH);
+    log_buffs->log_t = time(NULL);
+    log_buffs->log_timer = *localtime(&log_buffs->log_t);
 }
 
 
@@ -194,6 +217,12 @@ __always_inline void log_get_date_time(logging_buffs *log_buffs){
 }
 
 
+/**
+ * Builds the debug prefix containing the pid and thread id, and stores it in given buffer
+ * @param log_debug_prefix_buffer
+ * @param message_level
+ * @param verbosity
+ */
 __always_inline void log_debug_get_process_thread_id(char *log_debug_prefix_buffer, const int message_level,
                                                      const int verbosity){
     if(message_level <= verbosity){
@@ -202,7 +231,15 @@ __always_inline void log_debug_get_process_thread_id(char *log_debug_prefix_buff
     }
 }
 
-
+/**
+ * Builds the debug suffix containing filename, function, and line of indicated error, and stores it in given buffer
+ * @param log_debug_suffix_buffer
+ * @param file
+ * @param function
+ * @param line
+ * @param message_level
+ * @param verbosity
+ */
 __always_inline void log_debug_get_bug_location(char *log_debug_suffix_buffer, const char *file, const char *function,
                                                 const int line, const int message_level, const int verbosity){
     //if(message_level <= verbosity){
@@ -211,8 +248,6 @@ __always_inline void log_debug_get_bug_location(char *log_debug_suffix_buffer, c
         snprintf(log_debug_suffix_buffer, LOG_DEBUG_SUFFIX_MAX_LENGTH - 1, LOG_DEBUG_SUFFIX_FORMAT, file, function, line);
     }
 }
-
-
 
 /**
  * Interpret last encountered errno to be logged
@@ -225,15 +260,18 @@ __always_inline void log_debug_get_bug_location(char *log_debug_suffix_buffer, c
 __always_inline void log_get_errno(logging_buffs *log_buffs, const int error_number, const int message_level, const int verbosity){
     if(error_number >= 0 && message_level <= verbosity){
         sprintf(log_buffs->log_err, ": ");
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-result"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
         strerror_r(error_number, log_buffs->log_err, LOG_MAX_ERRNO_LENGTH - 1);
-#pragma clang diagnostic pop
+#pragma GCC diagnostic pop
     }
 }
 
-
-
+/**
+ * Accordingly returns the string representation of the given message level
+ * @param message_level
+ * @return
+ */
 __always_inline char* interpret_log_level(const int message_level){
     switch (message_level){
         case LOG_FATAL:
@@ -266,7 +304,13 @@ __always_inline char* interpret_log_level(const int message_level){
     }
 }
 
-
+/**
+ * Assembles all sub log buffers into one string
+ * @param log_buffs
+ * @param message_level
+ * @param message
+ * @param verbosity
+ */
 __always_inline void log_assemble(logging_buffs *log_buffs, const int message_level, const char *message, int verbosity){
     char *message_level_ch = interpret_log_level(message_level);
     if(verbosity >= LOG_FATAL && verbosity < LOG_DEBUG) {
@@ -288,7 +332,17 @@ __always_inline void log_assemble(logging_buffs *log_buffs, const int message_le
     }
 }
 
-
+/**
+ * Performs the whole logging string build-up, recording time, log level, debug info and log message.
+ * @param log_buffs
+ * @param message_level
+ * @param message
+ * @param error_number
+ * @param file
+ * @param function
+ * @param line
+ * @param verbosity
+ */
 __always_inline void log_build(logging_buffs *log_buffs, const int message_level, const char *message,
                                const int error_number, const char *file, const char *function, const int line, const uint8_t verbosity){
     log_reset(log_buffs);
@@ -300,13 +354,26 @@ __always_inline void log_build(logging_buffs *log_buffs, const int message_level
     log_assemble(log_buffs, message_level, message, verbosity);
 }
 
-
-
+/**
+ * Simply sends the string containing the final log line to message queue
+ * @param log_buffs
+ * @param log
+ */
 __always_inline void log_send_to_mq(logging_buffs *log_buffs, logging *log){
     mq_send(log->mq, log_buffs->log_entry_buffer, strlen(log_buffs->log_entry_buffer), 1);
 }
 
-
+/**
+ * Wrapper, building a whole log line and sending it to message queue
+ * @param log_buffs
+ * @param message_level
+ * @param message
+ * @param error_number
+ * @param file
+ * @param function
+ * @param line
+ * @param log
+ */
 __always_inline void log_to_mq(logging_buffs *log_buffs, const int message_level, const char *message,
         const int error_number, const char *file, const char *function, const int line, logging *log){
     if(log->verbosity >= LOG_NOTSET){
@@ -316,47 +383,51 @@ __always_inline void log_to_mq(logging_buffs *log_buffs, const int message_level
     log_send_to_mq(log_buffs, log);
 }
 
-
+/**
+ * Simple wrapper printing final log line to standard output
+ * @param log
+ */
 __always_inline void log_to_stdout(logging_buffs *log){
     printf("%s", log->log_entry_buffer);
 }
 
-/*
-__always_inline void log_panic_to_stdout(logging_buffs *log_original, const char* message, const int error_number, const char *file, const char *function, const int line, const uint8_t verbosity){
-    logging_buffs log_panic;
-    log_build(&log_panic, LOG_ALERT, message, error_number, file, function, line, verbosity);
-    printf("%s", log_panic.log_entry_buffer);
-    printf("\tOriginal log message :\n");
-    log_to_stdout(log_original);
+/**
+ * Wrapper, writing an already built log line directly to log file. If writing fails, and verbosity aska for it,
+ * error is printed to standard output
+ * @param log
+ * @param message
+ */
+__always_inline void log_write_to_file(logging *log, char *message){
+    if (write(log->fd, message, strlen(message)) == -1){
+        LOG_INIT;
+        LOG_STDOUT(LOG_ALERT, "Call to write() to log to file failed. Cannot log.", errno, 1);
+        if(log->verbosity >= LOG_NOTICE){
+            printf("\tOriginal log message :\n");
+            printf("\t%s", message);
+        }
+    }
+    memset(message, 0, strlen(message));
 }
-*/
 
+/**
+ * Builds a log line and writes it directly to buffer by calling log_write_to_file
+ * @param log_buffs
+ * @param message_level
+ * @param message
+ * @param error_number
+ * @param file
+ * @param function
+ * @param line
+ * @param log
+ */
 __always_inline void log_to_file(logging_buffs *log_buffs, const int message_level, const char *message,
                               const int error_number, const char *file, const char *function, const int line, logging *log){
     if(log->verbosity >= LOG_NOTSET){
         return;
     }
     log_build(log_buffs, message_level, message, error_number, file, function, line, log->verbosity);
-    if( write(log->fd, log_buffs->log_entry_buffer, strlen(log_buffs->log_entry_buffer)) == -1 ){
-        logging_buffs log_panic;
-        log_build(&log_panic, LOG_ALERT, message, error_number, file, function, line, log->verbosity);
-        printf("%s", log_panic.log_entry_buffer);
-        printf("\tOriginal log message :\n");
-        log_to_stdout(log_buffs);
-    }
+    log_write_to_file(log, log_buffs->log_entry_buffer);
 }
-
-#define LOG(message_level, message, error_number, error_delta, log)\
-    log_to_mq(&log_buffs, message_level, message, error_number, __FILE__, __FUNCTION__, __LINE__ - error_delta, log);\
-
-#define LOG_FILE(message_level, message, error_number, error_delta, log)\
-    log_to_file(&log_buffs, message_level, message, error_number, __FILE__, __FUNCTION__, __LINE__ - error_delta, log);\
-
-#define LOG_STDOUT(message_level, message, error_number, error_delta)\
-    log_build(&log_buffs, LOG_ALERT, message, error_number, __FILE__, __FUNCTION__, __LINE__ - error_delta, LOG_TRACE);\
-    log_to_stdout(&log_buffs);\
-
-
 
 /**
  * Given a previously declared logging structure, initialises it by setting the verbosity, and opening the message and
@@ -369,6 +440,9 @@ __always_inline void log_to_file(logging_buffs *log_buffs, const int message_lev
  * @return 0 on success, 1 on error
  */
 __always_inline uint8_t log_initialise_logging_s(logging *log, uint8_t verbosity, char *mq_name, char *filename){
+
+    LOG_INIT;
+
     log->verbosity = verbosity;
 
     /* Unlink potential previous message queue if it had the same name */
@@ -376,24 +450,26 @@ __always_inline uint8_t log_initialise_logging_s(logging *log, uint8_t verbosity
 
     /* Opening Message Queue */
     if( (log->mq = mq_open(mq_name, O_RDWR | O_CREAT | O_EXCL, 0600, NULL)) == (mqd_t)-1) {
-        LOG_STDOUT(LOG_FATAL, "Error in opening the logging messaging queue.", errno, __FILE__, __FUNCTION__, __LINE__ - 1);
+        LOG_STDOUT(LOG_FATAL, "Error in opening the logging messaging queue.", errno, 1);
         return 1;
     }
 
-    // TODO : check if successfull, error, etc.
+    // TODO : check if successful, error, etc.
+    // TODO : size of dest is not checked greater or equal to src.
+    /// TODO : check man strncpy
     strncpy(log->mq_name, mq_name, NAME_MAX - 1 );
 
     /* Open log file */
     log->fd = open(filename, O_CREAT|O_WRONLY|O_APPEND|O_SYNC, S_IRUSR|S_IWUSR);
     if( log->fd == -1 ){
-        LOG_STDOUT(LOG_FATAL, "Error in opening log file.", errno, __FILE__, __FUNCTION__, __LINE__ - 2);
+        LOG_STDOUT(LOG_FATAL, "Error in opening log file.", errno, 2);
         return 1;
     }
 
     /* Initialise asynchronous I/O structure */
     log->aio = malloc(sizeof(struct aiocb));
     if(!log->aio){
-        LOG_FILE(LOG_ALERT, "malloc failed allocation space for the aiocb structure.", errno, __FILE__, __FUNCTION__, __LINE__ - 2);
+        LOG_FILE(LOG_ALERT, "malloc failed allocation space for the aiocb structure.", errno, 2, log);
         return 1;
     }
 
@@ -401,7 +477,7 @@ __always_inline uint8_t log_initialise_logging_s(logging *log, uint8_t verbosity
     log->aio->aio_buf = NULL;
     log->aio->aio_nbytes = 0;
 
-    LOG_FILE(LOG_INFO, "Initialised logging structure.", -1, __FILE__, __FUNCTION__, __LINE__);
+    LOG_FILE(LOG_INFO, "Initialised logging structure.", -1, 0, log);
 
     return 0;
 }
@@ -418,9 +494,11 @@ __always_inline logging* log_initialise_logging(uint8_t verbosity, char *mq_name
 
     logging *log;
 
+    LOG_INIT;
+
     log = malloc(sizeof(logging));
     if ( !log ){
-        LOG_STDOUT(LOG_FATAL, "malloc failed allocation space for the logging structure.", errno, __FILE__, __FUNCTION__, __LINE__);
+        LOG_STDOUT(LOG_FATAL, "malloc failed allocation space for the logging structure.", errno, 2);
         return NULL;
     }
 
@@ -432,8 +510,10 @@ __always_inline logging* log_initialise_logging(uint8_t verbosity, char *mq_name
     return log;
 }
 
-
-
+/**
+ * Free the allocated spaces for the logging structure components, closes and unlinks the message queue
+ * @param log
+ */
 __always_inline void log_free_logging(logging *log){
 
     if (log->mq != -1){
