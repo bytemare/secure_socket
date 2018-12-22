@@ -17,6 +17,10 @@
 #include <threaded_server.h>
 #include <vars.h>
 
+/* BSD */
+#include <bsd/sys/types.h>
+#include <bsd/unistd.h>
+
 
 /**
  * Allocates memory for an ipc_socket instance, calling an error when failing
@@ -381,6 +385,7 @@ struct ucred* ipc_get_ucred(ipc_socket *sock){
 
     socklen_t len;
     struct ucred *creds = malloc(sizeof(struct ucred));
+    /* TODO */
     if ( creds == NULL ){
         /*ERROR("ipc_get_ucred() : malloc failed for ucred.")*/
     }
@@ -540,17 +545,36 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
  */
 bool ipc_validate_peer(server_context *ctx){
 
+    LOG_INIT;
+    char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
+
     struct ucred *creds = ipc_get_ucred(ctx->socket);
 
     pid_t peer_pid = creds->pid;
     uid_t peer_uid = creds->uid;
     gid_t peer_gid = creds->gid;
 
-    char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
+    /* BSD function for test and checking */
+    uid_t peer_uid_bsd = 0;
+    gid_t peer_gid_bsd = 0;
+    if (getpeereid(ctx->socket->socket_fd, &peer_uid_bsd, &peer_gid_bsd) == -1){
+        LOG(LOG_WARNING, "Could not use BSD getpeerid", errno, 1, &ctx->log);
+    }
 
-    LOG_INIT;
+    /* Check consistency between methods */
+    if ( peer_uid_bsd != 0 && peer_uid_bsd != peer_uid ){
+        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Inconsistency in peer uid : ucreds %d vs bsd getpeerid %d.", peer_pid, peer_uid_bsd);
+        LOG(LOG_CRITICAL, log_buffer, 0, 2, &ctx->log);
+        return false;
+    }
 
+    if ( peer_gid_bsd != 0 && peer_gid_bsd != peer_gid ){
+        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Inconsistency in peer gid : ucreds %d vs bsd getpeerid %d.", peer_gid, peer_gid_bsd);
+        LOG(LOG_CRITICAL, log_buffer, 0, 2, &ctx->log);
+        return false;
+    }
 
+    /* Test against authorised values */
     if(ctx->options->authorised_peer_pid){
         if( ctx->options->authorised_peer_pid != peer_pid) {
             snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer pid %d is not authorised.", peer_pid);
@@ -587,7 +611,7 @@ bool ipc_validate_peer(server_context *ctx){
 
     if(strlen(ctx->options->authorised_peer_process_name) > 0){
         if(!ipc_validate_proc(ctx, peer_pid)){
-            LOG(LOG_ERROR, "Peer process name does not match the authorised one. Process not authenticated.", errno, 3, &ctx->log);
+            LOG(LOG_ERROR, "Peer process name does not match the authorised one. Process not authenticated.", errno, 2, &ctx->log);
             return false;
         }
 
