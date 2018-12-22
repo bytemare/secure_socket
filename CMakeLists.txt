@@ -6,7 +6,7 @@ project(secure_broker)
 
 set(COMPILATION_WARNINGS "-W -Wall -Wextra -Werror -ansi -pedantic -Wuninitialized -Wcast-align -Wpointer-arith -Wmissing-braces -Wunused-result -Wl,-z,relro -Wl,-z,now -Wformat -Wformat-security -Wstrict-aliasing -Wunused-parameter -Wchkp")
 
-set(LINKER_LIBRARIES "-lrt -pthread -lm")
+set(LINKER_LIBRARIES "-lbsd -lrt -pthread -lm")
 
 
 set(SANITISER_FLAGS "-fsanitize=address -fsanitize=leak -fsanitize=undefined")
@@ -18,6 +18,8 @@ set(CMAKE_C_FLAGS " ${COMPILATION_WARNINGS} ${LINKER_LIBRARIES} ${SECURITY_FLAGS
 
 # -D_XOPEN_SOURCE=700
 # -fpic is for shared libraries
+
+# For libbsd, install libbsd-dev or use $(pkg-config --libs libbsd)
 
 set(SOURCE_FILES
         src/main.c

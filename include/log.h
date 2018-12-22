@@ -22,6 +22,8 @@
 #include <aio.h>
 #include <limits.h>
 
+#include <bsd/string.h>
+
 
 
 
@@ -392,7 +394,7 @@ __always_inline void log_to_stdout(logging_buffs *log){
 }
 
 /**
- * Wrapper, writing an already built log line directly to log file. If writing fails, and verbosity aska for it,
+ * Wrapper, writing an already built log line directly to log file. If writing fails, and verbosity asks for it,
  * error is printed to standard output
  * @param log
  * @param message
@@ -448,16 +450,23 @@ __always_inline uint8_t log_initialise_logging_s(logging *log, uint8_t verbosity
     /* Unlink potential previous message queue if it had the same name */
     mq_unlink(mq_name);
 
+    /* Check bounds to avoid overlow */
+    if (strlen(mq_name) >= sizeof(log->mq_name)){
+        LOG_STDOUT(LOG_FATAL, "Error in opening the logging messaging queue. Size is >= to maximum buffer size.", errno, 1);
+        return 1;
+    }
+
     /* Opening Message Queue */
     if( (log->mq = mq_open(mq_name, O_RDWR | O_CREAT | O_EXCL, 0600, NULL)) == (mqd_t)-1) {
         LOG_STDOUT(LOG_FATAL, "Error in opening the logging messaging queue.", errno, 1);
         return 1;
     }
 
-    // TODO : check if successful, error, etc.
-    // TODO : size of dest is not checked greater or equal to src.
-    /// TODO : check man strncpy
-    strncpy(log->mq_name, mq_name, NAME_MAX - 1 );
+
+    if ( strlcpy(log->mq_name, mq_name, sizeof(log->mq_name)) >= sizeof(log->mq_name) ){
+        LOG_STDOUT(LOG_FATAL, "Message queue name is too long and got truncated to maximum auhtorised size.", errno, 1);
+    }
+
 
     /* Open log file */
     log->fd = open(filename, O_CREAT|O_WRONLY|O_APPEND|O_SYNC, S_IRUSR|S_IWUSR);
