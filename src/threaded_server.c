@@ -13,6 +13,10 @@
 #include <sys/stat.h>
 #include <ipc_socket.h>
 
+/* BSD */
+#include <sys/fcntl.h>
+#include <bsd/libutil.h>
+
 /**
  * Set to be created pthreads attributes
  * @param ctx
@@ -64,7 +68,10 @@ char *read_data_from_source (const char *filename, int *size, logging *log){
     snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Attempting to read data from file '%s' ", filename);
     LOG(LOG_TRACE, log_buffer, 0, -2, log);
 
-    file = open(filename, O_RDONLY);
+    /*
+     * Use of a BSD function here with a lock to prevent a race condition, since the function is used to open a PID file, among others
+     */
+    file = flopen(filename, O_RDONLY);
 
     if(file == -1){
         snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Unable to open file '%s', open() failed. ", filename);

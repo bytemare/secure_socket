@@ -22,6 +22,9 @@
 #include <aio.h>
 #include <limits.h>
 
+/* BSD */
+#include <sys/fcntl.h>
+#include <bsd/libutil.h>
 #include <bsd/string.h>
 
 
@@ -88,7 +91,7 @@ typedef struct _logging{
 
 /* Allows grouping of locating the log */
 /*#define LOG_BUG_LOCATOR()\
-    __FILE__, __FUNCTION__, __LINE__\*/
+    __FILE__, __func__, __LINE__\*/
 
 
 /*
@@ -464,12 +467,12 @@ __always_inline uint8_t log_initialise_logging_s(logging *log, uint8_t verbosity
 
 
     if ( strlcpy(log->mq_name, mq_name, sizeof(log->mq_name)) >= sizeof(log->mq_name) ){
-        LOG_STDOUT(LOG_FATAL, "Message queue name is too long and got truncated to maximum auhtorised size.", errno, 1);
+        LOG_STDOUT(LOG_WARNING, "Message queue name is too long and got truncated to maximum authorised size.", errno, 1);
     }
 
 
-    /* Open log file */
-    log->fd = open(filename, O_CREAT|O_WRONLY|O_APPEND|O_SYNC, S_IRUSR|S_IWUSR);
+    /* Open log file with BSD function to obtain exclusive lock on file */
+    log->fd = flopen(filename, O_CREAT|O_WRONLY|O_APPEND|O_SYNC, S_IRUSR|S_IWUSR);
     if( log->fd == -1 ){
         LOG_STDOUT(LOG_FATAL, "Error in opening log file.", errno, 2);
         return 1;

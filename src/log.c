@@ -42,9 +42,8 @@ int get_mq_max_message_size(server_context *ctx){
     }
     else {
         errno = 0;
-        //ret = fscanf(fp, "%d\n", &max_size); /* TODO clean this here up, there should be a better way of doing this*/
 
-        ret = fscanf(fp, "%d", &max_size);
+        ret = fscanf(fp, "%d", &max_size); /* TODO clean this here up, there should be a better way of doing this*/
 
         if (ret == 1){
             fclose(fp);
