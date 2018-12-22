@@ -50,6 +50,8 @@ thread_context* make_thread_context(ipc_socket *socket, server_context *s_ctx){
  */
 void initialise_options(ipc_options *options){
 
+    printf("params : %p\n", (void*)&options);
+
     uint16_t mq_name_max_size;
     uint16_t log_name_max_size;
     uint8_t socket_name_max_size;
@@ -94,19 +96,30 @@ void initialise_options(ipc_options *options){
  */
 bool parse_options(ipc_options *options, int argc, char **argv){
 
+    printf("=> %s : %s at line %d\n", __FILE__, __func__, __LINE__);
+
     int i;
     char *p, *q;
     char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH];
 
+    printf("=> %s : %s at line %d\n", __FILE__, __func__, __LINE__);
+
     LOG_INIT;
+
+    printf("=> %s : %s at line %d\n", __FILE__, __func__, __LINE__);
 
     for( i = 1; i < argc; i++ ) {
         p = argv[i];
+
+        printf("=> parsing argument %s\n", p);
+
         if ((q = strchr(p, '=')) == NULL) {
             LOG_STDOUT(LOG_FATAL, "Invalid argument entry format. USAGE : [option]=[value].", -1, 1);
             return false;
         }
         *q++ = '\0';
+
+        printf("=> parsing argument q : %s\n", q);
 
         if (strcmp(p, "mq_name") == 0) {
             uint16_t mq_name_max_size = sizeof(options->mq_name);
@@ -343,9 +356,9 @@ server_context* make_server_context(ipc_options *params){
 
     LOG_FILE(LOG_TRACE, "Server context initialised", 0, 0, &ctx->log);
 
-    /*ctx->log.fd = open(ctx->options.log_file, O_CREAT|O_WRONLY|O_APPEND|O_SYNC, S_IRUSR|S_IWUSR);
+    ctx->log.fd = open(ctx->options->log_file, O_CREAT|O_WRONLY|O_APPEND|O_SYNC, S_IRUSR|S_IWUSR);
     if( ctx->log.fd == -1 ){
-        LOG_TTY(LOG_LVL_CRITICAL, "Error in opening log file.", errno);
+        LOG_STDOUT(LOG_CRITICAL, "Error in opening log file.", errno, 2);
         free_server_context(ctx);
         exit(1);
     }
@@ -353,7 +366,7 @@ server_context* make_server_context(ipc_options *params){
     ctx->log.aio = malloc(sizeof(struct aiocb));
     if(!ctx->log.aio){
         if( write(ctx->log.fd, "malloc failed allocation space for the aiocb structure.", (int)strlen("malloc failed allocation space for the aiocb structure.")) < 0){
-            LOG_TTY(LOG_LVL_CRITICAL, "Malloc fails for aiocb structure and write to log file failed.", errno);
+            LOG_STDOUT(LOG_CRITICAL, "Malloc fails for aiocb structure and write to log file failed.", errno, 3);
         }
         free_server_context(ctx);
         exit(1);
@@ -363,11 +376,11 @@ server_context* make_server_context(ipc_options *params){
     ctx->log.aio->aio_buf = NULL;
     ctx->log.aio->aio_nbytes = 0;
 
-    mq_unlink(ctx->options.mq_name);
+    mq_unlink(ctx->options->mq_name);
 
     // Opening Message Queue
-    if( (ctx->log.mq = mq_open(ctx->options.mq_name, O_RDWR | O_CREAT | O_EXCL, 0600, NULL)) == (mqd_t)-1){
-        LOG_TTY(LOG_LVL_CRITICAL, "Error in opening a messaging queue.", errno)
+    if( (ctx->log.mq = mq_open(ctx->options->mq_name, O_RDWR | O_CREAT | O_EXCL, 0600, NULL)) == (mqd_t)-1){
+        LOG_STDOUT(LOG_CRITICAL, "Error in opening a messaging queue.", errno, 1);
         free_server_context(ctx);
         exit(1);
     }
@@ -375,7 +388,6 @@ server_context* make_server_context(ipc_options *params){
     set_thread_attributes(ctx);
 
     ctx->log.quit_logging = false;
-     */
 
     return ctx;
 

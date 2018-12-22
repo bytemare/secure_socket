@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
 
     server_context *ctx;
     pthread_t logger;
-    ipc_options params;
+    ipc_options *params = malloc(sizeof(ipc_options));
 
     LOG_INIT;
 
@@ -36,16 +36,15 @@ int main(int argc, char** argv) {
 
     printf("%s\n%s\n", WELCOME_STRING, ARCH);
 
-
     /* Parse command line options and parameters */
-    initialise_options(&params);
+    initialise_options(params);
 
-    if( !parse_options(&params, argc, argv) ){
+    if( !parse_options(params, argc, argv) ){
         return 1;
     }
 
     /* Build the main threads server context */
-    ctx = make_server_context(&params);
+    ctx = make_server_context(params);
 
     LOG_FILE(LOG_INFO, "Starting Server. Context initialised.", errno, 0, &ctx->log);
 
@@ -65,7 +64,7 @@ int main(int argc, char** argv) {
     };
 
     /* Wait for clients */
-    threaded_server(ctx, params.max_connections);
+    threaded_server(ctx, params->max_connections);
 
     /* Wait for logging thread to terminate */
     pthread_mutex_lock(&ctx->mutex);

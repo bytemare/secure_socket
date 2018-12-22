@@ -31,6 +31,8 @@
 
 ### Todo :
 
+- add freeing function for the options/parameter structure !
+
 - separate logging macros from code for thread with mq, to enable genericity
 - add mode to be completely silent and not print to stdout
 - add mode to log everything to stdout
