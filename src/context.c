@@ -111,7 +111,8 @@ bool parse_options(ipc_options *options, int argc, char **argv){
     for( i = 1; i < argc; i++ ) {
         p = argv[i];
 
-        printf("=> parsing argument %s\n", p);
+        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Parsing argument : %s", p);
+        LOG_STDOUT(LOG_TRACE, log_buffer, -1, 3)
 
         if ((q = strchr(p, '=')) == NULL) {
             LOG_STDOUT(LOG_FATAL, "Invalid argument entry format. USAGE : [option]=[value].", -1, 1);
@@ -119,7 +120,8 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         }
         *q++ = '\0';
 
-        printf("=> parsing argument q : %s\n", q);
+        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Argument value : %s", q);
+        LOG_STDOUT(LOG_TRACE, log_buffer, -1, 3)
 
         if (strcmp(p, "mq_name") == 0) {
             uint16_t mq_name_max_size = sizeof(options->mq_name);
@@ -348,20 +350,13 @@ server_context* make_server_context(ipc_options *params){
     }
 
     if ( log_initialise_logging_s(&ctx->log, params->verbosity, params->mq_name, params->log_file) ) {
-        free(ctx);
+        free_server_context(ctx);
         return NULL;
     }
 
     ctx->options = params;
 
     LOG_FILE(LOG_TRACE, "Server context initialised", 0, 0, &ctx->log);
-
-    ctx->log.fd = open(ctx->options->log_file, O_CREAT|O_WRONLY|O_APPEND|O_SYNC, S_IRUSR|S_IWUSR);
-    if( ctx->log.fd == -1 ){
-        LOG_STDOUT(LOG_CRITICAL, "Error in opening log file.", errno, 2);
-        free_server_context(ctx);
-        exit(1);
-    }
 
     ctx->log.aio = malloc(sizeof(struct aiocb));
     if(!ctx->log.aio){
