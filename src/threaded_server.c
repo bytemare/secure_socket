@@ -61,9 +61,6 @@ char *read_data_from_source (const char *filename, int *size, logging *log){
 
     LOG_INIT;
 
-    /*
-     *
-     */
 
     snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Attempting to read data from file '%s' ", filename);
     LOG(LOG_TRACE, log_buffer, 0, -2, log);
@@ -72,10 +69,9 @@ char *read_data_from_source (const char *filename, int *size, logging *log){
      * Use of a BSD function here with a lock to prevent a race condition, since the function is used to open a PID file, among others
      */
     file = flopen(filename, O_RDONLY);
-
     if(file == -1){
         snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Unable to open file '%s', open() failed. ", filename);
-        LOG(LOG_ALERT, log_buffer, 0, 4, log);
+        LOG(LOG_ALERT, log_buffer, errno, 3, log);
         return NULL;
     }
 

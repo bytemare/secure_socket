@@ -48,13 +48,21 @@ thread_context* make_thread_context(ipc_socket *socket, server_context *s_ctx){
  * Initialises the programs options with data from vars.h
  * @param options
  */
-void initialise_options(ipc_options *options){
+ipc_options* initialise_options(){
 
-    printf("params : %p\n", (void*)&options);
+    LOG_INIT;
 
     uint16_t mq_name_max_size;
     uint16_t log_name_max_size;
     uint8_t socket_name_max_size;
+
+    /* Allocate memory */
+    ipc_options *options = malloc(sizeof(ipc_options));
+    if ( !options ){
+        LOG_STDOUT(LOG_FATAL, "malloc failed for ipc_options", errno, 3);
+        perror("Error in malloc for ipc_options : ");
+        return false;
+    }
 
     /* Set message queue name */
     mq_name_max_size = sizeof(options->mq_name);
@@ -84,6 +92,8 @@ void initialise_options(ipc_options *options){
     options->authorised_peer_pid = IPC_AUTHORIZED_PEER_GID;
     strcpy(options->authorised_peer_process_name, "");
     strcpy(options->authorised_peer_cli_args, "");
+
+    return 0;
 }
 
 
@@ -96,17 +106,11 @@ void initialise_options(ipc_options *options){
  */
 bool parse_options(ipc_options *options, int argc, char **argv){
 
-    printf("=> %s : %s at line %d\n", __FILE__, __func__, __LINE__);
-
     int i;
     char *p, *q;
     char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH];
 
-    printf("=> %s : %s at line %d\n", __FILE__, __func__, __LINE__);
-
     LOG_INIT;
-
-    printf("=> %s : %s at line %d\n", __FILE__, __func__, __LINE__);
 
     for( i = 1; i < argc; i++ ) {
         p = argv[i];
@@ -407,6 +411,8 @@ void free_server_context(server_context *ctx){
     }
 
     log_free_logging(&ctx->log);
+
+    free(ctx->options);
 
     free(ctx);
 }

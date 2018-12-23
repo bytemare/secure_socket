@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <broker_types.h>
 
-void initialise_options(ipc_options *options);
+ipc_options* initialise_options();
 
 bool parse_options(ipc_options *options, int argc, char **argv);
 

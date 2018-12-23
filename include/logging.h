@@ -7,4 +7,8 @@
 #ifndef SECURE_BROKER_LOGGING_H
 #define SECURE_BROKER_LOGGING_H
 
+#include <log.h>
+
+
+
 #endif //SECURE_BROKER_LOGGING_H

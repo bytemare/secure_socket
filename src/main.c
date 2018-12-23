@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
 
     server_context *ctx;
     pthread_t logger;
-    ipc_options *params = malloc(sizeof(ipc_options));
+    ipc_options *params;
 
     LOG_INIT;
 
@@ -37,7 +37,9 @@ int main(int argc, char** argv) {
     printf("%s\n%s\n", WELCOME_STRING, ARCH);
 
     /* Parse command line options and parameters */
-    initialise_options(params);
+    if( !( params = initialise_options()) ){
+        return 1;
+    }
 
     if( !parse_options(params, argc, argv) ){
         return 1;
