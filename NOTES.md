@@ -23,29 +23,38 @@
 - [+] [Logging] Enhanced logging usability : Logging to stdout, directly to file, or to message queue.
 - [+] [Logging] Introduced leveled verbosity of logging, set in parameters file. 
 
+
+### Priorities
+
+1) avoid use of exit(), and do proper error catching and termination
+2) Create socket under a dedicated, secured directory
+3) Document necessity to add libbsd on machine
+4) Fallback mechanism if libbsd is not available
+5) refactor code for socket to be used as component/library
+6) add examples and copy/pastable code
+7) if default values are used, add a random value at end of filename
+
+#### Logging
+1) add mode to be completely silent and not print to stdout
+2) add mode to log everything to stdout
+3) if logging is off, don't launch a logging thread, don't allocate stuff etc.
+4) separate logging macros from code for thread with mq, to enable genericity
+5) 
+
+
 ### Doing :
 
-- [>] separate debug and logs : leveled logging. Rewrite all logging.
+
 - [>] ucreds insertion in php socket : bypass php api macros and directly address underlying C socket
+
 
 
 ### Todo :
 
-- add freeing function for the options/parameter structure !
-
-- separate logging macros from code for thread with mq, to enable genericity
-- add mode to be completely silent and not print to stdout
-- add mode to log everything to stdout
-
-- if logging is off, don't launch a logging thread, don't allocate stuff etc.
-- avoid use of exit(), and do proper error catching and termination
-- if default values are used, add a random value at end of filename
-
-
 
 - benchmark performance differences between -fstack-protector-strong and -fstack-protector-all
 - check logging for snprintf return value
-- Create socket under a dedicated directory
+- 
 - Graceful stop via signal handling from outside : take care of threads etc.
 - Explore necessity of always_inline'ing functions
 - check which option of fsanitize is better suited : adress, thread or leak ?
