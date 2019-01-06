@@ -13,9 +13,10 @@
  */
 #define IPC_PORT 6666
 #define IPC_NB_CNX 200
+#define IPC_RAND_LENGTH 32
 #define IPC_DOMAIN AF_UNIX
 #define IPC_PROTOCOL SOCK_STREAM
-#define IPC_SOCKET_PATH "/tmp/sock_secure_broker"
+#define IPC_SOCKET_PATH_BASE "/tmp/"
 #define IPC_MQ_NAME "/secure_broker_MQ"
 #define IPC_LOG_FILE "/tmp/secure_broker/log/secure_broker_logs"
 #define IPC_AUTHORIZED_PEER_USERNAME "peer-uid"

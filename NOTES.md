@@ -21,12 +21,12 @@
 - [+] use of strtol instead of atoi in context.c
 - [+] [Logging] corrected data disclosure : hash id was fully written to log. Now only the first n characters a are shown.
 - [+] [Logging] Enhanced logging usability : Logging to stdout, directly to file, or to message queue.
-- [+] [Logging] Introduced leveled verbosity of logging, set in parameters file. 
-
+- [+] [Logging] Introduced leveled verbosity of logging, set in parameters file.
+- [+] [Socket] If default values are used, add a random value at end of filenames
+ 
 
 ### Priorities
 
-1) if default values are used, add a random value at end of filename
 2) Create socket under a dedicated, secured directory
 
 1) avoid use of exit(), and do proper error catching and termination

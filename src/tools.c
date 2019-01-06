@@ -11,7 +11,7 @@
 #include <bsd/stdlib.h>
 
 /**
- * Fills the buffer pointed to by *rand with random alphanumerical values.
+ * Fills the buffer pointed to by *rand with size - 1 random alphanumerical values, terminating with a null character.
  * The function never fails and will always return, and is based on a BSD random generator.
  * @param rand
  * @param size

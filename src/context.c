@@ -17,6 +17,7 @@
 #include <vars.h>
 #include <ctype.h>
 #include <pwd.h>
+#include <tools.h>
 
 
 /**
@@ -44,6 +45,7 @@ thread_context* make_thread_context(ipc_socket *socket, server_context *s_ctx){
     return ctx;
 }
 
+
 /**
  * Initialises the programs options with data from vars.h
  * @param options
@@ -52,9 +54,11 @@ ipc_options* initialise_options(){
 
     LOG_INIT;
 
+    size_t n;
     uint16_t mq_name_max_size;
     uint16_t log_name_max_size;
     uint8_t socket_name_max_size;
+    char rand_buffer[IPC_RAND_LENGTH + 1];
 
     /* Allocate memory */
     ipc_options *options = malloc(sizeof(ipc_options));
@@ -67,17 +71,23 @@ ipc_options* initialise_options(){
     /* Set message queue name */
     mq_name_max_size = sizeof(options->mq_name);
     memset(options->mq_name, '\0', mq_name_max_size);
-    strncpy(options->mq_name, IPC_MQ_NAME, (size_t) (mq_name_max_size - 1));
+    strlcpy(options->mq_name, IPC_MQ_NAME, (size_t) (mq_name_max_size - 1));
+    secure_random_string(rand_buffer, IPC_RAND_LENGTH + 1);
+    strlcat(options->mq_name, rand_buffer, IPC_RAND_LENGTH);
 
     /* Set log file */
     log_name_max_size = sizeof(options->log_file);
     memset(options->log_file, '\0', log_name_max_size);
     strncpy(options->log_file, IPC_LOG_FILE, (size_t) (log_name_max_size - 1));
+    secure_random_string(rand_buffer, IPC_RAND_LENGTH + 1);
+    strlcat(options->log_file, rand_buffer, IPC_RAND_LENGTH);
 
     /* Set socket data */
     socket_name_max_size = sizeof(options->socket_path);
     memset(options->socket_path, '\0', socket_name_max_size);
-    strncpy(options->socket_path, IPC_SOCKET_PATH, (size_t) (socket_name_max_size - 1));
+    strncpy(options->socket_path, IPC_SOCKET_PATH_BASE, (size_t) (socket_name_max_size - 1));
+    secure_random_string(rand_buffer, IPC_RAND_LENGTH + 1);
+    strlcat(options->log_file, rand_buffer, IPC_RAND_LENGTH);
 
     options->domain = IPC_DOMAIN;
     options->protocol = IPC_PROTOCOL;
