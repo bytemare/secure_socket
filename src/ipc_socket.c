@@ -18,7 +18,7 @@
 #include <vars.h>
 
 /* BSD */
-#include <bsd/sys/types.h>
+#include <sys/types.h>
 #include <bsd/unistd.h>
 
 
@@ -26,7 +26,7 @@
  * Allocates memory for an ipc_socket instance, calling an error when failing
  * @return allocated non-instanciated ipc_socket, NULL if failed
  */
-ipc_socket* new_socket(server_context *ctx){
+ipc_socket* allocate_socket(server_context *ctx){
 
     ipc_socket *sock;
 
@@ -36,7 +36,7 @@ ipc_socket* new_socket(server_context *ctx){
 
     if( sock == NULL){
         LOG(LOG_FATAL, "malloc() failed for : ipc_socket. ", errno, 3, &ctx->log);
-        printf("malloc failed for ipc socket.\n");
+        //printf("malloc failed for ipc socket.\n");
         return NULL;
     }
 
@@ -93,10 +93,11 @@ int set_bind_address(server_context *ctx, in_addr_t address){
 
             server->address.un.sun_family = AF_UNIX;
 
-            bzero((char*)server->address.un.sun_path, sizeof(server->address.un.sun_path));
+            //bzero((char*)server->address.un.sun_path, sizeof(server->address.un.sun_path));
+            bzero(server->address.un.sun_path, sizeof(server->address.un.sun_path));
             strncpy(server->address.un.sun_path, ctx->options->socket_path, sizeof(server->address.un.sun_path) - 1);
 
-            len = (socklen_t ) (strlen(server->address.un.sun_path) + sizeof(server->address.un.sun_family));
+            len = (socklen_t) (strlen(server->address.un.sun_path) + sizeof(server->address.un.sun_family));
 
             server->bind_address = (struct sockaddr*)&server->address.un;
             break;
@@ -123,7 +124,6 @@ int set_bind_address(server_context *ctx, in_addr_t address){
 }
 
 
-
 /**
  * Bind the application to an address via a socket contained in a ipc_socket structure
  * @param domain : address domain: AF_UNIX, AF_INET etc.
@@ -146,17 +146,13 @@ bool ipc_server_bind(in_addr_t address, server_context *ctx){
         }
     }
 
-    ctx->socket = new_socket(ctx);
+    ctx->socket = allocate_socket(ctx);
     if (ctx->socket == NULL) {
         LOG(LOG_FATAL, "server_bind() could not allocate socket : ", errno, 2, &ctx->log);
         return false;
     }
 
     LOG(LOG_INFO, "Allocated memory for server ipc_socket : ", errno, 0, &ctx->log);
-
-
-    //ctx->socket->mq = ctx->mq;
-
 
     /* Socket creation */
     ctx->socket->socket_fd = socket(ctx->options->domain, ctx->options->protocol, 0);
@@ -167,7 +163,6 @@ bool ipc_server_bind(in_addr_t address, server_context *ctx){
     }
 
     LOG(LOG_INFO, "Socket created.", errno, 0, &ctx->log);
-
 
     if ( (len = set_bind_address(ctx, address)) <= 0 ){
         LOG(LOG_FATAL, "Could not properly set socket address type.", errno, 1, &ctx->log);
@@ -253,7 +248,7 @@ ipc_socket* ipc_accept_connection(server_context *ctx){
 
     LOG_INIT;
 
-    client = new_socket(ctx);
+    client = allocate_socket(ctx);
     if (client == NULL) {
         LOG(LOG_ALERT, "accept_connection() could not allocate socket : ", errno, 2, &ctx->log);
         return NULL;

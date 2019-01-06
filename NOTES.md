@@ -26,13 +26,14 @@
 
 ### Priorities
 
-1) avoid use of exit(), and do proper error catching and termination
+1) if default values are used, add a random value at end of filename
 2) Create socket under a dedicated, secured directory
+
+1) avoid use of exit(), and do proper error catching and termination
 3) Document necessity to add libbsd on machine
 4) Fallback mechanism if libbsd is not available
 5) refactor code for socket to be used as component/library
 6) add examples and copy/pastable code
-7) if default values are used, add a random value at end of filename
 
 #### Logging
 1) add mode to be completely silent and not print to stdout

@@ -21,7 +21,6 @@ typedef struct ipc_options{
     char mq_name[PATH_MAX];
     char log_file[PATH_MAX];
 
-
     /* Socket related data */
     char socket_path[108]; /* size of sockaddr_un.sun_path array */
     uint8_t domain;
@@ -29,7 +28,6 @@ typedef struct ipc_options{
     uint16_t port;
     uint8_t max_connections;
     char socket_permissions[5];
-
 
     /* Security Parameters related to authentication */
     char authorised_peer_username[32];
@@ -47,7 +45,6 @@ typedef struct _ipc_socket{
 
     struct sockaddr in_address; /* A internet address, for client e.g. */
     int optval; /* the optval argument for bind function */
-
 
     /* Data relative to domain and, therefore, sockaddr type */
     union address{
