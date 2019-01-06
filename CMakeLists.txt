@@ -25,7 +25,7 @@ set(SOURCE_FILES
         src/main.c
         src/ipc_socket.c
         src/context.c
-        src/threaded_server.c src/log.c include/logging.h)
+        src/threaded_server.c src/log.c include/logging.h src/tools.c include/tools.h)
 
 
 include_directories(include/ src/)
