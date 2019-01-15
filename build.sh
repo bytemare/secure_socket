@@ -68,8 +68,8 @@ cd ..
 
 #ln -s ./$BUILD/$EXEC $LINK
 #chmod -R 500 *
-#chown -R secure_broker *
-#chgrp -R secure_broker *
+#chown -R secure_socket *
+#chgrp -R secure_socket *
 
 
 # Build launching script

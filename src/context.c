@@ -54,7 +54,6 @@ ipc_options* initialise_options(){
 
     LOG_INIT;
 
-    size_t n;
     uint16_t mq_name_max_size;
     uint16_t log_name_max_size;
     uint8_t socket_name_max_size;

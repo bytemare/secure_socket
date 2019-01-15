@@ -4,8 +4,8 @@
  * Copyright (C) 2017-2018 Bytemare <d@bytema.re>. All Rights Reserved.
  */
 
-#ifndef secure_broker_broker_VARS_H
-#define secure_broker_broker_VARS_H
+#ifndef secure_socket_VARS_H
+#define secure_socket_VARS_H
 
 
 /**
@@ -17,8 +17,8 @@
 #define IPC_DOMAIN AF_UNIX
 #define IPC_PROTOCOL SOCK_STREAM
 #define IPC_SOCKET_PATH_BASE "/tmp/"
-#define IPC_MQ_NAME "/secure_broker_MQ"
-#define IPC_LOG_FILE "/tmp/secure_broker/log/secure_broker_logs"
+#define IPC_MQ_NAME "/secure_socket_MQ"
+#define IPC_LOG_FILE "/tmp/secure_socket/log/secure_socket_logs"
 #define IPC_AUTHORIZED_PEER_USERNAME "peer-uid"
 #define IPC_SOCKET_PERMS "0660"
 #define IPC_AUTHORIZED_PEER_PID 0
@@ -39,4 +39,4 @@
 
 
 
-#endif /* secure_broker_broker_VARS_H */
+#endif /* secure_socket_VARS_H */

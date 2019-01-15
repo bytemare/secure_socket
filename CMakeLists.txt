@@ -2,7 +2,7 @@
 # Copyright (C) 2017-2018 Bytemare <d@bytema.re>. All Rights Reserved.
 
 cmake_minimum_required(VERSION 3.7.2)
-project(secure_broker)
+project(secure_socket)
 
 set(COMPILATION_WARNINGS "-W -Wall -Wextra -Werror -ansi -pedantic -Wuninitialized -Wcast-align -Wpointer-arith -Wmissing-braces -Wunused-result -Wl,-z,relro -Wl,-z,now -Wformat -Wformat-security -Wstrict-aliasing -Wunused-parameter -Wchkp")
 
@@ -30,4 +30,4 @@ set(SOURCE_FILES
 
 include_directories(include/ src/)
 
-add_executable(secure_broker ${SOURCE_FILES} ${HEADERS})
+add_executable(secure_socket ${SOURCE_FILES} ${HEADERS})

@@ -4,12 +4,12 @@
  * Copyright (C) 2017-2018 Bytemare <d@bytema.re>. All Rights Reserved.
  */
 
-#ifndef secure_broker_broker_CONTEXT_H
-#define secure_broker_broker_CONTEXT_H
+#ifndef secure_socket_CONTEXT_H
+#define secure_socket_CONTEXT_H
 
 #include <mqueue.h>
 #include <unistd.h>
-#include <broker_types.h>
+#include <secure_socket_types.h>
 
 ipc_options* initialise_options();
 
@@ -25,4 +25,4 @@ void free_server_context(server_context *ctx);
 
 
 
-#endif /*secure_broker_broker_CONTEXT_H*/
+#endif /*secure_socket_CONTEXT_H*/

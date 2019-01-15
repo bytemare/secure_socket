@@ -17,7 +17,7 @@
  * @param size
  * @return
  */
-static void secure_random_string(char *rand, uint32_t size){
+void secure_random_string(char *rand, uint32_t size){
 
     static char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     uint32_t n, charset_length = (uint32_t) strlen(charset);

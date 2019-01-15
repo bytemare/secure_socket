@@ -4,8 +4,8 @@
  * Copyright (C) 2017-2018 Bytemare <d@bytema.re>. All Rights Reserved.
  */
 
-#ifndef secure_broker_broker_TSM_TYPES_H
-#define secure_broker_broker_TSM_TYPES_H
+#ifndef secure_socket_TSM_TYPES_H
+#define secure_socket_TSM_TYPES_H
 
 #include <mqueue.h>
 #include <arpa/inet.h>
@@ -90,4 +90,4 @@ typedef struct _server_context{
     ipc_options *options;
 } server_context;
 
-#endif /*secure_broker_broker_TSM_TYPES_H*/
+#endif /*secure_socket_TSM_TYPES_H*/
