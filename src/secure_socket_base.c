@@ -7,7 +7,11 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include "secure_socket_base.h"
+#include <secure_socket_base.h>
+
+
+/* BSD */
+#include <bsd/string.h>
 
 /**
  * Fill a UNIX socket sockaddr_un struct.
@@ -30,7 +34,7 @@ struct sockaddr *socket_bind_unix(struct sockaddr_un *un, const char* socket_pat
 
     //bzero((char*)server->address.un.sun_path, sizeof(server->address.un.sun_path));
     bzero(un->sun_path, sizeof(un->sun_path));
-    strncpy(un->sun_path, socket_path, sizeof(un->sun_path) - 1);
+    strlcpy(un->sun_path, socket_path, sizeof(un->sun_path) - 1);
 
     *socklen = (socklen_t) (strlen(un->sun_path) + sizeof(un->sun_family));
 
