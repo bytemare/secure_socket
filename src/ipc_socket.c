@@ -20,31 +20,47 @@
 /* BSD */
 #include <sys/types.h>
 #include <bsd/unistd.h>
+#include "secure_socket_base.h"
 
 
 /**
  * Allocates memory for an ipc_socket instance, calling an error when failing
  * @return allocated non-instanciated ipc_socket, NULL if failed
  */
-ipc_socket* allocate_socket(server_context *ctx){
+secure_socket* secure_socket_allocate(server_context *ctx){
 
-    ipc_socket *sock;
+    secure_socket *sock;
 
     LOG_INIT;
 
-    sock = malloc(sizeof(ipc_socket));
+    sock = malloc(sizeof(secure_socket));
 
     if( sock == NULL){
-        LOG(LOG_FATAL, "malloc() failed for : ipc_socket. ", errno, 3, &ctx->log);
+        LOG(LOG_FATAL, "malloc() failed for : secure_socket. ", errno, 3, &ctx->log);
         //printf("malloc failed for ipc socket.\n");
         return NULL;
     }
 
-    /*sock->addrlen = sizeof (sock->in_address);*/ /* TODO what's this ? */
+    //sock->addrlen = sizeof (sock->in_address); /* TODO what's this ? */
 
     return sock;
 }
 
+
+
+bool secure_socket_create_socket(server_context *ctx){
+
+    LOG_INIT;
+
+    ctx->socket->socket_fd = socket(ctx->options->domain, ctx->options->protocol, 0);
+    if( ctx->socket->socket_fd < -1 ){
+        LOG(LOG_FATAL, "socket() failed : ", errno, 2, &ctx->log);
+        ipc_socket_free(ctx->socket, &ctx->log);
+        return false;
+    }
+
+    return true;
+}
 
 
 
@@ -58,10 +74,9 @@ ipc_socket* allocate_socket(server_context *ctx){
  * @param ctx
  * @return -1 if failed, or length of address structure
  */
-int set_bind_address(server_context *ctx, in_addr_t address){
+void set_bind_address(server_context *ctx, in_addr_t address){
 
-    int len;
-    ipc_socket *server;
+    secure_socket *server;
 
     LOG_INIT;
 
@@ -82,10 +97,10 @@ int set_bind_address(server_context *ctx, in_addr_t address){
         */
 
             /* Destroy ancient socket if interrupted abruptly*/
-            unlink(ctx->options->socket_path);
+            //unlink(ctx->options->socket_path);
 
             /* Make sure we do not overflow the path buffer */
-            if( strlen(ctx->options->socket_path) >= sizeof(server->address.un.sun_path)){
+            /*if( strlen(ctx->options->socket_path) >= sizeof(server->address.un.sun_path)){
                 LOG(LOG_CRITICAL, "Socket path is too long : overflow avoided !", errno, 1, &ctx->log);
                 len = -1;
                 break;
@@ -101,9 +116,19 @@ int set_bind_address(server_context *ctx, in_addr_t address){
 
             server->bind_address = (struct sockaddr*)&server->address.un;
             break;
+             */
+
+            server->bind_address = socket_bind_unix(&server->address.un, ctx->options->socket_path, &ctx->socket->addrlen);
+
+            if ( ctx->socket->addrlen == 0 ){
+                LOG(LOG_CRITICAL, "Socket path is too long : overflow avoided !", errno, 1, &ctx->log);
+            }
+
+            break;
         }
 
         case AF_INET:{
+            /*
             server->address.in.sin_family = (sa_family_t) ctx->options->domain;
             server->address.in.sin_port = htons(ctx->options->port);
             server->address.in.sin_addr.s_addr = address;
@@ -111,16 +136,16 @@ int set_bind_address(server_context *ctx, in_addr_t address){
             len = sizeof(struct sockaddr_in);
 
             server->bind_address = (struct sockaddr*)&server->address.in;
+             */
+            server->bind_address = socket_bind_inet(&server->address.in, ctx->options->domain, ctx->options->port, address, &ctx->socket->addrlen);
             break;
         }
 
         default:
-            LOG(LOG_CRITICAL, "domain type not recognised !", errno, 0, &ctx->log);
-            len = -1;
+            LOG(LOG_CRITICAL, "domain type is invalid or not recognised !", errno, 0, &ctx->log);
+            ctx->socket->addrlen = 0;
 
     }
-
-    return len;
 }
 
 
@@ -146,19 +171,16 @@ bool ipc_server_bind(in_addr_t address, server_context *ctx){
         }
     }
 
-    ctx->socket = allocate_socket(ctx);
+    ctx->socket = secure_socket_allocate(ctx);
     if (ctx->socket == NULL) {
         LOG(LOG_FATAL, "server_bind() could not allocate socket : ", errno, 2, &ctx->log);
         return false;
     }
 
-    LOG(LOG_INFO, "Allocated memory for server ipc_socket : ", errno, 0, &ctx->log);
+    LOG(LOG_INFO, "Allocated memory for server secure_socket : ", errno, 0, &ctx->log);
 
     /* Socket creation */
-    ctx->socket->socket_fd = socket(ctx->options->domain, ctx->options->protocol, 0);
-    if( ctx->socket->socket_fd < 0 ){
-        LOG(LOG_FATAL, "socket() failed : ", errno, 2, &ctx->log);
-        ipc_socket_free(ctx->socket, &ctx->log);
+    if( secure_socket_create_socket(ctx) == false ){
         return false;
     }
 
@@ -241,20 +263,20 @@ bool ipc_bind_set_and_listen(in_addr_t address, server_context *ctx) {
  * @param client
  * @return true or false whether connection could be accepted
  */
-ipc_socket* ipc_accept_connection(server_context *ctx){
+secure_socket* ipc_accept_connection(server_context *ctx){
 
     socklen_t len;
-    ipc_socket *client;
+    secure_socket *client;
 
     LOG_INIT;
 
-    client = allocate_socket(ctx);
+    client = secure_socket_allocate(ctx);
     if (client == NULL) {
         LOG(LOG_ALERT, "accept_connection() could not allocate socket : ", errno, 2, &ctx->log);
         return NULL;
     }
 
-    LOG(LOG_INFO, "Allocated memory for communication ipc_socket : ", errno, 0, &ctx->log);
+    LOG(LOG_INFO, "Allocated memory for communication secure_socket : ", errno, 0, &ctx->log);
 
 
     switch(ctx->options->domain){
@@ -300,7 +322,7 @@ ipc_socket* ipc_accept_connection(server_context *ctx){
  * @param data
  * @return true or false, whether send succeded
  */
-bool ipc_send(ipc_socket *sock, int length, char *data, thread_context *ctx){
+bool ipc_send(secure_socket *sock, int length, char *data, thread_context *ctx){
 
     /* unsigned const int length = (unsigned const int ) strlen(data); */
     int sent;
@@ -342,7 +364,7 @@ bool ipc_send(ipc_socket *sock, int length, char *data, thread_context *ctx){
  * @param length
  * @return number of bytes received
  */
-int ipc_recv(ipc_socket *sock, char *data, unsigned int length, thread_context *ctx){
+int ipc_recv(secure_socket *sock, char *data, unsigned int length, thread_context *ctx){
 
     int received;
     char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
@@ -376,7 +398,7 @@ int ipc_recv(ipc_socket *sock, char *data, unsigned int length, thread_context *
  * @param sock
  * @return struct ucred
  */
-struct ucred* ipc_get_ucred(ipc_socket *sock){
+struct ucred* ipc_get_ucred(secure_socket *sock){
 
     socklen_t len;
     struct ucred *creds = malloc(sizeof(struct ucred));
@@ -401,7 +423,7 @@ struct ucred* ipc_get_ucred(ipc_socket *sock){
  * @return
  */
 /*
-pid_t ipc_get_peer_pid(ipc_socket *sock){
+pid_t ipc_get_peer_pid(secure_socket *sock){
     struct ucred *creds = ipc_get_ucred(sock);
     pid_t pid = creds->pid;
     free(creds);
@@ -421,7 +443,7 @@ void ipc_close_socket(int socket_fd){
  * Closes a socket and frees the memory allocated to the ipc_socket
  * @param com
  */
-void ipc_socket_free(ipc_socket *com, logging *log){
+void ipc_socket_free(secure_socket *com, logging *log){
     LOG_INIT;
     ipc_close_socket(com->socket_fd);
     free(com);

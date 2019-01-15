@@ -39,7 +39,7 @@ typedef struct ipc_options{
 
 } ipc_options;
 
-typedef struct _ipc_socket{
+typedef struct _secure_socket{
 
     int socket_fd; /* The sockets file descriptor */
 
@@ -58,10 +58,10 @@ typedef struct _ipc_socket{
     /* For logging */
     //mqd_t mq;
     //logging log;
-} ipc_socket;
+} secure_socket;
 
 typedef struct _thread_context{
-    ipc_socket *socket;
+    secure_socket *socket;
     logging *log;
 } thread_context;
 
@@ -75,7 +75,7 @@ typedef struct _server_context{
     pthread_condattr_t cattr;*/
 
     /* Socket related data */
-    ipc_socket *socket;
+    secure_socket *socket;
 
     /* For logging */
 
