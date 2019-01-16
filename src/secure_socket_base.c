@@ -9,7 +9,6 @@
 #include <arpa/inet.h>
 #include <secure_socket_base.h>
 
-
 /* BSD */
 #include <bsd/string.h>
 
@@ -22,7 +21,7 @@
  */
 struct sockaddr *socket_bind_unix(struct sockaddr_un *un, const char* socket_path, socklen_t *socklen){
 
-    /* Destroy ancient socket if interrupted abruptly*/
+    /* Destroy ancient socket if it was abruptly interrupted */
     unlink(socket_path);
 
     /* Make sure we do not overflow the path buffer */
@@ -32,14 +31,18 @@ struct sockaddr *socket_bind_unix(struct sockaddr_un *un, const char* socket_pat
 
     un->sun_family = AF_UNIX;
 
-    //bzero((char*)server->address.un.sun_path, sizeof(server->address.un.sun_path));
-    bzero(un->sun_path, sizeof(un->sun_path));
-    strlcpy(un->sun_path, socket_path, sizeof(un->sun_path) - 1);
+    if ( socket_path ){
 
-    *socklen = (socklen_t) (strlen(un->sun_path) + sizeof(un->sun_family));
+        //bzero((char*)server->address.un.sun_path, sizeof(server->address.un.sun_path));
+        bzero(un->sun_path, sizeof(un->sun_path));
+        strlcpy(un->sun_path, socket_path, sizeof(un->sun_path) - 1);
+
+        *socklen = (socklen_t) (strlen(un->sun_path) + sizeof(un->sun_family));
+    }
 
     return (struct sockaddr*)un;
 }
+
 
 /**
  * Fill an internet socket sockaddr_in struct.

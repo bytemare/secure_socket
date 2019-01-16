@@ -14,7 +14,7 @@
 #include <values.h>
 #include <log.h>
 
-typedef struct ipc_options{
+typedef struct _ipc_options{
 
     /* Logging related parameters */
     uint8_t verbosity;
@@ -43,7 +43,7 @@ typedef struct _secure_socket{
 
     int socket_fd; /* The sockets file descriptor */
 
-    struct sockaddr in_address; /* A internet address, for client e.g. */
+    //struct sockaddr in_address; /* A internet address, for client e.g. */
     int optval; /* the optval argument for bind function */
 
     /* Data relative to domain and, therefore, sockaddr type */

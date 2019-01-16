@@ -11,16 +11,18 @@
 #include <log.h>
 #include <string.h>
 #include <pthread.h>
-#include <ipc_socket.h>
 #include <grp.h>
 #include <sys/stat.h>
-#include <threaded_server.h>
-#include <vars.h>
 
 /* BSD */
 #include <sys/types.h>
 #include <bsd/unistd.h>
-#include "secure_socket_base.h"
+
+/* Secure_socket */
+#include <ipc_socket.h>
+#include <secure_socket_base.h>
+#include <threaded_server.h>
+#include <vars.h>
 
 
 /**
@@ -72,9 +74,9 @@ bool secure_socket_create_socket(server_context *ctx){
  * @param port
  * @param socket_address
  * @param ctx
- * @return -1 if failed, or length of address structure
+ * @return -1 if failed, 0 on success
  */
-void set_bind_address(server_context *ctx, in_addr_t address){
+int8_t set_bind_address(server_context *ctx, in_addr_t address){
 
     secure_socket *server;
 
@@ -84,23 +86,53 @@ void set_bind_address(server_context *ctx, in_addr_t address){
 
     LOG(LOG_TRACE, "Setting up address to bind on ...", errno, 0, &ctx->log);
 
+
+
+    if ( ctx->options->domain == AF_UNIX ){
+        server->bind_address = socket_bind_unix(&server->address.un, ctx->options->socket_path, &ctx->socket->addrlen);
+
+        if ( server->bind_address == NULL ){
+            LOG(LOG_CRITICAL, "Socket path is too long : overflow avoided !", errno, 1, &ctx->log);
+            ctx->socket->addrlen = 0;
+        }
+
+        return -1;
+    }
+
+    if ( ctx->options->domain == AF_INET ){
+        server->bind_address = socket_bind_inet(&server->address.in, ctx->options->domain, ctx->options->port, address, &ctx->socket->addrlen);
+        return 0;
+    }
+
+
+    LOG(LOG_CRITICAL, "domain type is invalid or not recognised !", errno, 0, &ctx->log);
+    ctx->socket->addrlen = 0;
+
+    return -1;
+
+    /*
+
+    server->bind_address = socket_bind_inet(&server->address.in, ctx->options->domain, ctx->options->port, address, &ctx->socket->addrlen);
+
+
+
     switch(ctx->options->domain){
 
         case AF_UNIX:{
-            /*
-        server->address.sa_family = (sa_family_t) domain;
-        strcpy(server->address.sa_data, socket_address);
-        unlink(server->address.sa_data);
 
-        len = (socklen_t) (strlen(socket_address) + sizeof(domain));
-        server->bind_address = &server->address;
-        */
+        //server->address.sa_family = (sa_family_t) domain;
+        //strcpy(server->address.sa_data, socket_address);
+        //unlink(server->address.sa_data);
 
-            /* Destroy ancient socket if interrupted abruptly*/
+        //len = (socklen_t) (strlen(socket_address) + sizeof(domain));
+        //server->bind_address = &server->address;
+
+
+            // Destroy ancient socket if interrupted abruptly
             //unlink(ctx->options->socket_path);
 
-            /* Make sure we do not overflow the path buffer */
-            /*if( strlen(ctx->options->socket_path) >= sizeof(server->address.un.sun_path)){
+            // Make sure we do not overflow the path buffer
+            if( strlen(ctx->options->socket_path) >= sizeof(server->address.un.sun_path)){
                 LOG(LOG_CRITICAL, "Socket path is too long : overflow avoided !", errno, 1, &ctx->log);
                 len = -1;
                 break;
@@ -116,19 +148,20 @@ void set_bind_address(server_context *ctx, in_addr_t address){
 
             server->bind_address = (struct sockaddr*)&server->address.un;
             break;
-             */
+
 
             server->bind_address = socket_bind_unix(&server->address.un, ctx->options->socket_path, &ctx->socket->addrlen);
 
-            if ( ctx->socket->addrlen == 0 ){
+            if ( server->bind_address == NULL ){
                 LOG(LOG_CRITICAL, "Socket path is too long : overflow avoided !", errno, 1, &ctx->log);
+                ctx->socket->addrlen = 0;
             }
 
             break;
         }
 
         case AF_INET:{
-            /*
+
             server->address.in.sin_family = (sa_family_t) ctx->options->domain;
             server->address.in.sin_port = htons(ctx->options->port);
             server->address.in.sin_addr.s_addr = address;
@@ -136,7 +169,7 @@ void set_bind_address(server_context *ctx, in_addr_t address){
             len = sizeof(struct sockaddr_in);
 
             server->bind_address = (struct sockaddr*)&server->address.in;
-             */
+
             server->bind_address = socket_bind_inet(&server->address.in, ctx->options->domain, ctx->options->port, address, &ctx->socket->addrlen);
             break;
         }
@@ -146,6 +179,8 @@ void set_bind_address(server_context *ctx, in_addr_t address){
             ctx->socket->addrlen = 0;
 
     }
+
+    */
 }
 
 
@@ -154,11 +189,9 @@ void set_bind_address(server_context *ctx, in_addr_t address){
  * @param domain : address domain: AF_UNIX, AF_INET etc.
  * @param address
  * @param port
- * @return ipc_socket structure
+ * @return true or false, depending on success
  */
 bool ipc_server_bind(in_addr_t address, server_context *ctx){
-
-    int len;
 
     LOG_INIT;
 
@@ -186,7 +219,7 @@ bool ipc_server_bind(in_addr_t address, server_context *ctx){
 
     LOG(LOG_INFO, "Socket created.", errno, 0, &ctx->log);
 
-    if ( (len = set_bind_address(ctx, address)) <= 0 ){
+    if ( set_bind_address(ctx, address) <= 0 ){
         LOG(LOG_FATAL, "Could not properly set socket address type.", errno, 1, &ctx->log);
         ipc_socket_free(ctx->socket, &ctx->log);
         return false;
@@ -198,7 +231,7 @@ bool ipc_server_bind(in_addr_t address, server_context *ctx){
     }
 
     /* Bind to address */
-    if (bind(ctx->socket->socket_fd, ctx->socket->bind_address, (socklen_t) len) != 0) {
+    if (bind(ctx->socket->socket_fd, ctx->socket->bind_address, ctx->socket->addrlen) != 0) {
         LOG(LOG_FATAL, "Error binding socket : ", errno, 1, &ctx->log);
         ipc_socket_free(ctx->socket, &ctx->log);
         return false;
@@ -317,7 +350,7 @@ secure_socket* ipc_accept_connection(server_context *ctx){
 }
 
 /**
- * Sends data buffer through given  socket
+ * Sends data buffer through given socket
  * @param sock
  * @param data
  * @return true or false, whether send succeded
@@ -398,18 +431,22 @@ int ipc_recv(secure_socket *sock, char *data, unsigned int length, thread_contex
  * @param sock
  * @return struct ucred
  */
-struct ucred* ipc_get_ucred(secure_socket *sock){
+struct ucred* ipc_get_ucred(server_context *ctx){
 
     socklen_t len;
     struct ucred *creds = malloc(sizeof(struct ucred));
-    /* TODO */
+
+    LOG_INIT;
+
     if ( creds == NULL ){
-        /*ERROR("ipc_get_ucred() : malloc failed for ucred.")*/
+        LOG(LOG_TRACE, "ipc_get_ucred() : malloc failed for ucred.", errno, 0, &ctx->log);
+        return NULL;
     }
     len = sizeof(struct ucred);
 
-    if ( getsockopt(sock->socket_fd, SOL_SOCKET, SO_PEERCRED, creds, &len) < 0 ){
-        /*ERROR("ipc_get_ucred() : could not retrieve ucred.");*/
+    if ( getsockopt(ctx->socket->socket_fd, SOL_SOCKET, SO_PEERCRED, creds, &len) < 0 ){
+
+        LOG(LOG_TRACE, "ipc_get_ucred() : could not retrieve ucred.", errno, 0, &ctx->log);
         return NULL;
     }
 
@@ -453,7 +490,7 @@ void ipc_socket_free(secure_socket *com, logging *log){
 
 
 /**
- * Changes access and permissions on specified file.
+ * Changes access and permissions on socket.
  * If real_gid is given (i.e. different from 0) than grants group access to this group. If real_gid is 0, than the
  * group_name is used to retrieve the gid to grant access to.
  * perms is the mode_t describing the permissions to apply, like "0770" : use strtoul("0770", 0, 8)
@@ -565,7 +602,12 @@ bool ipc_validate_peer(server_context *ctx){
     LOG_INIT;
     char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
 
-    struct ucred *creds = ipc_get_ucred(ctx->socket);
+    struct ucred *creds = ipc_get_ucred(ctx);
+
+    if ( creds == NULL ){
+        LOG(LOG_CRITICAL, "Retrieve ucreds : aborting validation.", errno, 3, &ctx->log);
+        return false;
+    }
 
     pid_t peer_pid = creds->pid;
     uid_t peer_uid = creds->uid;

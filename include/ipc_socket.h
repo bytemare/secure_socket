@@ -22,7 +22,7 @@ bool ipc_bind_set_and_listen(in_addr_t address, server_context *ctx);
 
 secure_socket* ipc_accept_connection(server_context *ctx);
 
-struct ucred* ipc_get_ucred(secure_socket *sock);
+struct ucred* ipc_get_ucred(server_context *ctx);
 
 
 void ipc_close_socket(int socket_fd);

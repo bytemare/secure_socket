@@ -19,8 +19,8 @@ check_file()
 
 echo -n "Checking for build files ..."
 
-PARAMETERS="./parameters.conf" && check_file $PARAMETERS
-CMAKELISTS="./CMakeLists.txt" && check_file $CMAKELISTS
+PARAMETERS="./parameters.conf" && check_file ${PARAMETERS}
+CMAKELISTS="./CMakeLists.txt" && check_file ${CMAKELISTS}
 
 echo " done."
 
@@ -30,7 +30,7 @@ echo " done."
 # Source parameter file
 #
 
-source $PARAMETERS
+source ${PARAMETERS}
 
 
 # Targets to be created and deleted
@@ -42,7 +42,7 @@ $s
 
 
 # Build cleaner script
-echo $SHELL_H > $CLEANER
+echo $SHELL_H > ${CLEANER}
 echo $s >> $CLEANER
 chmod 500 $CLEANER
 

@@ -155,7 +155,7 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
     unsigned int nb_authorised_errors; /* Number of errors before exiting daemon mode */
 
     thread_context **client_ctx; /* Contexts with logging queue and ipc_sockets to deal with clients */
-    ipc_socket *new_client;
+    secure_socket *new_client;
 
     /* Initialise variables */
     pthread_t tid;

@@ -27,9 +27,9 @@
 
 ### Priorities
 
-2) Create socket under a dedicated, secured directory
+1) Create socket under a dedicated, secured directory
 
-1) avoid use of exit(), and do proper error catching and termination
+2) avoid use of exit(), and do proper error catching and termination
 3) Document necessity to add libbsd on machine
 4) Fallback mechanism if libbsd is not available
 5) refactor code for socket to be used as component/library
@@ -40,7 +40,9 @@
 2) add mode to log everything to stdout
 3) if logging is off, don't launch a logging thread, don't allocate stuff etc.
 4) separate logging macros from code for thread with mq, to enable genericity
-5) 
+5) Add a parameter for log file size, to keep log files at a maximum size, and then log into different file with timestamp
+6) Compress old log files
+7) ability to send logs to a socket or network address
 
 
 ### Doing :

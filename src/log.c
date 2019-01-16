@@ -12,7 +12,7 @@
 #define __STDC_WANT_LIB_EXT1__ 1
 
 #include <stdio.h>
-#include <broker_types.h>
+#include <secure_socket_types.h>
 #include <log.h>
 
 

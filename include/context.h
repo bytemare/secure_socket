@@ -15,7 +15,7 @@ ipc_options* initialise_options();
 
 bool parse_options(ipc_options *options, int argc, char **argv);
 
-thread_context* make_thread_context(ipc_socket *socket, server_context *ctx);
+thread_context* make_thread_context(secure_socket *socket, server_context *ctx);
 
 server_context* make_server_context(ipc_options *params);
 

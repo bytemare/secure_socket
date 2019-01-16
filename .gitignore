@@ -14,3 +14,4 @@ Release
 .old
 .idea
 sonar-project.properties
+.test

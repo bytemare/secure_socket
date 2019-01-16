@@ -9,7 +9,7 @@
 
 #include <mqueue.h>
 #include <aio.h>
-#include <broker_types.h>
+#include <secure_socket_types.h>
 
 char* read_data_from_source (const char *filename, int *size, logging *log);
 
