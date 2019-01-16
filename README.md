@@ -1,13 +1,44 @@
 # secure_socket
 
-The secure_socket is a multi-threaded server daemon using a unix socket as IPC to communicate with a local client who desires to access certain protected scripts.
+### DRAFT
 
-It can be used as an access-broker to relay information or requests, triggering things afterwards. It is build to be very fast, reliable, and tries to be as secure as possible in itself.
+secure_socket aims to provide an easy way to set up and manage a socket in C with advanced security properties.
+For example, it can be used as a broker to relay information or requests, shielding other clients (but not on data layer).
+It is build for reliability and speed in mind.
+
+Integrated, you'll also find an advanced logging mecanism, that will later be extracted as an individual project.
+
+Among functional properties, you'll find :
+- Single or multi-threaded server daemon
+- UNIX socket for IPC
+
+Choice is seemless and requires minimal effort.
+
+Among security properties, you'll have :
+- Advanced access protection on the socket
+    - Lock down access to a single authorised unix user
+    - Lock down access to a single authorised unix group
+    - Lock down access to a single authorised system process (P2P)
+- Dedicated, secured and locked down directory
+- Abuse detection and prevention through advanced protection mechanisms integrated at compile time
+- Use of BSD functions when needed to protect against known abuse of common un-protected functions
+- **add rest**
 
 
- 
- Commands are send to the process through the socket, which are interpreted, and the result is sent back to the client.
- 
+Among logging properties, you'll benefit :
+- Easy integration of a logging mecanism through macros
+- Reduced performance overhead due to inlining, threaded logging and asynchronous writes
+- Broad logging targets : choose between stdout, a message queue, files, or remote destination.
+- Leveled verbosity on a scale of 0 (Fatal) to 10 (very verbose)
+- Ability to pinpoint the file, function and line in your code where you want a log line to point to
+- Set your desired log file size. When full, a new one is used and the old compressed.
+
+
+## Use in development stage
+
+
+
+
  To compile the program, place yourself into the project directory and run :
  ```bash
 ./build.sh
@@ -32,15 +63,4 @@ for default parameters (found in `build.sh` script) or with whatever parameters 
 
 To automate running with your default values, insert them in the `parameters.conf` script with the others.
 
-For more variables setting (like changing calls to scripts), you'll have to change ./include/vars.h and recompile the project.
-
 For now, no stopping procedure has been implemented, even though graceful soft-fail is implemented.
-
-
-## Security
-- Creates a directory with write and search (execute) permissions to create the socket in
-- Creates the socket with default read and write permissions for the caller and the peer
-- The owner is by default the same as the caller, and group is set to be the destined authorised peer's real_gid
-- These default values can be changed in the parameter file
-- Peer commands are parsed and thoroughly checked against the predefined protocol to avoid overflows or command injections.
-- The behaviour of the launched scripts is not controlled by the server, only the return code may be observed.
