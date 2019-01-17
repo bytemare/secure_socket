@@ -44,6 +44,7 @@ int main(int argc, char** argv) {
     LOG_STDOUT(LOG_INFO, "milestone", 0, 0);
 
     if( !parse_options(params, argc, argv) ){
+        free(params);
         return 1;
     }
 
