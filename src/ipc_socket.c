@@ -464,6 +464,7 @@ pid_t ipc_get_peer_pid(secure_socket *sock){
     struct ucred *creds = ipc_get_ucred(sock);
     pid_t pid = creds->pid;
     free(creds);
+    creds = NULL;
     return pid;
 }
 */
@@ -482,8 +483,14 @@ void ipc_close_socket(int socket_fd){
  */
 void ipc_socket_free(secure_socket *com, logging *log){
     LOG_INIT;
-    ipc_close_socket(com->socket_fd);
-    free(com);
+    LOG_STDOUT(LOG_INFO, "ipc_socket_free", errno, 0);
+    if( com ){
+        printf("com value %p!\n", (void*)com);
+        ipc_close_socket(com->socket_fd);
+        LOG_STDOUT(LOG_INFO, "ipc_socket_free 2 ", errno, 0);
+        free(com);
+        com = NULL;
+    }
     LOG(LOG_INFO, "Closed socket and freed structure.", errno, 0, log);
 }
 
@@ -575,6 +582,7 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
 
     if (peer_binary_length != authorised_length + 1){
         free(peer_binary);
+        peer_binary = NULL;
         LOG(LOG_ERROR, "Peer process name does not match the authorised one. Process not authenticated.", errno, 3, &ctx->log);
         return false;
     }
@@ -582,6 +590,7 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
     result = strncmp(ctx->options->authorised_peer_process_name, peer_binary, authorised_length);
 
     free(peer_binary);
+    peer_binary = NULL;
 
     return result == 0;
 }

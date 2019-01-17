@@ -41,9 +41,13 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    LOG_STDOUT(LOG_INFO, "milestone", 0, 0);
+
     if( !parse_options(params, argc, argv) ){
         return 1;
     }
+
+    LOG_STDOUT(LOG_INFO, "milestone", 0, 0);
 
     /* Build the main threads server context */
     ctx = make_server_context(params);

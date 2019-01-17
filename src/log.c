@@ -129,6 +129,7 @@ void* logging_thread(void *args){
         }
 
         free(buffer);
+        buffer = NULL;
     }
 
     LOG_FILE(LOG_TRACE, "Logging thread now quitting.", 0, 0, &ctx->log);

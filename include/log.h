@@ -516,6 +516,7 @@ __always_inline logging* log_initialise_logging(uint8_t verbosity, char *mq_name
 
     if ( log_initialise_logging_s(log, verbosity, mq_name, filename) ){
         free(log);
+        log = NULL;
         return NULL;
     }
 
@@ -536,5 +537,6 @@ __always_inline void log_free_logging(logging *log){
     close(log->fd);
 
     free(log->aio);
+    log->aio = NULL;
 }
 #endif /* LOG_H */

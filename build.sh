@@ -37,13 +37,13 @@ source ${PARAMETERS}
 CREAT="$RELEASE $DEBUG $LINK $RUNNER $SOCKET_PATH $CLEANER"
 
 # Clean up previous work
-s="rm --force -rf $CREAT"
-$s
+#s="rm --force -rf $CREAT"
+#$s
 
 
 # Build cleaner script
-echo $SHELL_H > ${CLEANER}
-echo $s >> $CLEANER
+#echo $SHELL_H > ${CLEANER}
+#echo $s >> $CLEANER
 chmod 500 $CLEANER
 
 
@@ -84,6 +84,6 @@ s=$s"socket_permissions=$SOCKET_PERMISSIONS "
 s=$s"authorised_peer_username=$AUTHORISED_PEER_NAME "
 
 
-echo $SHELL_H > $RUNNER
-echo $s >> $RUNNER
+#echo $SHELL_H > $RUNNER
+#echo $s >> $RUNNER
 chmod 500 $RUNNER

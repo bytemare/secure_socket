@@ -217,4 +217,5 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
     }
 
     free(client_ctx);
+    client_ctx = NULL;
 }

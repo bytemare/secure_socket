@@ -64,7 +64,7 @@ ipc_options* initialise_options(){
     if ( !options ){
         LOG_STDOUT(LOG_FATAL, "malloc failed for ipc_options", errno, 3);
         perror("Error in malloc for ipc_options : ");
-        return false;
+        return NULL;
     }
 
     /* Set message queue name */
@@ -102,7 +102,7 @@ ipc_options* initialise_options(){
     strcpy(options->authorised_peer_process_name, "");
     strcpy(options->authorised_peer_cli_args, "");
 
-    return 0;
+    return options;
 }
 
 
@@ -412,16 +412,20 @@ void free_thread_context(thread_context *ctx){
     }
 
     free(ctx);
+    ctx = NULL;
 }
 
 void free_server_context(server_context *ctx){
-    if(ctx->socket){
-        ipc_socket_free(ctx->socket, &ctx->log);
-    }
+
+    //LOG_INIT;
+
+    ipc_socket_free(ctx->socket, &ctx->log);
 
     log_free_logging(&ctx->log);
 
     free(ctx->options);
+    ctx->options= NULL;
 
     free(ctx);
+    ctx = NULL;
 }
