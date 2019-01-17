@@ -78,7 +78,6 @@ typedef struct _server_context{
     secure_socket *socket;
 
     /* For logging */
-
     logging log;
 
     /*mqd_t mq;

@@ -25,9 +25,11 @@ secure_socket* ipc_accept_connection(server_context *ctx);
 struct ucred* ipc_get_ucred(server_context *ctx);
 
 
-void ipc_close_socket(int socket_fd);
+void ipc_close_socket(secure_socket *sock);
 
-void ipc_socket_free(secure_socket *com, logging *log);
+secure_socket *secure_socket_free(secure_socket *sock, logging *log);
+
+void secure_socket_free_from_context(server_context *ctx);
 
 void set_socket_owner_and_permissions(server_context *ctx, gid_t real_gid, mode_t perms);
 

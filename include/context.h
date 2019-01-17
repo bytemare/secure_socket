@@ -19,9 +19,9 @@ thread_context* make_thread_context(secure_socket *socket, server_context *ctx);
 
 server_context* make_server_context(ipc_options *params);
 
-void free_thread_context(thread_context *ctx);
+thread_context* free_thread_context(thread_context *ctx);
 
-void free_server_context(server_context *ctx);
+server_context* free_server_context(server_context *ctx);
 
 
 

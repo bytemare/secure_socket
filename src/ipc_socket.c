@@ -8,7 +8,6 @@
 
 #include <unistd.h>
 #include <stdlib.h>
-#include <log.h>
 #include <string.h>
 #include <pthread.h>
 #include <grp.h>
@@ -23,6 +22,7 @@
 #include <secure_socket_base.h>
 #include <threaded_server.h>
 #include <vars.h>
+#include <log.h>
 
 
 /**
@@ -49,6 +49,33 @@ secure_socket* secure_socket_allocate(server_context *ctx){
 }
 
 
+/**
+ * Closes a socket given its file descriptor
+ * @param socketfd
+ */
+void ipc_close_socket(secure_socket *sock){
+    close(sock->socket_fd);
+    sock->socket_fd = -1;
+}
+
+
+/**
+ * Closes the socket file descriptor and frees the structure. This function returns à NULL pointer to be affected
+ * to the pointer given in argument, to avoid heap-use-after-free bugs.
+ * E.g. : sock = secure_socket_free(sock, log);
+ * @param sock
+ * @param log
+ * @return NULL
+ */
+secure_socket *secure_socket_free(secure_socket *sock, logging *log){
+    LOG_INIT;
+    ipc_close_socket(sock);
+    free(sock);
+    LOG(LOG_INFO, "Closed socket and freed structure.", errno, 0, log);
+    return NULL;
+}
+
+
 
 bool secure_socket_create_socket(server_context *ctx){
 
@@ -57,7 +84,7 @@ bool secure_socket_create_socket(server_context *ctx){
     ctx->socket->socket_fd = socket(ctx->options->domain, ctx->options->protocol, 0);
     if( ctx->socket->socket_fd < -1 ){
         LOG(LOG_FATAL, "socket() failed : ", errno, 2, &ctx->log);
-        ipc_socket_free(ctx->socket, &ctx->log);
+        secure_socket_free_from_context(ctx);
         return false;
     }
 
@@ -221,7 +248,7 @@ bool ipc_server_bind(in_addr_t address, server_context *ctx){
 
     if ( set_bind_address(ctx, address) <= 0 ){
         LOG(LOG_FATAL, "Could not properly set socket address type.", errno, 1, &ctx->log);
-        ipc_socket_free(ctx->socket, &ctx->log);
+        secure_socket_free_from_context(ctx);
         return false;
     }
 
@@ -233,7 +260,7 @@ bool ipc_server_bind(in_addr_t address, server_context *ctx){
     /* Bind to address */
     if (bind(ctx->socket->socket_fd, ctx->socket->bind_address, ctx->socket->addrlen) != 0) {
         LOG(LOG_FATAL, "Error binding socket : ", errno, 1, &ctx->log);
-        ipc_socket_free(ctx->socket, &ctx->log);
+        secure_socket_free_from_context(ctx);
         return false;
     }
 
@@ -254,7 +281,7 @@ bool ipc_server_listen(server_context *ctx, const unsigned int nb_cnx){
     /* Listen for connections */
     if (listen(ctx->socket->socket_fd, nb_cnx) != 0) {
         LOG(LOG_FATAL, "error on listening : ", errno, 1, &ctx->log);
-        ipc_socket_free(ctx->socket, &ctx->log);
+        secure_socket_free_from_context(ctx);
         return false;
     }
 
@@ -322,7 +349,8 @@ secure_socket* ipc_accept_connection(server_context *ctx){
 
         default:
             LOG(LOG_ALERT, "Other domains than AF_UNIX are not handled yet !", errno, 0, &ctx->log);
-            ipc_socket_free(client, &ctx->log);
+            client = secure_socket_free(client, &ctx->log);
+            secure_socket_free(client, &ctx->log);
             return NULL;
     }
 
@@ -332,7 +360,7 @@ secure_socket* ipc_accept_connection(server_context *ctx){
     client->socket_fd = accept(ctx->socket->socket_fd, client->bind_address, &len);
     if (client->socket_fd < 0) {
         LOG(LOG_ERROR, "accept() connection failed : ", errno, 0, &ctx->log);
-        ipc_socket_free(client, &ctx->log);
+        secure_socket_free(client, &ctx->log);
         return NULL;
     }
 
@@ -340,7 +368,7 @@ secure_socket* ipc_accept_connection(server_context *ctx){
 
     if( !ipc_validate_peer(ctx)){
         LOG(LOG_ALERT, "Peer has not been authenticated. Dropping connection.", errno, 0, &ctx->log);
-        ipc_socket_free(client, &ctx->log);
+        secure_socket_free(client, &ctx->log);
         return NULL;
     }
 
@@ -469,29 +497,17 @@ pid_t ipc_get_peer_pid(secure_socket *sock){
 }
 */
 
-/**
- * Closes a socket given its file descriptor
- * @param socketfd
- */
-void ipc_close_socket(int socket_fd){
-    close(socket_fd);
-}
+
+
 
 /**
  * Closes a socket and frees the memory allocated to the ipc_socket
  * @param com
  */
-void ipc_socket_free(secure_socket *com, logging *log){
-    LOG_INIT;
-    LOG_STDOUT(LOG_INFO, "ipc_socket_free", errno, 0);
-    if( com ){
-        printf("com value %p!\n", (void*)com);
-        ipc_close_socket(com->socket_fd);
-        LOG_STDOUT(LOG_INFO, "ipc_socket_free 2 ", errno, 0);
-        free(com);
-        com = NULL;
+void secure_socket_free_from_context(server_context *ctx){
+    if( ctx->socket ){
+        ctx->socket = secure_socket_free(ctx->socket, &ctx->log);
     }
-    LOG(LOG_INFO, "Closed socket and freed structure.", errno, 0, log);
 }
 
 

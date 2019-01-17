@@ -176,19 +176,19 @@ typedef struct _logging_buffs{
  * by sending it to the message queue
  */
 #define LOG(message_level, message, error_number, error_delta, log)\
-    log_to_mq(&log_buffs, message_level, message, error_number, __FILE__, __func__, __LINE__ - (error_delta), log);\
+    log_to_mq(&log_buffs, message_level, message, error_number, __FILE__, __func__, __LINE__ + 1 - (error_delta), log);\
 
 /**
  * Same as LOG, but writes directly to log file
  */
 #define LOG_FILE(message_level, message, error_number, error_delta, log)\
-    log_to_file(&log_buffs, message_level, message, error_number, __FILE__, __func__, __LINE__ - (error_delta), log);\
+    log_to_file(&log_buffs, message_level, message, error_number, __FILE__, __func__, __LINE__ + 1 - (error_delta), log);\
 
 /**
  * Same as LOG, but prints out to standard ouput
  */
 #define LOG_STDOUT(message_level, message, error_number, error_delta)\
-    log_build(&log_buffs, LOG_ALERT, message, error_number, __FILE__, __func__, __LINE__ - (error_delta), LOG_TRACE);\
+    log_build(&log_buffs, LOG_ALERT, message, error_number, __FILE__, __func__, __LINE__ + 1 - (error_delta), LOG_TRACE);\
     log_to_stdout(&log_buffs);\
 
 
@@ -502,7 +502,7 @@ __always_inline uint8_t log_initialise_logging_s(logging *log, uint8_t verbosity
  * @param filename
  * @return Pointer to initialised logging structure, NULL when failed
  */
-__always_inline logging* log_initialise_logging(uint8_t verbosity, char *mq_name, char *filename){
+/*__always_inline logging* log_initialise_logging(uint8_t verbosity, char *mq_name, char *filename){
 
     logging *log;
 
@@ -516,12 +516,11 @@ __always_inline logging* log_initialise_logging(uint8_t verbosity, char *mq_name
 
     if ( log_initialise_logging_s(log, verbosity, mq_name, filename) ){
         free(log);
-        log = NULL;
         return NULL;
     }
 
     return log;
-}
+}*/
 
 /**
  * Free the allocated spaces for the logging structure components, closes and unlinks the message queue

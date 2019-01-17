@@ -128,9 +128,9 @@ static void* handle_client(void *args){
     /*handle_client_connection(client);*/
     //handler(ctx);
 
-    free_thread_context(ctx);
-
     LOG(LOG_TRACE, "Connexion closed. Thread now exiting.", 0, 0, ctx->log);
+
+    ctx = free_thread_context(ctx);
 
     pthread_exit((void*)0);
 }
@@ -203,7 +203,7 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
         /* (void*)handle_client */
         if( pthread_create(&tid, &ctx->attr, &handle_client, client_ctx[offset]) != 0 ){
             LOG(LOG_ALERT, "error creating thread. Connection closed.", errno, 1, &ctx->log);
-            free_thread_context(client_ctx[offset]);
+            client_ctx[offset] = free_thread_context(client_ctx[offset]);
             nb_authorised_errors--;
             continue;
         }

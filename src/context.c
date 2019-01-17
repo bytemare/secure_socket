@@ -363,7 +363,7 @@ server_context* make_server_context(ipc_options *params){
     }
 
     if ( log_initialise_logging_s(&ctx->log, params->verbosity, params->mq_name, params->log_file) ) {
-        free_server_context(ctx);
+        ctx = free_server_context(ctx);
         return NULL;
     }
 
@@ -376,8 +376,8 @@ server_context* make_server_context(ipc_options *params){
         if( write(ctx->log.fd, "malloc failed allocation space for the aiocb structure.", (int)strlen("malloc failed allocation space for the aiocb structure.")) < 0){
             LOG_STDOUT(LOG_CRITICAL, "Malloc fails for aiocb structure and write to log file failed.", errno, 3);
         }
-        free_server_context(ctx);
-        exit(1);
+        ctx = free_server_context(ctx);
+        return NULL;
     }
 
     ctx->log.aio->aio_fildes = ctx->log.fd;
@@ -389,8 +389,8 @@ server_context* make_server_context(ipc_options *params){
     // Opening Message Queue
     if( (ctx->log.mq = mq_open(ctx->options->mq_name, O_RDWR | O_CREAT | O_EXCL, 0600, NULL)) == (mqd_t)-1){
         LOG_STDOUT(LOG_CRITICAL, "Error in opening a messaging queue.", errno, 1);
-        free_server_context(ctx);
-        exit(1);
+        ctx = free_server_context(ctx);
+        return NULL;
     }
 
     set_thread_attributes(ctx);
@@ -398,34 +398,41 @@ server_context* make_server_context(ipc_options *params){
     ctx->log.quit_logging = false;
 
     return ctx;
-
 }
 
 
 /**
- * Frees the memory allocated to a context and its socket if it is still referenced
+ * Frees the memory allocated to a context and its socket. This function returns à NULL pointer to be affected
+ * to the pointer given in argument, to avoid heap-use-after-free bugs.
  * @param ctx
  */
-void free_thread_context(thread_context *ctx){
-    if(ctx->socket){
-        ipc_socket_free(ctx->socket, ctx->log);
+thread_context* free_thread_context(thread_context *ctx){
+
+    if(ctx){
+        ctx->socket = secure_socket_free(ctx->socket, ctx->log);
+        free(ctx);
     }
 
-    free(ctx);
-    ctx = NULL;
+    return NULL;
 }
 
-void free_server_context(server_context *ctx){
+/**
+ * Frees the server context and all nested structures and files descriptors. This function returns à NULL pointer to be affected
+ * to the pointer given in argument, to avoid heap-use-after-free bugs.
+ * @param ctx
+ */
+server_context* free_server_context(server_context *ctx){
 
-    //LOG_INIT;
+    if (ctx) {
+        secure_socket_free_from_context(ctx);
 
-    ipc_socket_free(ctx->socket, &ctx->log);
+        log_free_logging(&ctx->log);
 
-    log_free_logging(&ctx->log);
+        free(ctx->options);
+        ctx->options= NULL;
 
-    free(ctx->options);
-    ctx->options= NULL;
+        free(ctx);
+    }
 
-    free(ctx);
-    ctx = NULL;
+    return NULL;
 }
