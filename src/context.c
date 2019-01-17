@@ -46,6 +46,18 @@ thread_context* make_thread_context(secure_socket *socket, server_context *s_ctx
 }
 
 
+bool is_valid_integer(char *number){
+    int index;
+    bool valid = true;
+    for (index = 0 ; index < (int) strlen(number); index++){
+        if( !isdigit(number[index]) ){
+            valid = false;
+        }
+    }
+    return valid;
+}
+
+
 /**
  * Initialises the programs options with data from vars.h
  * @param options
@@ -295,19 +307,15 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         }
 
         if (strcmp(p, "authorised_peer_pid") == 0) {
-            int index;
-            bool valid = true;
-            for (index = 0 ; index < (int) strlen(q); index++){
-                if( !isdigit(q[index]) ){
-                    valid = false;
+            if(is_valid_integer(q)){
+                long int apid= strtol(q, NULL, 10);
+                if (apid >= 1 && apid <= (4194304 - 1) ){ /* Maximum value for a pid on 64-bit systems, 2^22*/
+                    options->authorised_peer_pid = (unsigned int) strtol(q, NULL, 10);
+                    continue;
                 }
             }
-            if(valid){
-                options->authorised_peer_pid = (unsigned int) strtol(q, NULL, 10);
-                continue;
-            }
 
-            LOG_STDOUT(LOG_FATAL, "Invalid pid.", errno, 5);
+            LOG_STDOUT(LOG_FATAL, "Invalid pid value.", errno, 5);
             return false;
         }
 
@@ -330,6 +338,19 @@ bool parse_options(ipc_options *options, int argc, char **argv){
             }
 
             LOG_STDOUT(LOG_FATAL, "Invalid peer command line arguments : too long.", errno, 6);
+            return false;
+        }
+
+        if (strcmp(p, "verbosity") == 0){
+            if(is_valid_integer(q)){
+                long int verbosity = strtol(q, NULL, 10);
+                if (verbosity > 0 && verbosity <= 11) {
+                    options->verbosity = (uint8_t) verbosity;
+                    continue;
+                }
+            }
+
+            LOG_STDOUT(LOG_FATAL, "Invalid verbosity.", errno, 5);
             return false;
         }
 
