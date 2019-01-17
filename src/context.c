@@ -363,7 +363,7 @@ server_context* make_server_context(ipc_options *params){
     }
 
     if ( log_initialise_logging_s(&ctx->log, params->verbosity, params->mq_name, params->log_file) ) {
-        ctx = free_server_context(ctx);
+        free_server_context(ctx);
         return NULL;
     }
 
@@ -376,7 +376,7 @@ server_context* make_server_context(ipc_options *params){
         if( write(ctx->log.fd, "malloc failed allocation space for the aiocb structure.", (int)strlen("malloc failed allocation space for the aiocb structure.")) < 0){
             LOG_STDOUT(LOG_CRITICAL, "Malloc fails for aiocb structure and write to log file failed.", errno, 3);
         }
-        ctx = free_server_context(ctx);
+        free_server_context(ctx);
         return NULL;
     }
 
@@ -389,7 +389,7 @@ server_context* make_server_context(ipc_options *params){
     // Opening Message Queue
     if( (ctx->log.mq = mq_open(ctx->options->mq_name, O_RDWR | O_CREAT | O_EXCL, 0600, NULL)) == (mqd_t)-1){
         LOG_STDOUT(LOG_CRITICAL, "Error in opening a messaging queue.", errno, 1);
-        ctx = free_server_context(ctx);
+        free_server_context(ctx);
         return NULL;
     }
 

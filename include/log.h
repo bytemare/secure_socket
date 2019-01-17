@@ -82,6 +82,9 @@ typedef struct _logging{
     int fd;
     struct aiocb *aio;
     bool quit_logging; /* Syncing with logging thread */
+
+    pthread_mutex_t mutex;
+    pthread_cond_t cond;
 } logging;
 
 
@@ -521,6 +524,12 @@ __always_inline uint8_t log_initialise_logging_s(logging *log, uint8_t verbosity
 
     return log;
 }*/
+
+void terminate_logging_thread_blocking(const pthread_t *logger, logging *log);
+
+void* logging_thread(void *args);
+
+
 
 /**
  * Free the allocated spaces for the logging structure components, closes and unlinks the message queue

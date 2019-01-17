@@ -13,8 +13,6 @@
 
 char* read_data_from_source (const char *filename, int *size, logging *log);
 
-void* logging_thread(void *args);
-
 void set_thread_attributes(server_context *ctx);
 
 void threaded_server(server_context *ctx, unsigned int nb_cnx);

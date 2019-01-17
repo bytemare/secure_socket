@@ -23,7 +23,7 @@
  * mq_receive call has to specify a buffer at least as big as this size
  * @return
  */
-int get_mq_max_message_size(server_context *ctx){
+int get_mq_max_message_size(logging *log){
 
     FILE *fp;
     int max_size = 0, ret;
@@ -33,12 +33,12 @@ int get_mq_max_message_size(server_context *ctx){
     LOG_INIT;
 
 
-    LOG_FILE(LOG_TRACE, "Logging Thread : getting maximum message size from system", 0, 0, &ctx->log);
+    LOG_FILE(LOG_TRACE, "Logging Thread : getting maximum message size from system", 0, 0, log);
 
     fp = fopen(mq_max_message_size_source, "r");
     if (fp == NULL) {
         snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Logging Thread : Could not open '%s'. Taking default max value %d.", mq_max_message_size_source, LOG_MQ_MAX_MESSAGE_SIZE);
-        LOG_FILE(LOG_TRACE, log_buffer, errno, 3, &ctx->log);
+        LOG_FILE(LOG_TRACE, log_buffer, errno, 3, log);
     }
     else {
         errno = 0;
@@ -48,19 +48,19 @@ int get_mq_max_message_size(server_context *ctx){
         if (ret == 1){
             fclose(fp);
             snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Maximum size message for messaging queue is %d.", max_size);
-            LOG_FILE(LOG_INFO, log_buffer, 0, 5, &ctx->log);
+            LOG_FILE(LOG_INFO, log_buffer, 0, 5, log);
         }
         else if ( errno != 0){
-            LOG_FILE(LOG_WARNING, "Error in fscanf(). Message size set to default.", errno, 8, &ctx->log);
+            LOG_FILE(LOG_WARNING, "Error in fscanf(). Message size set to default.", errno, 8, log);
             max_size = LOG_MQ_MAX_MESSAGE_SIZE;
         }
         else{
-            LOG_FILE(LOG_WARNING, "Message queue : no matching pattern to an integer in file for message size. Message size set to default.", 0, 12, &ctx->log);
+            LOG_FILE(LOG_WARNING, "Message queue : no matching pattern to an integer in file for message size. Message size set to default.", 0, 12, log);
             max_size = LOG_MQ_MAX_MESSAGE_SIZE;
         }
     }
 
-    LOG_FILE(LOG_TRACE, "Size for message in mq set.", 0, 0, &ctx->log);
+    LOG_FILE(LOG_TRACE, "Size for message in mq set.", 0, 0, log);
 
     return max_size;
 }
@@ -79,6 +79,22 @@ void log_to_file(server_context *ctx, char *message){
 }
 */
 
+
+void terminate_logging_thread_blocking(const pthread_t *logger, logging *log){
+
+    LOG_INIT;
+
+    /* Wait for logging thread to terminate */
+    pthread_mutex_lock(&log->mutex);
+    log->quit_logging = true;
+    pthread_mutex_unlock(&log->mutex);
+
+    /* Put a message to unblock logging thread on message queue */
+    LOG(LOG_INFO, "Server awaiting logging thread to terminate ...", errno, 0, log);
+
+    pthread_join(*logger, NULL);
+}
+
 /**
  * Thread handler for log related actions. Waits on a POSIX messaging queue for incoming messages, and writes them into log file.
  * @param args
@@ -86,58 +102,58 @@ void log_to_file(server_context *ctx, char *message){
  */
 void* logging_thread(void *args){
 
-    server_context *ctx;
+    logging *log;
     int nb_bytes;
     int mq_max_size;
     unsigned int prio;
     char *buffer;
 
-    ctx = (server_context*) args;
+    log = (logging*) args;
 
     LOG_INIT;
 
-    LOG_FILE(LOG_TRACE, "Logging thread started.", 0, 0, &ctx->log);
+    LOG_FILE(LOG_TRACE, "Logging thread started.", 0, 0, log);
 
-    mq_max_size = get_mq_max_message_size(ctx);
+    mq_max_size = get_mq_max_message_size(log);
     prio = 0;
     buffer = calloc((size_t )mq_max_size+1, sizeof(char));
 
     if(!buffer){
-        LOG_FILE(LOG_ALERT, "calloc() failed for buffer. Logging thread is not working !!! Exiting now.", errno, 3, &ctx->log);
+        LOG_FILE(LOG_ALERT, "calloc() failed for buffer. Logging thread is not working !!! Exiting now.", errno, 3, log);
     }
     else {
 
-        LOG_FILE(LOG_TRACE, "Logging thread awaiting new messages.", 0, 0, &ctx->log);
+        LOG_FILE(LOG_TRACE, "Logging thread awaiting new messages.", 0, 0, log);
 
-        pthread_mutex_lock(&ctx->mutex);
+        pthread_mutex_lock(&log->mutex);
 
-        while (!ctx->log.quit_logging) {
+        while (!log->quit_logging) {
 
-            pthread_mutex_unlock(&ctx->mutex);
+            pthread_mutex_unlock(&log->mutex);
 
             memset(buffer, '\0', (size_t )mq_max_size+1);
-            nb_bytes = (int) mq_receive(ctx->log.mq, buffer, (size_t )mq_max_size, &prio);
+            nb_bytes = (int) mq_receive(log->mq, buffer, (size_t )mq_max_size, &prio);
 
             if (nb_bytes == -1) {
-                LOG_FILE(LOG_ALERT, "Logging : Error in mq_receive", errno, 3, &ctx->log);
+                LOG_FILE(LOG_ALERT, "Logging : Error in mq_receive", errno, 3, log);
             }
             else {
-                log_write_to_file(&ctx->log, buffer);
+                log_write_to_file(log, buffer);
             }
 
-            pthread_mutex_lock(&ctx->mutex);
+            pthread_mutex_lock(&log->mutex);
         }
 
         free(buffer);
     }
 
-    LOG_FILE(LOG_TRACE, "Logging thread now quitting.", 0, 0, &ctx->log);
+    LOG_FILE(LOG_TRACE, "Logging thread now quitting.", 0, 0, log);
 
-    ctx->log.quit_logging = false;
+    log->quit_logging = false;
 
-    pthread_cond_signal(&ctx->cond);
+    pthread_cond_signal(&log->cond);
 
-    pthread_mutex_unlock(&ctx->mutex);
+    pthread_mutex_unlock(&log->mutex);
 
     pthread_exit((void*)0);
 

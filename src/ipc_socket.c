@@ -598,7 +598,6 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
 
     if (peer_binary_length != authorised_length + 1){
         free(peer_binary);
-        peer_binary = NULL;
         LOG(LOG_ERROR, "Peer process name does not match the authorised one. Process not authenticated.", errno, 3, &ctx->log);
         return false;
     }
@@ -606,7 +605,6 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
     result = strncmp(ctx->options->authorised_peer_process_name, peer_binary, authorised_length);
 
     free(peer_binary);
-    peer_binary = NULL;
 
     return result == 0;
 }

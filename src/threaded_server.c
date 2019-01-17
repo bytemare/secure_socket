@@ -130,8 +130,6 @@ static void* handle_client(void *args){
 
     LOG(LOG_TRACE, "Connexion closed. Thread now exiting.", 0, 0, ctx->log);
 
-    ctx = free_thread_context(ctx);
-
     pthread_exit((void*)0);
 }
 
@@ -145,8 +143,8 @@ static void* handle_client(void *args){
 void threaded_server(server_context *ctx, const unsigned int nb_cnx){
 
     /* Variables for timestamping */
-    time_t t;
-    struct tm timer;
+    /*time_t t;
+    struct tm timer;*/
 
     /* List of threads system id's */
     unsigned int count; /* Total accumulated amount of accepted connections */
@@ -171,12 +169,12 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
         return;
     }
 
-    t = time(NULL);
+    /*t = time(NULL);
     timer = *localtime(&t);
 
     printf("%04d-%d-%d - %02d:%02d:%02d : Server now running and awaiting connections.\n\tpid : %d\n\tlog file : %s\n\tsocket : %s\n\n",
            timer.tm_year + 1900, timer.tm_mon + 1, timer.tm_mday, timer.tm_hour, timer.tm_min, timer.tm_sec,
-           getpid(), ctx->options->log_file, ctx->options->socket_path);
+           getpid(), ctx->options->log_file, ctx->options->socket_path);*/
     LOG(LOG_INFO, "Server now ready and awaiting incoming connections.", 0, 0, &ctx->log);
 
     /* Enter Daemon mode */
@@ -217,5 +215,4 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
     }
 
     free(client_ctx);
-    client_ctx = NULL;
 }

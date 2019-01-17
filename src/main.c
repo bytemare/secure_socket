@@ -12,25 +12,6 @@
 #include <ipc_socket.h>
 
 
-
-void terminate_logging_thread_blocking(server_context *ctx, const pthread_t *logger){
-
-    LOG_INIT;
-
-    /* Wait for logging thread to terminate */
-    pthread_mutex_lock(&ctx->mutex);
-    ctx->log.quit_logging = true;
-    pthread_mutex_unlock(&ctx->mutex);
-
-    /* Put a message to unblock logging thread on message queue */
-    LOG(LOG_INFO, "Server awaiting logging thread to terminate ...", errno, 0, &ctx->log);
-
-    pthread_join(*logger, NULL);
-}
-
-
-
-
 int main(int argc, char** argv) {
 
     server_context *ctx;
@@ -87,7 +68,7 @@ int main(int argc, char** argv) {
     /* Server initialization */
     if( !ipc_bind_set_and_listen(INADDR_ANY, ctx) ){
         LOG_STDOUT(LOG_FATAL, "The server encountered an error. Shutting down.", errno, 1);
-        terminate_logging_thread_blocking(ctx, &logger);
+        terminate_logging_thread_blocking(&logger, &ctx->log);
         free_server_context(ctx);
         LOG_STDOUT(LOG_FATAL, "The server encountered an error. Shutting down. 2", errno, 1);
         return 1;
@@ -96,15 +77,8 @@ int main(int argc, char** argv) {
     /* Wait for clients */
     threaded_server(ctx, params->max_connections);
 
-    /* Wait for logging thread to terminate */
-    pthread_mutex_lock(&ctx->mutex);
-    ctx->log.quit_logging = true;
-    pthread_mutex_unlock(&ctx->mutex);
 
-    /* Put a message to unblock logging thread on message queue */
-    LOG(LOG_INFO, "Server awaiting logging thread to terminate ...", errno, 0, &ctx->log);
-
-    pthread_join(logger, NULL);
+    terminate_logging_thread_blocking(&logger, &ctx->log);
 
     /* Inform for shut down */
     LOG_FILE(LOG_INFO, "Server now shutting down.", 0, 0, &ctx->log);
