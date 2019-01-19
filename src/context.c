@@ -136,8 +136,8 @@ bool parse_options(ipc_options *options, int argc, char **argv){
     for( i = 1; i < argc; i++ ) {
         p = argv[i];
 
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Parsing argument : %s", p);
-        LOG_STDOUT(LOG_TRACE, log_buffer, -1, 3)
+        //snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Parsing argument : %s", p);
+        //LOG_STDOUT(LOG_TRACE, log_buffer, -1, 3)
 
         if ((q = strchr(p, '=')) == NULL) {
             LOG_STDOUT(LOG_FATAL, "Invalid argument entry format. USAGE : [option]=[value].", -1, 1);
@@ -145,8 +145,8 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         }
         *q++ = '\0';
 
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Argument value : %s", q);
-        LOG_STDOUT(LOG_TRACE, log_buffer, -1, 3)
+        //snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Argument value : %s", q);
+        //LOG_STDOUT(LOG_TRACE, log_buffer, -1, 3)
 
         if (strcmp(p, "mq_name") == 0) {
             uint16_t mq_name_max_size = sizeof(options->mq_name);
@@ -379,12 +379,30 @@ server_context* make_server_context(ipc_options *params){
 
     if( !ctx ){
         LOG_STDOUT(LOG_FATAL, "malloc failed for server context", errno, 3);
-        perror("Error in malloc for server context : ");
-        exit(errno);
+        return NULL;
     }
 
+    /* secure_socket */
+    ctx->socket = secure_socket_allocate(ctx);
+    if (ctx->socket == NULL) {
+        LOG(LOG_FATAL, "Could not allocate memory for secure_socket : ", errno, 2, &ctx->log);
+        return false;
+    }
+
+    LOG(LOG_INFO, "Allocated memory for server secure_socket : ", errno, 0, &ctx->log);
+
+    /* Socket creation */
+    if( secure_socket_create_socket(ctx) == false ){
+        secure_socket_free(ctx->socket, &ctx->log);
+        return false;
+    }
+
+    LOG(LOG_INFO, "Socket created.", errno, 0, &ctx->log);
+
     if ( log_initialise_logging_s(&ctx->log, params->verbosity, params->mq_name, params->log_file) ) {
+        LOG_STDOUT(LOG_FATAL, "server ctx", errno, 0);
         free_server_context(ctx);
+        LOG_STDOUT(LOG_FATAL, "freed !", errno, 0);
         return NULL;
     }
 

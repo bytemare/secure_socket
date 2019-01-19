@@ -29,7 +29,7 @@
  * Allocates memory for an ipc_socket instance, calling an error when failing
  * @return allocated non-instanciated ipc_socket, NULL if failed
  */
-secure_socket* secure_socket_allocate(server_context *ctx){
+secure_socket *secure_socket_allocate(server_context *ctx) {
 
     secure_socket *sock;
 
@@ -54,6 +54,7 @@ secure_socket* secure_socket_allocate(server_context *ctx){
  * @param socketfd
  */
 void ipc_close_socket(secure_socket *sock){
+    printf("socket value : %d\n", sock->socket_fd);
     close(sock->socket_fd);
     sock->socket_fd = -1;
 }
@@ -241,6 +242,7 @@ bool ipc_server_bind(in_addr_t address, server_context *ctx){
 
     /* Socket creation */
     if( secure_socket_create_socket(ctx) == false ){
+        secure_socket_free(ctx->socket, &ctx->log);
         return false;
     }
 
