@@ -42,9 +42,9 @@ CREAT="$RELEASE $DEBUG $LINK $RUNNER $SOCKET_PATH $CLEANER"
 
 
 # Build cleaner script
-#echo $SHELL_H > ${CLEANER}
-#echo $s >> $CLEANER
-#chmod 500 $CLEANER
+echo $SHELL_H > ${CLEANER}
+echo $s >> $CLEANER
+chmod 700 $CLEANER
 
 
 # Build Release

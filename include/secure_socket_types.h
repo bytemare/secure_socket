@@ -76,12 +76,7 @@ typedef struct _server_context{
     secure_socket *socket;
 
     /* For logging */
-    logging log;
-
-    /*mqd_t mq;
-    int fd;
-    struct aiocb *aio;
-    bool quit_logging;*/ /* Syncing with logging thread */
+    logging *log;
 
     /* Instance options and parameters */
     ipc_options *options;

@@ -14,6 +14,10 @@
 #include <secure_socket_types.h>
 
 
+secure_socket* secure_socket_allocate(server_context *ctx);
+
+bool secure_socket_create_socket(server_context *ctx);
+
 bool ipc_send(secure_socket *sock, int length, char *data, thread_context *ctx);
 
 int ipc_recv(secure_socket *sock, char *data, unsigned int length, thread_context *ctx);

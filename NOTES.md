@@ -27,6 +27,8 @@
 
 ### Priorities
 
+0) change ctx->socket to non-pointer ?
+
 1) Create socket under a dedicated, secured directory
 
 2) avoid use of exit(), and do proper error catching and termination
@@ -36,6 +38,11 @@
 6) add examples and copy/pastable code
 
 #### Logging
+0) When not cleanly shut down, the logging thread/process continues and holds the lock on the log file,
+furthers attemps to open are blocked. lslocks CL helps identifying.
+0) logs into files by LOG() have weird characters at end of line
+
+
 1) add mode to be completely silent and not print to stdout
 2) add mode to log everything to stdout
 3) if logging is off, don't launch a logging thread, don't allocate stuff etc.

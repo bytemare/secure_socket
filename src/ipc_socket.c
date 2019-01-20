@@ -38,7 +38,7 @@ secure_socket *secure_socket_allocate(server_context *ctx) {
     sock = malloc(sizeof(secure_socket));
 
     if( sock == NULL){
-        LOG(LOG_FATAL, "malloc() failed for : secure_socket. ", errno, 3, &ctx->log);
+        LOG(LOG_FATAL, "malloc() failed for : secure_socket. ", errno, 3, ctx->log);
         //printf("malloc failed for ipc socket.\n");
         return NULL;
     }
@@ -84,7 +84,7 @@ bool secure_socket_create_socket(server_context *ctx){
 
     ctx->socket->socket_fd = socket(ctx->options->domain, ctx->options->protocol, 0);
     if( ctx->socket->socket_fd < -1 ){
-        LOG(LOG_FATAL, "socket() failed : ", errno, 2, &ctx->log);
+        LOG(LOG_FATAL, "socket() failed : ", errno, 2, ctx->log);
         secure_socket_free_from_context(ctx);
         return false;
     }
@@ -112,7 +112,7 @@ int8_t set_bind_address(server_context *ctx, in_addr_t address){
 
     server = ctx->socket;
 
-    LOG(LOG_TRACE, "Setting up address to bind on ...", errno, 0, &ctx->log);
+    LOG(LOG_TRACE, "Setting up address to bind on ...", errno, 0, ctx->log);
 
 
 
@@ -120,7 +120,7 @@ int8_t set_bind_address(server_context *ctx, in_addr_t address){
         server->bind_address = socket_bind_unix(&server->address.un, ctx->options->socket_path, &ctx->socket->addrlen);
 
         if ( server->bind_address == NULL ){
-            LOG(LOG_CRITICAL, "Socket path is too long : overflow avoided !", errno, 1, &ctx->log);
+            LOG(LOG_CRITICAL, "Socket path is too long : overflow avoided !", errno, 1, ctx->log);
             ctx->socket->addrlen = 0;
         }
 
@@ -133,7 +133,7 @@ int8_t set_bind_address(server_context *ctx, in_addr_t address){
     }
 
 
-    LOG(LOG_CRITICAL, "domain type is invalid or not recognised !", errno, 0, &ctx->log);
+    LOG(LOG_CRITICAL, "domain type is invalid or not recognised !", errno, 0, ctx->log);
     ctx->socket->addrlen = 0;
 
     return -1;
@@ -161,7 +161,7 @@ int8_t set_bind_address(server_context *ctx, in_addr_t address){
 
             // Make sure we do not overflow the path buffer
             if( strlen(ctx->options->socket_path) >= sizeof(server->address.un.sun_path)){
-                LOG(LOG_CRITICAL, "Socket path is too long : overflow avoided !", errno, 1, &ctx->log);
+                LOG(LOG_CRITICAL, "Socket path is too long : overflow avoided !", errno, 1, ctx->log);
                 len = -1;
                 break;
             }
@@ -181,7 +181,7 @@ int8_t set_bind_address(server_context *ctx, in_addr_t address){
             server->bind_address = socket_bind_unix(&server->address.un, ctx->options->socket_path, &ctx->socket->addrlen);
 
             if ( server->bind_address == NULL ){
-                LOG(LOG_CRITICAL, "Socket path is too long : overflow avoided !", errno, 1, &ctx->log);
+                LOG(LOG_CRITICAL, "Socket path is too long : overflow avoided !", errno, 1, ctx->log);
                 ctx->socket->addrlen = 0;
             }
 
@@ -203,7 +203,7 @@ int8_t set_bind_address(server_context *ctx, in_addr_t address){
         }
 
         default:
-            LOG(LOG_CRITICAL, "domain type is invalid or not recognised !", errno, 0, &ctx->log);
+            LOG(LOG_CRITICAL, "domain type is invalid or not recognised !", errno, 0, ctx->log);
             ctx->socket->addrlen = 0;
 
     }
@@ -227,46 +227,46 @@ bool ipc_server_bind(in_addr_t address, server_context *ctx){
         if (ctx->options->domain != AF_LOCAL && ctx->options->domain != AF_INET) {
             LOG(LOG_FATAL,
                     "This server does not support other socket types than Unix Sockets, yet. Please use AF_UNIX.",
-                    0, 1, &ctx->log);
+                    0, 1, ctx->log);
             return false;
         }
     }
 
-    ctx->socket = secure_socket_allocate(ctx);
+    /*ctx->socket = secure_socket_allocate(ctx);
     if (ctx->socket == NULL) {
-        LOG(LOG_FATAL, "server_bind() could not allocate socket : ", errno, 2, &ctx->log);
+        LOG(LOG_FATAL, "server_bind() could not allocate socket : ", errno, 2, ctx->log);
         return false;
     }
 
-    LOG(LOG_INFO, "Allocated memory for server secure_socket : ", errno, 0, &ctx->log);
+    LOG(LOG_INFO, "Allocated memory for server secure_socket : ", errno, 0, ctx->log);*/
 
     /* Socket creation */
-    if( secure_socket_create_socket(ctx) == false ){
-        secure_socket_free(ctx->socket, &ctx->log);
+    /*if( secure_socket_create_socket(ctx) == false ){
+        secure_socket_free(ctx->socket, ctx->log);
         return false;
     }
 
-    LOG(LOG_INFO, "Socket created.", errno, 0, &ctx->log);
+    LOG(LOG_INFO, "Socket created.", errno, 0, ctx->log);*/
 
     if ( set_bind_address(ctx, address) <= 0 ){
-        LOG(LOG_FATAL, "Could not properly set socket address type.", errno, 1, &ctx->log);
+        LOG(LOG_FATAL, "Could not properly set socket address type.", errno, 1, ctx->log);
         secure_socket_free_from_context(ctx);
         return false;
     }
 
     /* Set REUSEADDR socket option */
     if( setsockopt(ctx->socket->socket_fd, SOL_SOCKET, SO_PASSCRED || SO_REUSEADDR, &ctx->socket->optval, sizeof(int)) == -1){
-        LOG(LOG_ALERT, "set socket option messed up for some reason : ", errno, 1, &ctx->log);
+        LOG(LOG_ALERT, "set socket option messed up for some reason : ", errno, 1, ctx->log);
     }
 
     /* Bind to address */
     if (bind(ctx->socket->socket_fd, ctx->socket->bind_address, ctx->socket->addrlen) != 0) {
-        LOG(LOG_FATAL, "Error binding socket : ", errno, 1, &ctx->log);
+        LOG(LOG_FATAL, "Error binding socket : ", errno, 1, ctx->log);
         secure_socket_free_from_context(ctx);
         return false;
     }
 
-    LOG(LOG_INFO, "Socket bound.", errno, 0, &ctx->log);
+    LOG(LOG_INFO, "Socket bound.", errno, 0, ctx->log);
 
     return true;
 }
@@ -282,12 +282,12 @@ bool ipc_server_listen(server_context *ctx, const unsigned int nb_cnx){
 
     /* Listen for connections */
     if (listen(ctx->socket->socket_fd, nb_cnx) != 0) {
-        LOG(LOG_FATAL, "error on listening : ", errno, 1, &ctx->log);
+        LOG(LOG_FATAL, "error on listening : ", errno, 1, ctx->log);
         secure_socket_free_from_context(ctx);
         return false;
     }
 
-    LOG(LOG_INFO, "Server now listening on socket.", errno, 0, &ctx->log);
+    LOG(LOG_INFO, "Server now listening on socket.", errno, 0, ctx->log);
 
     return true;
 }
@@ -334,11 +334,11 @@ secure_socket* ipc_accept_connection(server_context *ctx){
 
     client = secure_socket_allocate(ctx);
     if (client == NULL) {
-        LOG(LOG_ALERT, "accept_connection() could not allocate socket : ", errno, 2, &ctx->log);
+        LOG(LOG_ALERT, "accept_connection() could not allocate socket : ", errno, 2, ctx->log);
         return NULL;
     }
 
-    LOG(LOG_INFO, "Allocated memory for communication secure_socket : ", errno, 0, &ctx->log);
+    LOG(LOG_INFO, "Allocated memory for communication secure_socket : ", errno, 0, ctx->log);
 
 
     switch(ctx->options->domain){
@@ -350,9 +350,9 @@ secure_socket* ipc_accept_connection(server_context *ctx){
         }
 
         default:
-            LOG(LOG_ALERT, "Other domains than AF_UNIX are not handled yet !", errno, 0, &ctx->log);
-            client = secure_socket_free(client, &ctx->log);
-            secure_socket_free(client, &ctx->log);
+            LOG(LOG_ALERT, "Other domains than AF_UNIX are not handled yet !", errno, 0, ctx->log);
+            client = secure_socket_free(client, ctx->log);
+            secure_socket_free(client, ctx->log);
             return NULL;
     }
 
@@ -361,20 +361,20 @@ secure_socket* ipc_accept_connection(server_context *ctx){
     /*client->socket_fd = accept(server->socket_fd, (struct sockaddr *)&client->address, &client->addrlen);*/
     client->socket_fd = accept(ctx->socket->socket_fd, client->bind_address, &len);
     if (client->socket_fd < 0) {
-        LOG(LOG_ERROR, "accept() connection failed : ", errno, 0, &ctx->log);
-        secure_socket_free(client, &ctx->log);
+        LOG(LOG_ERROR, "accept() connection failed : ", errno, 0, ctx->log);
+        secure_socket_free(client, ctx->log);
         return NULL;
     }
 
-    LOG(LOG_INFO, "Connection initated.", errno, 0, &ctx->log);
+    LOG(LOG_INFO, "Connection initated.", errno, 0, ctx->log);
 
     if( !ipc_validate_peer(ctx)){
-        LOG(LOG_ALERT, "Peer has not been authenticated. Dropping connection.", errno, 0, &ctx->log);
-        secure_socket_free(client, &ctx->log);
+        LOG(LOG_ALERT, "Peer has not been authenticated. Dropping connection.", errno, 0, ctx->log);
+        secure_socket_free(client, ctx->log);
         return NULL;
     }
 
-    LOG(LOG_INFO, "Peer successfully authenticated. Connection accepted.", errno, 0, &ctx->log);
+    LOG(LOG_INFO, "Peer successfully authenticated. Connection accepted.", errno, 0, ctx->log);
 
     return client;
 }
@@ -469,14 +469,14 @@ struct ucred* ipc_get_ucred(server_context *ctx){
     LOG_INIT;
 
     if ( creds == NULL ){
-        LOG(LOG_TRACE, "ipc_get_ucred() : malloc failed for ucred.", errno, 0, &ctx->log);
+        LOG(LOG_TRACE, "ipc_get_ucred() : malloc failed for ucred.", errno, 0, ctx->log);
         return NULL;
     }
     len = sizeof(struct ucred);
 
     if ( getsockopt(ctx->socket->socket_fd, SOL_SOCKET, SO_PEERCRED, creds, &len) < 0 ){
 
-        LOG(LOG_TRACE, "ipc_get_ucred() : could not retrieve ucred.", errno, 0, &ctx->log);
+        LOG(LOG_TRACE, "ipc_get_ucred() : could not retrieve ucred.", errno, 0, ctx->log);
         return NULL;
     }
 
@@ -508,7 +508,7 @@ pid_t ipc_get_peer_pid(secure_socket *sock){
  */
 void secure_socket_free_from_context(server_context *ctx){
     if( ctx->socket ){
-        ctx->socket = secure_socket_free(ctx->socket, &ctx->log);
+        ctx->socket = secure_socket_free(ctx->socket, ctx->log);
     }
 }
 
@@ -533,7 +533,7 @@ void set_socket_owner_and_permissions(server_context *ctx, gid_t real_gid, mode_
 
     LOG_INIT;
 
-    LOG(LOG_INFO, "Applying access and permission changes on file.", errno, 0, &ctx->log);
+    LOG(LOG_INFO, "Applying access and permission changes on file.", errno, 0, ctx->log);
 
     /**
      * Set ownership of file
@@ -547,7 +547,7 @@ void set_socket_owner_and_permissions(server_context *ctx, gid_t real_gid, mode_
 
         /* Get group id */
         if (grp == NULL) {
-            LOG(LOG_ALERT, "Could not retrieve group structure. Access to group will not be applied.", errno, 4, &ctx->log);
+            LOG(LOG_ALERT, "Could not retrieve group structure. Access to group will not be applied.", errno, 4, ctx->log);
         }
         else {
             real_gid = grp->gr_gid;
@@ -555,14 +555,14 @@ void set_socket_owner_and_permissions(server_context *ctx, gid_t real_gid, mode_
     }
 
     if (real_gid && chown(ctx->options->socket_path, uid, real_gid) == -1) {
-        LOG(LOG_ALERT, "chown() on socket failed.", errno, 1, &ctx->log);
+        LOG(LOG_ALERT, "chown() on socket failed.", errno, 1, ctx->log);
     }
 
     /**
      * Change file permissions
      */
     if( chmod(ctx->options->socket_path, perms) < 0){
-        LOG(LOG_ALERT, "chmod() on socket failed.", errno, 1, &ctx->log);
+        LOG(LOG_ALERT, "chmod() on socket failed.", errno, 1, ctx->log);
     }
 
 }
@@ -588,10 +588,10 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
 
     snprintf(proc_file, NAME_MAX, IPC_PEER_BINARY_NAME_FILE_FORMAT, (int)peer_pid, IPC_PEER_BINARY_NAME_FILE);
 
-    peer_binary = read_data_from_source(proc_file, &peer_name_length, &ctx->log);
+    peer_binary = read_data_from_source(proc_file, &peer_name_length, ctx->log);
     if( peer_binary == NULL ){
         snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not read process file '%s'. Process not authenticated.", proc_file);
-        LOG(LOG_INFO, log_buffer, errno, 3, &ctx->log);
+        LOG(LOG_INFO, log_buffer, errno, 3, ctx->log);
         return false;
     }
 
@@ -600,7 +600,7 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
 
     if (peer_binary_length != authorised_length + 1){
         free(peer_binary);
-        LOG(LOG_ERROR, "Peer process name does not match the authorised one. Process not authenticated.", errno, 3, &ctx->log);
+        LOG(LOG_ERROR, "Peer process name does not match the authorised one. Process not authenticated.", errno, 3, ctx->log);
         return false;
     }
 
@@ -630,7 +630,7 @@ bool ipc_validate_peer(server_context *ctx){
     struct ucred *creds = ipc_get_ucred(ctx);
 
     if ( creds == NULL ){
-        LOG(LOG_CRITICAL, "Retrieve ucreds : aborting validation.", errno, 3, &ctx->log);
+        LOG(LOG_CRITICAL, "Retrieve ucreds : aborting validation.", errno, 3, ctx->log);
         return false;
     }
 
@@ -642,19 +642,19 @@ bool ipc_validate_peer(server_context *ctx){
     uid_t peer_uid_bsd = 0;
     gid_t peer_gid_bsd = 0;
     if (getpeereid(ctx->socket->socket_fd, &peer_uid_bsd, &peer_gid_bsd) == -1){
-        LOG(LOG_WARNING, "Could not use BSD getpeerid", errno, 1, &ctx->log);
+        LOG(LOG_WARNING, "Could not use BSD getpeerid", errno, 1, ctx->log);
     }
 
     /* Check consistency between methods */
     if ( peer_uid_bsd != 0 && peer_uid_bsd != peer_uid ){
         snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Inconsistency in peer uid : ucreds %d vs bsd getpeerid %d.", peer_pid, peer_uid_bsd);
-        LOG(LOG_CRITICAL, log_buffer, 0, 2, &ctx->log);
+        LOG(LOG_CRITICAL, log_buffer, 0, 2, ctx->log);
         return false;
     }
 
     if ( peer_gid_bsd != 0 && peer_gid_bsd != peer_gid ){
         snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Inconsistency in peer gid : ucreds %d vs bsd getpeerid %d.", peer_gid, peer_gid_bsd);
-        LOG(LOG_CRITICAL, log_buffer, 0, 2, &ctx->log);
+        LOG(LOG_CRITICAL, log_buffer, 0, 2, ctx->log);
         return false;
     }
 
@@ -662,45 +662,45 @@ bool ipc_validate_peer(server_context *ctx){
     if(ctx->options->authorised_peer_pid){
         if( ctx->options->authorised_peer_pid != peer_pid) {
             snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer pid %d is not authorised.", peer_pid);
-            LOG(LOG_INFO, log_buffer, errno, 2, &ctx->log);
+            LOG(LOG_INFO, log_buffer, errno, 2, ctx->log);
             return false;
         }
 
         snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer authenticated by pid %d.", peer_pid);
-        LOG(LOG_INFO, log_buffer, errno, 0, &ctx->log);
+        LOG(LOG_INFO, log_buffer, errno, 0, ctx->log);
     }
 
     if(ctx->options->authorised_peer_uid){
         if( ctx->options->authorised_peer_uid != peer_uid) {
             snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer uid %d, is not authorised.", peer_uid);
-            LOG(LOG_INFO, log_buffer, errno, 2, &ctx->log);
+            LOG(LOG_INFO, log_buffer, errno, 2, ctx->log);
             return false;
         }
 
         snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer authenticated by uid %d.", peer_uid);
-        LOG(LOG_INFO, log_buffer, errno, 0, &ctx->log);
+        LOG(LOG_INFO, log_buffer, errno, 0, ctx->log);
     }
 
     if(ctx->options->authorised_peer_gid){
         if( ctx->options->authorised_peer_gid != peer_gid){
             snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer gid %d is not authorised.", peer_gid);
-            LOG(LOG_INFO, log_buffer, errno, 2, &ctx->log);
+            LOG(LOG_INFO, log_buffer, errno, 2, ctx->log);
             return false;
         }
 
         snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer authenticated by gid %d.", peer_gid);
-        LOG(LOG_INFO, log_buffer, errno, 0, &ctx->log);
+        LOG(LOG_INFO, log_buffer, errno, 0, ctx->log);
     }
 
 
     if(strlen(ctx->options->authorised_peer_process_name) > 0){
         if(!ipc_validate_proc(ctx, peer_pid)){
-            LOG(LOG_ERROR, "Peer process name does not match the authorised one. Process not authenticated.", errno, 2, &ctx->log);
+            LOG(LOG_ERROR, "Peer process name does not match the authorised one. Process not authenticated.", errno, 2, ctx->log);
             return false;
         }
 
         snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer authenticated by process name '%s'.", ctx->options->authorised_peer_process_name);
-        LOG(LOG_INFO, log_buffer, errno, 0, &ctx->log);
+        LOG(LOG_INFO, log_buffer, errno, 0, ctx->log);
     }
 
     return true;

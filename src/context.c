@@ -40,7 +40,7 @@ thread_context* make_thread_context(secure_socket *socket, server_context *s_ctx
     }
 
     ctx->socket = socket;
-    ctx->log = &s_ctx->log;
+    ctx->log = s_ctx->log;
 
     return ctx;
 }
@@ -365,7 +365,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
 }
 
 
-server_context* make_server_context(ipc_options *params){
+server_context* make_server_context(ipc_options *params, logging *log){
 
     /*
     time_t t;
@@ -382,59 +382,39 @@ server_context* make_server_context(ipc_options *params){
         return NULL;
     }
 
+    /* Link Logging */
+    ctx->log = log;
+
+    /* Link options */
+    ctx->options = params;
+
     /* secure_socket */
     ctx->socket = secure_socket_allocate(ctx);
     if (ctx->socket == NULL) {
-        LOG(LOG_FATAL, "Could not allocate memory for secure_socket : ", errno, 2, &ctx->log);
+        LOG(LOG_FATAL, "Could not allocate memory for secure_socket : ", errno, 2, ctx->log);
+        free(ctx);
         return false;
     }
 
-    LOG(LOG_INFO, "Allocated memory for server secure_socket : ", errno, 0, &ctx->log);
+    //LOG(LOG_INFO, "Allocated memory for server secure_socket : ", errno, 0, ctx->log);
 
     /* Socket creation */
     if( secure_socket_create_socket(ctx) == false ){
-        secure_socket_free(ctx->socket, &ctx->log);
+        secure_socket_free(ctx->socket, ctx->log);
+        free(ctx);
         return false;
     }
 
-    LOG(LOG_INFO, "Socket created.", errno, 0, &ctx->log);
+    LOG(LOG_INFO, "Socket created.", errno, 0, ctx->log);
 
-    if ( log_initialise_logging_s(&ctx->log, params->verbosity, params->mq_name, params->log_file) ) {
-        LOG_STDOUT(LOG_FATAL, "server ctx", errno, 0);
-        free_server_context(ctx);
-        LOG_STDOUT(LOG_FATAL, "freed !", errno, 0);
-        return NULL;
-    }
-
-    ctx->options = params;
-
-    LOG_FILE(LOG_TRACE, "Server context initialised", 0, 0, &ctx->log);
-
-    ctx->log.aio = malloc(sizeof(struct aiocb));
-    if(!ctx->log.aio){
-        if( write(ctx->log.fd, "malloc failed allocation space for the aiocb structure.", (int)strlen("malloc failed allocation space for the aiocb structure.")) < 0){
-            LOG_STDOUT(LOG_CRITICAL, "Malloc fails for aiocb structure and write to log file failed.", errno, 3);
-        }
+    if ( log_initialise_logging_s(ctx->log, params->verbosity, params->mq_name, params->log_file) ) {
         free_server_context(ctx);
         return NULL;
     }
 
-    ctx->log.aio->aio_fildes = ctx->log.fd;
-    ctx->log.aio->aio_buf = NULL;
-    ctx->log.aio->aio_nbytes = 0;
+    set_thread_attributes(&ctx->attr, ctx->log);
 
-    mq_unlink(ctx->options->mq_name);
-
-    // Opening Message Queue
-    if( (ctx->log.mq = mq_open(ctx->options->mq_name, O_RDWR | O_CREAT | O_EXCL, 0600, NULL)) == (mqd_t)-1){
-        LOG_STDOUT(LOG_CRITICAL, "Error in opening a messaging queue.", errno, 1);
-        free_server_context(ctx);
-        return NULL;
-    }
-
-    set_thread_attributes(ctx);
-
-    ctx->log.quit_logging = false;
+    LOG_FILE(LOG_TRACE, "Server context initialised", 0, 0, ctx->log);
 
     return ctx;
 }
@@ -465,7 +445,7 @@ server_context* free_server_context(server_context *ctx){
     if (ctx) {
         secure_socket_free_from_context(ctx);
 
-        log_free_logging(&ctx->log);
+        log_free_logging(ctx->log);
 
         free(ctx->options);
         ctx->options= NULL;

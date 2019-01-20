@@ -7,41 +7,18 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <log.h>
+#include <sys/stat.h>
+
+
+/* secure_socket */
 #include <context.h>
 #include <threaded_server.h>
-#include <sys/stat.h>
 #include <ipc_socket.h>
 
 /* BSD */
 #include <sys/fcntl.h>
 #include <bsd/libutil.h>
 
-/**
- * Set to be created pthreads attributes
- * @param ctx
- */
-void set_thread_attributes(server_context *ctx){
-
-    LOG_INIT;
-
-    /* Initialise structure */
-    if( pthread_attr_init(&ctx->attr) != 0 ) {
-        LOG(LOG_ERROR, "Error in thread attribute initialisation : ", errno, 1, &ctx->log);
-    }
-
-    /* Makes the threads KERNEL THREADS, thus allowing multi-processor execution */
-    if( pthread_attr_setscope(&ctx->attr, PTHREAD_SCOPE_SYSTEM) != 0) {
-        LOG(LOG_ERROR, "Error in thread setscope : ", errno, 1, &ctx->log);
-    }
-
-    /* Launches threads as detached, since there's no need to sync whith them after they ended */
-    if( pthread_attr_setdetachstate(&ctx->attr, PTHREAD_CREATE_DETACHED) != 0 ){
-        LOG(LOG_ERROR, "Error in thread setdetachstate : ", errno, 1, &ctx->log);
-    }
-
-    LOG(LOG_TRACE, "Thread attributes set.", 0, 0, &ctx->log);
-}
 
 /**
  * Given a path to filename, reads the file and returns an appropriate buffer containing its content and appropriately
@@ -165,7 +142,7 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
 
     client_ctx = malloc(nb_cnx * sizeof(thread_context*));
     if( client_ctx == NULL){
-        LOG(LOG_FATAL, "malloc failed for client/thread_contexts ", errno, 2, &ctx->log);
+        LOG(LOG_FATAL, "malloc failed for client/thread_contexts ", errno, 2, ctx->log);
         return;
     }
 
@@ -175,7 +152,7 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
     printf("%04d-%d-%d - %02d:%02d:%02d : Server now running and awaiting connections.\n\tpid : %d\n\tlog file : %s\n\tsocket : %s\n\n",
            timer.tm_year + 1900, timer.tm_mon + 1, timer.tm_mday, timer.tm_hour, timer.tm_min, timer.tm_sec,
            getpid(), ctx->options->log_file, ctx->options->socket_path);*/
-    LOG(LOG_INFO, "Server now ready and awaiting incoming connections.", 0, 0, &ctx->log);
+    LOG(LOG_INFO, "Server now ready and awaiting incoming connections.", 0, 0, ctx->log);
 
     /* Enter Daemon mode */
     while(nb_authorised_errors) {
@@ -189,7 +166,7 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
         new_client = ipc_accept_connection(ctx);
 
         if( new_client == NULL ){
-            LOG(LOG_ALERT, "Connection denied.", errno, 3, &ctx->log);
+            LOG(LOG_ALERT, "Connection denied.", errno, 3, ctx->log);
             count--;
             nb_authorised_errors--;
             free_thread_context(client_ctx[offset]);
@@ -200,7 +177,7 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
 
         /* (void*)handle_client */
         if( pthread_create(&tid, &ctx->attr, &handle_client, client_ctx[offset]) != 0 ){
-            LOG(LOG_ALERT, "error creating thread. Connection closed.", errno, 1, &ctx->log);
+            LOG(LOG_ALERT, "error creating thread. Connection closed.", errno, 1, ctx->log);
             client_ctx[offset] = free_thread_context(client_ctx[offset]);
             nb_authorised_errors--;
             continue;
@@ -208,10 +185,10 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
 
     }
 
-    LOG(LOG_INFO, "Thread Server is quitting daemon mode. Now cleaning up.", 0, 0, &ctx->log);
+    LOG(LOG_INFO, "Thread Server is quitting daemon mode. Now cleaning up.", 0, 0, ctx->log);
 
     if( pthread_attr_destroy(&ctx->attr) != 0 ){
-        LOG(LOG_ERROR, "Thread Server could not destroy thread attributes.", errno, 1, &ctx->log);
+        LOG(LOG_ERROR, "Thread Server could not destroy thread attributes.", errno, 1, ctx->log);
     }
 
     free(client_ctx);
