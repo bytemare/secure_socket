@@ -15,6 +15,104 @@
 #include <log.h>
 
 
+/**
+ * Starts the logging thread.
+ * @param log
+ */
+bool log_start_thread(logging *log, uint8_t verbosity, char *mq_name, char *log_file){
+
+    int ret;
+    LOG_INIT;
+
+    if ( log_initialise_logging_s(log, verbosity, mq_name, log_file) ){
+        return false;
+    }
+
+    if ( (ret = pthread_create(&log->thread, NULL, &logging_thread, log) ) ){
+        LOG_STDOUT(LOG_FATAL, "Error creating logging thread : ", ret, 1);
+        return false;
+    }
+
+    return true;
+}
+
+
+/**
+ * Given a previously declared logging structure, initialises it by setting the verbosity, and opening the message and
+ * log file descriptor.
+ * Returns 0 on success, 1 on error
+ * @param log
+ * @param verbosity
+ * @param mq_name
+ * @param filename
+ * @return 0 on success, 1 on error
+ */
+__always_inline uint8_t log_initialise_logging_s(logging *log, uint8_t verbosity, char *mq_name, char *filename) {
+
+    LOG_INIT;
+
+    log->verbosity = verbosity;
+    log->aio = NULL;
+
+    /* Open log file with BSD function to obtain exclusive lock on file */
+    log->fd = flopen(filename, O_CREAT|O_WRONLY|O_APPEND|O_SYNC|O_NONBLOCK, S_IRUSR|S_IWUSR);
+    if( log->fd == -1 ){
+        if( errno == EWOULDBLOCK){
+            LOG_STDOUT(LOG_FATAL, "The log file is locked by another process. Free the file and try again.", errno, 3);
+        }
+        else{
+            LOG_STDOUT(LOG_FATAL, "Error in opening log file.", errno, 6);
+        }
+        return 1;
+    }
+
+
+    /* Unlink potential previous message queue if it had the same name */
+    mq_unlink(mq_name);
+
+    /* Check bounds to avoid overlow */
+    if (strlen(mq_name) >= sizeof(log->mq_name)){
+        LOG_STDOUT(LOG_FATAL, "Error in opening the logging messaging queue. Size is >= to maximum buffer size.", errno, 1);
+        close(log->fd);
+        return 1;
+    }
+
+    /* Opening Message Queue */
+    if( (log->mq = mq_open(mq_name, O_RDWR | O_CREAT | O_EXCL, 0600, NULL)) == (mqd_t)-1) {
+        LOG_STDOUT(LOG_FATAL, "Error in opening the logging messaging queue.", errno, 1);
+        close(log->fd);
+        return 1;
+    }
+
+    if ( strlcpy(log->mq_name, mq_name, sizeof(log->mq_name)) >= sizeof(log->mq_name) ){
+        LOG_STDOUT(LOG_WARNING, "Message queue name is too long and got truncated to maximum authorised size.", errno, 1);
+    }
+
+
+    /* Initialise asynchronous I/O structure */
+    log->aio = malloc(sizeof(struct aiocb));
+    if(!log->aio){
+        LOG_FILE(LOG_ALERT, "malloc failed allocation space for the logging aiocb structure.", errno, 2, log);
+        close(log->fd);
+        if (log->mq != -1){
+            mq_close(log->mq);
+            mq_unlink(log->mq_name);
+        }
+        return 1;
+    }
+
+    log->aio->aio_fildes = log->fd;
+    log->aio->aio_buf = NULL;
+    log->aio->aio_nbytes = 0;
+
+    log->quit_logging = false;
+
+    set_thread_attributes(&log->attr, log);
+
+    LOG_FILE(LOG_INFO, "Initialised logging structure.", -1, 0, log);
+
+    return 0;
+}
 
 
 /**
@@ -119,34 +217,32 @@ void terminate_logging_thread_blocking(logging *log){
     pthread_join(log->thread, NULL);
 }
 
-
-void log_close(logging *log) {
-
-    terminate_logging_thread_blocking(log);
-
-}
-
-
 /**
- * Starts the logging thread.
+ * Free the allocated spaces for the logging structure components, closes and unlinks the message queue
  * @param log
  */
-bool log_start_thread(logging *log, uint8_t verbosity, char *mq_name, char *log_file){
+__always_inline void log_free_logging(logging *log){
 
-    int ret;
-    LOG_INIT;
-
-    if ( log_initialise_logging_s(log, verbosity, mq_name, log_file) ){
-        return false;
+    if (log->mq != -1){
+        mq_close(log->mq);
+        mq_unlink(log->mq_name);
     }
 
-    if ( (ret = pthread_create(&log->thread, NULL, &logging_thread, log) ) ){
-        LOG_STDOUT(LOG_FATAL, "Error creating logging thread : ", ret, 1);
-        return false;
-    }
+    close(log->fd);
 
-    return true;
+    //pthread_attr_destroy(&log->attr);
+
+    free(log->aio);
+    log->aio = NULL;
 }
+
+void log_close(logging *log) {
+    terminate_logging_thread_blocking(log);
+    log_free_logging(log);
+}
+
+
+
 
 
 
@@ -182,7 +278,10 @@ void* logging_thread(void *args){
 
         pthread_mutex_lock(&log->mutex);
 
-        while (!log->quit_logging) {
+        if ( mq_getattr(log->mq, &log->mq_attr) == -1 ){
+            //TODO : handle this error
+        }
+        while (!log->quit_logging || log->mq_attr.mq_curmsgs) {
 
             pthread_mutex_unlock(&log->mutex);
 
@@ -197,6 +296,10 @@ void* logging_thread(void *args){
             }
 
             pthread_mutex_lock(&log->mutex);
+
+            if ( mq_getattr(log->mq, &log->mq_attr) == -1 ){
+                //TODO : handle this error
+            }
         }
 
         free(buffer);

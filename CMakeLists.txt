@@ -8,13 +8,14 @@ set(COMPILATION_WARNINGS "-W -Wall -Wextra -Werror -ansi -pedantic -Wuninitializ
 
 set(LINKER_LIBRARIES "-lbsd -lrt -pthread -lm")
 
+set(SECURITY_SANITISER_FLAGS "-fsanitize=address -fsanitize=leak -fsanitize=undefined")
 
-set(SANITISER_FLAGS "-fsanitize=address -fsanitize=leak -fsanitize=undefined")
+set(SECURITY_FLAGS "${SECURITY_SANITISER_FLAGS} -fstack-protector-strong -fPIE -D_FORTIFY_SOURCE=2 -fstack-check -fsplit-stack")
 
-set(SECURITY_FLAGS "${SANITISER_FLAGS} -fstack-protector-strong -fPIE -D_FORTIFY_SOURCE=2 -fstack-check -fsplit-stack")
+set(PERFORMANCE_FLAGS "-finline-functions -O3 ")
 
 
-set(CMAKE_C_FLAGS " ${COMPILATION_WARNINGS} ${LINKER_LIBRARIES} ${SECURITY_FLAGS} -D_GNU_SOURCE -O3 -std=c11")
+set(CMAKE_C_FLAGS " ${COMPILATION_WARNINGS} ${LINKER_LIBRARIES} ${SECURITY_FLAGS} ${PERFORMANCE_FLAGS} -D_GNU_SOURCE -std=c11")
 
 # -D_XOPEN_SOURCE=700
 # -fpic is for shared libraries
@@ -25,7 +26,7 @@ set(SOURCE_FILES
         src/main.c
         src/ipc_socket.c
         src/context.c
-        src/threaded_server.c src/log.c src/tools.c include/tools.h src/secure_socket_base.c include/secure_socket_base.h)
+        src/threaded_server.c src/log.c src/tools.c src/secure_socket_base.c)
 
 
 include_directories(include/ src/)

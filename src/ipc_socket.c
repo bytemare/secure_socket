@@ -54,7 +54,6 @@ secure_socket *secure_socket_allocate(server_context *ctx) {
  * @param socketfd
  */
 void ipc_close_socket(secure_socket *sock){
-    printf("socket value : %d\n", sock->socket_fd);
     close(sock->socket_fd);
     sock->socket_fd = -1;
 }

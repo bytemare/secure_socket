@@ -407,11 +407,6 @@ server_context* make_server_context(ipc_options *params, logging *log){
 
     LOG(LOG_INFO, "Socket created.", errno, 0, ctx->log);
 
-    if ( log_initialise_logging_s(ctx->log, params->verbosity, params->mq_name, params->log_file) ) {
-        free_server_context(ctx);
-        return NULL;
-    }
-
     set_thread_attributes(&ctx->attr, ctx->log);
 
     LOG_FILE(LOG_TRACE, "Server context initialised", 0, 0, ctx->log);
@@ -444,8 +439,6 @@ server_context* free_server_context(server_context *ctx){
 
     if (ctx) {
         secure_socket_free_from_context(ctx);
-
-        log_free_logging(ctx->log);
 
         free(ctx->options);
         ctx->options= NULL;
