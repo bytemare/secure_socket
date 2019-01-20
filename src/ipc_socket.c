@@ -103,7 +103,7 @@ bool secure_socket_create_socket(server_context *ctx){
  * @param ctx
  * @return -1 if failed, 0 on success
  */
-int8_t set_bind_address(server_context *ctx, in_addr_t address){
+uint8_t set_bind_address(server_context *ctx, in_addr_t address){
 
     secure_socket *server;
 
@@ -121,9 +121,10 @@ int8_t set_bind_address(server_context *ctx, in_addr_t address){
         if ( server->bind_address == NULL ){
             LOG(LOG_CRITICAL, "Socket path is too long : overflow avoided !", errno, 1, ctx->log);
             ctx->socket->addrlen = 0;
+            return 1;
         }
 
-        return -1;
+        return 0;
     }
 
     if ( ctx->options->domain == AF_INET ){
@@ -135,7 +136,7 @@ int8_t set_bind_address(server_context *ctx, in_addr_t address){
     LOG(LOG_CRITICAL, "domain type is invalid or not recognised !", errno, 0, ctx->log);
     ctx->socket->addrlen = 0;
 
-    return -1;
+    return 1;
 
     /*
 
@@ -247,7 +248,7 @@ bool ipc_server_bind(in_addr_t address, server_context *ctx){
 
     LOG(LOG_INFO, "Socket created.", errno, 0, ctx->log);*/
 
-    if ( set_bind_address(ctx, address) <= 0 ){
+    if ( set_bind_address(ctx, address) ){
         LOG(LOG_FATAL, "Could not properly set socket address type.", errno, 1, ctx->log);
         secure_socket_free_from_context(ctx);
         return false;
