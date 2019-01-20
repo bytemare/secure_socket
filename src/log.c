@@ -12,7 +12,6 @@
 #define __STDC_WANT_LIB_EXT1__ 1
 
 #include <stdio.h>
-#include <secure_socket_types.h>
 #include <log.h>
 
 
@@ -33,7 +32,7 @@ int get_mq_max_message_size(logging *log){
     LOG_INIT;
 
 
-    LOG_FILE(LOG_TRACE, "Logging Thread : getting maximum message size from system", 0, 0, log);
+    LOG_FILE(LOG_TRACE, "Logging Thread : getting maximum message size from system", errno, 0, log);
 
     fp = fopen(mq_max_message_size_source, "r");
     if (fp == NULL) {
@@ -48,25 +47,22 @@ int get_mq_max_message_size(logging *log){
         if (ret == 1){
             fclose(fp);
             snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Maximum size message for messaging queue is %d.", max_size);
-            LOG_FILE(LOG_INFO, log_buffer, 0, 5, log);
+            LOG_FILE(LOG_INFO, log_buffer, errno, 5, log);
         }
         else if ( errno != 0){
             LOG_FILE(LOG_WARNING, "Error in fscanf(). Message size set to default.", errno, 8, log);
             max_size = LOG_MQ_MAX_MESSAGE_SIZE;
         }
         else{
-            LOG_FILE(LOG_WARNING, "Message queue : no matching pattern to an integer in file for message size. Message size set to default.", 0, 12, log);
+            LOG_FILE(LOG_WARNING, "Message queue : no matching pattern to an integer in file for message size. Message size set to default.", errno, 12, log);
             max_size = LOG_MQ_MAX_MESSAGE_SIZE;
         }
     }
 
-    LOG_FILE(LOG_TRACE, "Size for message in mq set.", 0, 0, log);
+    LOG_FILE(LOG_TRACE, "Size for message in mq is set.", errno, 0, log);
 
     return max_size;
 }
-
-
-
 
 /*
 void log_to_file(server_context *ctx, char *message){
@@ -79,10 +75,38 @@ void log_to_file(server_context *ctx, char *message){
 }
 */
 
-
-void terminate_logging_thread_blocking(const pthread_t *logger, logging *log){
+/**
+ * Set to be created pthreads attributes
+ * @param attr
+ * @param log
+ */
+void set_thread_attributes(pthread_attr_t *attr, logging *log){
 
     LOG_INIT;
+
+    /* Initialise structure */
+    if( pthread_attr_init(attr) != 0 ) {
+        LOG(LOG_ERROR, "Error in thread attribute initialisation : ", errno, 1, log);
+    }
+
+    /* Makes the threads KERNEL THREADS, thus allowing multi-processor execution */
+    if( pthread_attr_setscope(attr, PTHREAD_SCOPE_SYSTEM) != 0) {
+        LOG(LOG_ERROR, "Error in thread setscope : ", errno, 1, log);
+    }
+
+    /* Launches threads as detached, since there's no need to sync whith them after they ended */
+    if( pthread_attr_setdetachstate(attr, PTHREAD_CREATE_DETACHED) != 0 ){
+        LOG(LOG_ERROR, "Error in thread setdetachstate : ", errno, 1, log);
+    }
+
+    LOG(LOG_TRACE, "Thread attributes set.", 0, 0, log);
+}
+
+void terminate_logging_thread_blocking(logging *log){
+
+    LOG_INIT;
+
+    LOG(LOG_INFO, "Terminating logging thread. Awaiting for mutex.", errno, 0, log);
 
     /* Wait for logging thread to terminate */
     pthread_mutex_lock(&log->mutex);
@@ -92,8 +116,39 @@ void terminate_logging_thread_blocking(const pthread_t *logger, logging *log){
     /* Put a message to unblock logging thread on message queue */
     LOG(LOG_INFO, "Server awaiting logging thread to terminate ...", errno, 0, log);
 
-    pthread_join(*logger, NULL);
+    pthread_join(log->thread, NULL);
 }
+
+
+void log_close(logging *log) {
+
+    terminate_logging_thread_blocking(log);
+
+}
+
+
+/**
+ * Starts the logging thread.
+ * @param log
+ */
+bool log_start_thread(logging *log, uint8_t verbosity, char *mq_name, char *log_file){
+
+    int ret;
+    LOG_INIT;
+
+    if ( log_initialise_logging_s(log, verbosity, mq_name, log_file) ){
+        return false;
+    }
+
+    if ( (ret = pthread_create(&log->thread, NULL, &logging_thread, log) ) ){
+        LOG_STDOUT(LOG_FATAL, "Error creating logging thread : ", ret, 1);
+        return false;
+    }
+
+    return true;
+}
+
+
 
 /**
  * Thread handler for log related actions. Waits on a POSIX messaging queue for incoming messages, and writes them into log file.
@@ -112,7 +167,7 @@ void* logging_thread(void *args){
 
     LOG_INIT;
 
-    LOG_FILE(LOG_TRACE, "Logging thread started.", 0, 0, log);
+    LOG_FILE(LOG_TRACE, "Logging thread started.", errno, 0, log);
 
     mq_max_size = get_mq_max_message_size(log);
     prio = 0;
@@ -123,7 +178,7 @@ void* logging_thread(void *args){
     }
     else {
 
-        LOG_FILE(LOG_TRACE, "Logging thread awaiting new messages.", 0, 0, log);
+        LOG_FILE(LOG_TRACE, "Logging thread awaiting new messages.", errno, 0, log);
 
         pthread_mutex_lock(&log->mutex);
 
@@ -147,7 +202,7 @@ void* logging_thread(void *args){
         free(buffer);
     }
 
-    LOG_FILE(LOG_TRACE, "Logging thread now quitting.", 0, 0, log);
+    LOG_FILE(LOG_TRACE, "Logging thread now quitting.", errno, 0, log);
 
     log->quit_logging = false;
 
@@ -158,3 +213,4 @@ void* logging_thread(void *args){
     pthread_exit((void*)0);
 
 }
+
