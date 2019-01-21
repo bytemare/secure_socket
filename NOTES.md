@@ -40,7 +40,7 @@
 #### Logging
 0) When not cleanly shut down, the logging thread/process continues and holds the lock on the log file,
 furthers attemps to open are blocked. lslocks CL helps identifying.
-0) logs into files by LOG() have weird characters at end of line
+
 
 
 1) add mode to be completely silent and not print to stdout

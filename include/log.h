@@ -213,7 +213,7 @@ void* logging_thread(void *args);
  * Same as LOG, but prints out to standard ouput
  */
 #define LOG_STDOUT(message_level, message, error_number, error_delta)\
-    log_build(&log_buffs, LOG_ALERT, message, error_number, __FILE__, __func__, __LINE__ + 1 - (error_delta), LOG_TRACE);\
+    log_build(&log_buffs, (message_level <= LOG_ALERT ? message_level : LOG_ALERT), message, error_number, __FILE__, __func__, __LINE__ + 1 - (error_delta), LOG_TRACE);\
     log_to_stdout(&log_buffs);\
 
 
