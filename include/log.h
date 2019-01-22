@@ -212,9 +212,8 @@ void* logging_thread(void *args);
 /**
  * Same as LOG, but prints out to standard ouput
  */
-#define LOG_STDOUT(message_level, message, error_number, error_delta)\
-    log_build(&log_buffs, (message_level <= LOG_ALERT ? message_level : LOG_ALERT), message, error_number, __FILE__, __func__, __LINE__ + 1 - (error_delta), LOG_TRACE);\
-    log_to_stdout(&log_buffs);\
+#define LOG_STDOUT(message_level, message, error_number, error_delta, log)\
+    log_to_stdout(&log_buffs, message_level, message, error_number, __FILE__, __func__, __LINE__ + 1 - (error_delta), log);\
 
 
 
@@ -385,14 +384,6 @@ __always_inline void log_build(logging_buffs *log_buffs, const int message_level
     log_assemble(log_buffs, message_level, message, verbosity);
 }
 
-/**
- * Simply sends the string containing the final log line to message queue
- * @param log_buffs
- * @param log
- */
-__always_inline void log_send_to_mq(logging_buffs *log_buffs, logging *log){
-    mq_send(log->mq, log_buffs->log_entry_buffer, strlen(log_buffs->log_entry_buffer), 1);
-}
 
 /**
  * Wrapper, building a whole log line and sending it to message queue
@@ -407,19 +398,32 @@ __always_inline void log_send_to_mq(logging_buffs *log_buffs, logging *log){
  */
 __always_inline void log_to_mq(logging_buffs *log_buffs, const int message_level, const char *message,
         const int error_number, const char *file, const char *function, const int line, logging *log){
-    if(log->verbosity >= LOG_NOTSET){
-        return;
+    if(log->verbosity > LOG_OFF){
+        log_build(log_buffs, message_level, message, error_number, file, function, line, log->verbosity);
+        mq_send(log->mq, log_buffs->log_entry_buffer, strlen(log_buffs->log_entry_buffer), 1);
     }
-    log_build(log_buffs, message_level, message, error_number, file, function, line, log->verbosity);
-    log_send_to_mq(log_buffs, log);
 }
 
 /**
  * Simple wrapper printing final log line to standard output
  * @param log
  */
-__always_inline void log_to_stdout(logging_buffs *log){
-    printf("%s", log->log_entry_buffer);
+__always_inline void log_to_stdout(logging_buffs *log_buffs, const int message_level, const char *message,
+        const int error_number, const char *file, const char *function, const int line, logging *log){
+    int8_t verbosity = -1;
+
+    if (log){
+        if ( log->verbosity > LOG_OFF ){
+            verbosity = log->verbosity;
+        }
+    } else{
+        verbosity = LOG_INFO;
+    }
+
+    if ( verbosity != -1 ){
+        log_build(log_buffs, message_level, message, error_number, file, function, line, (uint8_t) verbosity);
+        printf("%s", log_buffs->log_entry_buffer);
+    }
 }
 
 /**
@@ -431,7 +435,7 @@ __always_inline void log_to_stdout(logging_buffs *log){
 __always_inline void log_write_to_file(logging *log, char *message){
     if (write(log->fd, message, strlen(message)) == -1){
         LOG_INIT;
-        LOG_STDOUT(LOG_ALERT, "Call to write() to log to file failed. Cannot log.", errno, 1);
+        LOG_STDOUT(LOG_ALERT, "Call to write() to log to file failed. Cannot log.", errno, 1, log);
         if(log->verbosity >= LOG_NOTICE){
             printf("\tOriginal log message :\n");
             printf("\t%s", message);
@@ -453,11 +457,11 @@ __always_inline void log_write_to_file(logging *log, char *message){
  */
 __always_inline void log_to_file(logging_buffs *log_buffs, const int message_level, const char *message,
                               const int error_number, const char *file, const char *function, const int line, logging *log){
-    if(log->verbosity >= LOG_NOTSET){
-        return;
+    if(log->verbosity > LOG_OFF){
+        log_build(log_buffs, message_level, message, error_number, file, function, line, log->verbosity);
+        log_write_to_file(log, log_buffs->log_entry_buffer);
     }
-    log_build(log_buffs, message_level, message, error_number, file, function, line, log->verbosity);
-    log_write_to_file(log, log_buffs->log_entry_buffer);
+
 }
 
 

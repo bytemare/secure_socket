@@ -29,12 +29,95 @@ bool log_start_thread(logging *log, uint8_t verbosity, char *mq_name, char *log_
     }
 
     if ( (ret = pthread_create(&log->thread, NULL, &logging_thread, log) ) ){
-        LOG_STDOUT(LOG_FATAL, "Error creating logging thread : ", ret, 1);
+        LOG_STDOUT(LOG_FATAL, "Error creating logging thread : ", ret, 1, log);
         return false;
     }
 
     return true;
 }
+
+
+/**
+ * Opens the specified file for writing and tries to obtain an exclusive write lock.
+ * @param fd
+ * @return 0, 1 on failure with stdout logging
+ */
+uint8_t log_util_open_file_lock(logging *log, const char *filename){
+
+    LOG_INIT;
+
+    /* Open log file with BSD function to obtain exclusive lock on file */
+    /* This may not be the best idea. TODO: study what, between BSD and POSIX locks, is better suited. We may want to detect a lock and kill another process to get it."*/
+    log->fd = flopen(filename, O_CREAT|O_WRONLY|O_APPEND|O_SYNC|O_NONBLOCK, S_IRUSR|S_IWUSR);
+    if( log->fd == -1 ){
+        if( errno == EWOULDBLOCK){
+            LOG_STDOUT(LOG_FATAL, "The log file is locked by another process. Free the file and try again.", errno, 3, log);
+        }
+        else{
+            LOG_STDOUT(LOG_FATAL, "Error in opening log file.", errno, 6, log);
+        }
+        return 1;
+    }
+
+    return 0;
+}
+
+
+/**
+ * Opens a message queue in log with given name. Checks for overflow on mq_name.
+ * @param log
+ * @param mq_name
+ * @return 0 on success, 1 on failure
+ */
+uint8_t log_util_open_mq(logging *log, const char *mq_name){
+
+    LOG_INIT;
+
+    /* Unlink potential previous message queue if it had the same name */
+    mq_unlink(mq_name);
+
+    /* Check bounds to avoid overlow */
+    if (strlen(mq_name) >= sizeof(log->mq_name)){
+        LOG_STDOUT(LOG_FATAL, "Error in opening the logging messaging queue. Size is >= to maximum buffer size.", errno, 1, log);
+        return 1;
+    }
+
+    if ( strlcpy(log->mq_name, mq_name, sizeof(log->mq_name)) >= sizeof(log->mq_name) ){
+        LOG_STDOUT(LOG_WARNING, "Message queue name is too long and got truncated to maximum authorised size.", errno, 1, log);
+    }
+
+    /* Opening Message Queue */
+    if( (log->mq = mq_open(log->mq_name, O_RDWR | O_CREAT | O_EXCL, 0600, NULL)) == (mqd_t)-1) {
+        LOG_STDOUT(LOG_FATAL, "Error in opening the logging messaging queue.", errno, 1, log);
+        return 1;
+    }
+
+    return 0;
+}
+
+/**
+ * Allocates and initialises the asynchronous I/O structure.
+ * @param log
+ * @return 0 on success, 1 on failure
+ */
+uint8_t log_util_open_aio(logging *log){
+
+    LOG_INIT;
+
+    log->aio = malloc(sizeof(struct aiocb));
+    if(!log->aio){
+        LOG_FILE(LOG_ALERT, "malloc failed allocation space for the logging aiocb structure.", errno, 2, log);
+        return 1;
+    }
+
+    log->aio->aio_fildes = log->fd;
+    log->aio->aio_buf = NULL;
+    log->aio->aio_nbytes = 0;
+
+    return 0;
+}
+
+
 
 
 /**
@@ -53,46 +136,22 @@ __always_inline uint8_t log_initialise_logging_s(logging *log, uint8_t verbosity
 
     log->verbosity = verbosity;
     log->aio = NULL;
+    log->quit_logging = false;
+    set_thread_attributes(&log->attr, log);
 
-    /* Open log file with BSD function to obtain exclusive lock on file */
-    log->fd = flopen(filename, O_CREAT|O_WRONLY|O_APPEND|O_SYNC|O_NONBLOCK, S_IRUSR|S_IWUSR);
-    if( log->fd == -1 ){
-        if( errno == EWOULDBLOCK){
-            LOG_STDOUT(LOG_FATAL, "The log file is locked by another process. Free the file and try again.", errno, 3);
-        }
-        else{
-            LOG_STDOUT(LOG_FATAL, "Error in opening log file.", errno, 6);
-        }
+    /* Open log file */
+    if ( log_util_open_file_lock(log, filename) ){
         return 1;
     }
 
-
-    /* Unlink potential previous message queue if it had the same name */
-    mq_unlink(mq_name);
-
-    /* Check bounds to avoid overlow */
-    if (strlen(mq_name) >= sizeof(log->mq_name)){
-        LOG_STDOUT(LOG_FATAL, "Error in opening the logging messaging queue. Size is >= to maximum buffer size.", errno, 1);
+    /* Open message queue */
+    if ( log_util_open_mq(log, mq_name) ){
         close(log->fd);
         return 1;
     }
-
-    /* Opening Message Queue */
-    if( (log->mq = mq_open(mq_name, O_RDWR | O_CREAT | O_EXCL, 0600, NULL)) == (mqd_t)-1) {
-        LOG_STDOUT(LOG_FATAL, "Error in opening the logging messaging queue.", errno, 1);
-        close(log->fd);
-        return 1;
-    }
-
-    if ( strlcpy(log->mq_name, mq_name, sizeof(log->mq_name)) >= sizeof(log->mq_name) ){
-        LOG_STDOUT(LOG_WARNING, "Message queue name is too long and got truncated to maximum authorised size.", errno, 1);
-    }
-
 
     /* Initialise asynchronous I/O structure */
-    log->aio = malloc(sizeof(struct aiocb));
-    if(!log->aio){
-        LOG_FILE(LOG_ALERT, "malloc failed allocation space for the logging aiocb structure.", errno, 2, log);
+    if ( log_util_open_aio(log) ) {
         close(log->fd);
         if (log->mq != -1){
             mq_close(log->mq);
@@ -100,14 +159,6 @@ __always_inline uint8_t log_initialise_logging_s(logging *log, uint8_t verbosity
         }
         return 1;
     }
-
-    log->aio->aio_fildes = log->fd;
-    log->aio->aio_buf = NULL;
-    log->aio->aio_nbytes = 0;
-
-    log->quit_logging = false;
-
-    set_thread_attributes(&log->attr, log);
 
     LOG_FILE(LOG_INFO, "Initialised logging structure.", -1, 0, log);
 

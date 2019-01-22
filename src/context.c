@@ -35,7 +35,7 @@ thread_context* make_thread_context(secure_socket *socket, server_context *s_ctx
     ctx = malloc(sizeof(thread_context));
 
     if(!ctx){
-        LOG_STDOUT(LOG_FATAL, "Error in malloc for context", errno, 3);
+        LOG_STDOUT(LOG_FATAL, "Error in malloc for context", errno, 3, ctx->log);
         return NULL;
     }
 
@@ -74,8 +74,7 @@ ipc_options* initialise_options(){
     /* Allocate memory */
     ipc_options *options = malloc(sizeof(ipc_options));
     if ( !options ){
-        LOG_STDOUT(LOG_FATAL, "malloc failed for ipc_options", errno, 3);
-        perror("Error in malloc for ipc_options : ");
+        LOG_STDOUT(LOG_FATAL, "malloc failed for ipc_options", errno, 3, NULL);
         return NULL;
     }
 
@@ -137,22 +136,22 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         p = argv[i];
 
         //snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Parsing argument : %s", p);
-        //LOG_STDOUT(LOG_TRACE, log_buffer, -1, 3)
+        //LOG_STDOUT(LOG_TRACE, log_buffer, 0, 3)
 
         if ((q = strchr(p, '=')) == NULL) {
-            LOG_STDOUT(LOG_FATAL, "Invalid argument entry format. USAGE : [option]=[value].", -1, 1);
+            LOG_STDOUT(LOG_FATAL, "Invalid argument entry format. USAGE : [option]=[value].", 0, 1, NULL);
             return false;
         }
         *q++ = '\0';
 
         //snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Argument value : %s", q);
-        //LOG_STDOUT(LOG_TRACE, log_buffer, -1, 3)
+        //LOG_STDOUT(LOG_TRACE, log_buffer, 0, 3)
 
         if (strcmp(p, "mq_name") == 0) {
             uint16_t mq_name_max_size = sizeof(options->mq_name);
             if( q[0] != '/' && strlen(q) >= mq_name_max_size ){
                 snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Invalid name for message queue. First character must be '/' and must be shorter than %d characters.", mq_name_max_size);
-                LOG_STDOUT(LOG_FATAL, log_buffer, -1, 2);
+                LOG_STDOUT(LOG_FATAL, log_buffer, 0, 2, NULL);
                 return false;
             }
 
@@ -165,7 +164,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
             uint8_t socket_name_max_size = sizeof(options->socket_path);
             if( strlen(q) >= socket_name_max_size ){
                 snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Invalid name for socket path. Must be shorter than %d characters.", socket_name_max_size);
-                LOG_STDOUT(LOG_FATAL, log_buffer, -1, 2);
+                LOG_STDOUT(LOG_FATAL, log_buffer, 0, 2, NULL);
                 return false;
             }
 
@@ -179,7 +178,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
             uint16_t log_name_max_size = sizeof(options->log_file);
             if( strlen(q) >= log_name_max_size ){
                 snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Invalid name for log file. Must be shorter than %d characters.", log_name_max_size);
-                LOG_STDOUT(LOG_FATAL, log_buffer, -1, 2);
+                LOG_STDOUT(LOG_FATAL, log_buffer, 0, 2, NULL);
                 return false;
             }
 
@@ -199,7 +198,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 continue;
             }
 
-            LOG_STDOUT(LOG_FATAL, "Invalid value for domain type. Supported values are AF_UNIX/AF_LOCAL or AF_INET.", errno, 9);
+            LOG_STDOUT(LOG_FATAL, "Invalid value for domain type. Supported values are AF_UNIX/AF_LOCAL or AF_INET.", errno, 9, NULL);
             return false;
         }
 
@@ -209,7 +208,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 continue;
             }
 
-            LOG_STDOUT(LOG_FATAL, "Invalid value for protocol type. Only SOCKET_STREAM is supported for now.", errno, 5);
+            LOG_STDOUT(LOG_FATAL, "Invalid value for protocol type. Only SOCKET_STREAM is supported for now.", errno, 5, NULL);
             return false;
         }
 
@@ -220,7 +219,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 continue;
             }
 
-            LOG_STDOUT(LOG_FATAL, "Invalid value for port. Must be between 1 and 65635.", errno, 5);
+            LOG_STDOUT(LOG_FATAL, "Invalid value for port. Must be between 1 and 65635.", errno, 5, NULL);
             return false;
         }
 
@@ -231,7 +230,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 continue;
             }
 
-            LOG_STDOUT(LOG_FATAL, "Invalid value for max_connections. Must be a positive number.", errno, 5);
+            LOG_STDOUT(LOG_FATAL, "Invalid value for max_connections. Must be a positive number.", errno, 5, NULL);
             return false;
         }
 
@@ -255,7 +254,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 }
             }
 
-            LOG_STDOUT(LOG_FATAL, "Invalid value for socket_permissions. Use '0660'.", errno, 18);
+            LOG_STDOUT(LOG_FATAL, "Invalid value for socket_permissions. Use '0660'.", errno, 18, NULL);
             return false;
         }
 
@@ -267,7 +266,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 continue;
             }
 
-            LOG_STDOUT(LOG_FATAL, "Invalid username : too long.", errno, 6);
+            LOG_STDOUT(LOG_FATAL, "Invalid username : too long.", errno, 6, NULL);
             return false;
         }
 
@@ -284,7 +283,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 continue;
             }
 
-            LOG_STDOUT(LOG_FATAL, "Invalid uid.", errno, 5);
+            LOG_STDOUT(LOG_FATAL, "Invalid uid.", errno, 5, NULL);
             return false;
 
         }
@@ -302,7 +301,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 continue;
             }
 
-            LOG_STDOUT(LOG_FATAL, "Invalid gid.", errno, 5);
+            LOG_STDOUT(LOG_FATAL, "Invalid gid.", errno, 5, NULL);
             return false;
         }
 
@@ -315,7 +314,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 }
             }
 
-            LOG_STDOUT(LOG_FATAL, "Invalid pid value.", errno, 5);
+            LOG_STDOUT(LOG_FATAL, "Invalid pid value.", errno, 5, NULL);
             return false;
         }
 
@@ -326,7 +325,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 continue;
             }
 
-            LOG_STDOUT(LOG_FATAL, "Invalid process name : too long.", errno, 6);
+            LOG_STDOUT(LOG_FATAL, "Invalid process name : too long.", errno, 6, NULL);
             return false;
         }
 
@@ -337,29 +336,29 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 continue;
             }
 
-            LOG_STDOUT(LOG_FATAL, "Invalid peer command line arguments : too long.", errno, 6);
+            LOG_STDOUT(LOG_FATAL, "Invalid peer command line arguments : too long.", errno, 6, NULL);
             return false;
         }
 
         if (strcmp(p, "verbosity") == 0){
             if(is_valid_integer(q)){
                 long int verbosity = strtol(q, NULL, 10);
-                if (verbosity > 0 && verbosity <= 11) {
+                if (verbosity >= LOG_OFF && verbosity <= LOG_UNKNWON) {
                     options->verbosity = (uint8_t) verbosity;
                     continue;
                 }
             }
 
-            LOG_STDOUT(LOG_FATAL, "Invalid verbosity.", errno, 5);
+            LOG_STDOUT(LOG_FATAL, "Invalid verbosity.", errno, 5, NULL);
             return false;
         }
 
         snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Invalid argument : %s", p);
-        LOG_STDOUT(LOG_FATAL, log_buffer, -1, 1);
+        LOG_STDOUT(LOG_FATAL, log_buffer, 0, 1, NULL);
         return false;
     }
 
-    LOG_STDOUT(LOG_INFO, "Arguments parsed and validated.", errno, 0);
+    LOG_STDOUT(LOG_INFO, "Arguments parsed and validated.", errno, 0, NULL);
 
     return true;
 }
@@ -378,7 +377,7 @@ server_context* make_server_context(ipc_options *params, logging *log){
     ctx = malloc(sizeof(server_context));
 
     if( !ctx ){
-        LOG_STDOUT(LOG_FATAL, "malloc failed for server context", errno, 3);
+        LOG_STDOUT(LOG_FATAL, "malloc failed for server context", errno, 3, ctx->log);
         return NULL;
     }
 

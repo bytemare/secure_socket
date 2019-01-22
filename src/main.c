@@ -47,14 +47,14 @@ int main(int argc, char** argv) {
 
     /* Launch Logging Thread */
     if( !log_start_thread(&log, params->verbosity, params->mq_name, params->log_file) ){
-        LOG_STDOUT(LOG_FATAL, "The server encountered an error. Shutting down.", errno, 2);
+        LOG_STDOUT(LOG_FATAL, "The server encountered an error. Shutting down.", errno, 2, &log);
         free(params);
         return 1;
     }
 
     /* Build the main threads server context */
     if ( (ctx = make_server_context(params, &log) ) == NULL ){
-        LOG_STDOUT(LOG_FATAL, "Could not create server context. Startup aborted.", errno, 1);
+        LOG_STDOUT(LOG_FATAL, "Could not create server context. Startup aborted.", errno, 1, &log);
         log_close(&log);
         return 1;
     }
@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
 
     /* Server initialization */
     if( !ipc_bind_set_and_listen(INADDR_ANY, ctx) ){
-        LOG_STDOUT(LOG_FATAL, "The server encountered an error. Shutting down.", errno, 1);
+        LOG_STDOUT(LOG_FATAL, "The server encountered an error. Shutting down.", errno, 1, &log);
         free_server_context(ctx);
         log_close(&log);
         return 1;
