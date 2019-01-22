@@ -23,6 +23,7 @@
 - [+] [Logging] Enhanced logging usability : Logging to stdout, directly to file, or to message queue.
 - [+] [Logging] Introduced leveled verbosity of logging, set in parameters file.
 - [+] [Socket] If default values are used, add a random value at end of filenames
+- [+] [Logging] Added mode to completely disable logging after the command line parsing
  
 
 ### Priorities
@@ -41,11 +42,7 @@
 0) When not cleanly shut down, the logging thread/process continues and holds the lock on the log file,
 furthers attemps to open are blocked. lslocks CL helps identifying.
 
-
-
-1) add mode to be completely silent and not print to stdout
 2) add mode to log everything to stdout
-3) if logging is off, don't launch a logging thread, don't allocate stuff etc.
 4) separate logging macros from code for thread with mq, to enable genericity
 5) Add a parameter for log file size, to keep log files at a maximum size, and then log into different file with timestamp
 6) Compress old log files

@@ -21,6 +21,10 @@
  */
 bool log_start_thread(logging *log, uint8_t verbosity, char *mq_name, char *log_file){
 
+    if( log->verbosity == LOG_OFF ){
+        return true;
+    }
+
     int ret;
     LOG_INIT;
 
@@ -288,8 +292,10 @@ __always_inline void log_free_logging(logging *log){
 }
 
 void log_close(logging *log) {
-    terminate_logging_thread_blocking(log);
-    log_free_logging(log);
+    if(log->verbosity > LOG_OFF) {
+        terminate_logging_thread_blocking(log);
+        log_free_logging(log);
+    }
 }
 
 
