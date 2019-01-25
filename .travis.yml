@@ -1,5 +1,4 @@
 language: c
-install:
-  - $(pkg-config --libs libbsd)
+
 script:
   - ./build.sh && ./run.sh
