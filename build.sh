@@ -37,8 +37,8 @@ source ${PARAMETERS}
 CREAT="$RELEASE $DEBUG $LINK $RUNNER $SOCKET_PATH $CLEANER"
 
 # Clean up previous work
-#s="rm --force -rf $CREAT"
-#$s
+s="rm --force -rf $CREAT"
+$s
 
 
 # Build cleaner script
