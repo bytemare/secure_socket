@@ -36,7 +36,10 @@ Among logging properties, you'll benefit :
 
 ## Use in development stage
 
-
+You may not have certain used libraries, like libbsd, and should install libbsd-dev or
+```bash
+$(pkg-config --libs libbsd)
+```
 
 
  To compile the program, place yourself into the project directory and run :

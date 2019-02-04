@@ -32,8 +32,6 @@
 
 1) Create socket under a dedicated, secured directory
 
-2) avoid use of exit(), and do proper error catching and termination
-3) Document necessity to add libbsd on machine
 4) Fallback mechanism if libbsd is not available
 5) refactor code for socket to be used as component/library
 6) add examples and copy/pastable code
