@@ -6,24 +6,20 @@ project(secure_socket)
 
 set(COMPILATION_WARNINGS "-W -Wall -Wextra -Werror -ansi -pedantic -Wuninitialized -Wcast-align -Wmissing-braces -Wunused-result -Wpointer-arith -Wchkp -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -Wstack-protector -Wformat -Wformat-security -Wstrict-aliasing -Wunused-parameter")
 
-set(LINKER_LIBRARIES "-lbsd -pthread -lm -lrt")
-
 set(SECURITY_SANITISER_FLAGS "-fsanitize=address -fsanitize=leak -fsanitize=undefined")
-
 
 # -fstack-protector-all
 set(SECURITY_FLAGS "${SECURITY_SANITISER_FLAGS} -fstack-protector-strong -pie -fPIE --param ssp-buffer-size=1 -D_FORTIFY_SOURCE=2 -fstack-check -fsplit-stack")
 
-
 # -O3 may make the code to big, thus not fitting into the cache, therefore loosing performance
 set(PERFORMANCE_FLAGS "-finline-functions -O2 ")
 
-
-set(CMAKE_C_FLAGS " ${COMPILATION_WARNINGS} ${SECURITY_FLAGS} ${PERFORMANCE_FLAGS} -D_GNU_SOURCE -std=c11 ${LINKER_LIBRARIES}")
+set(CMAKE_C_FLAGS " ${COMPILATION_WARNINGS} ${SECURITY_FLAGS} ${PERFORMANCE_FLAGS} -D_GNU_SOURCE -D_XOPEN_SOURCE=700 -std=gnu11")
 
 # -D_XOPEN_SOURCE=700
 # -fpic is for shared libraries
 
+set(LINKER_LIBRARIES "-lbsd -pthread -lm -lrt")
 # For libbsd, install libbsd-dev or use $(pkg-config --libs libbsd)
 
 set(SOURCE_FILES
@@ -36,3 +32,4 @@ set(SOURCE_FILES
 include_directories(include/ src/)
 
 add_executable(secure_socket ${SOURCE_FILES} ${HEADERS})
+target_link_libraries(secure_socket ${LINKER_LIBRARIES})
