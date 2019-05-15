@@ -46,8 +46,8 @@ int main(int argc, char** argv) {
     }
 
     /* Launch Logging Thread */
-    if( !log_start_thread(&log, params->verbosity, params->mq_name, params->log_file) ){
-        LOG_STDOUT(LOG_FATAL, "The server encountered an error. Shutting down.", errno, 2, &log);
+    if( !log_start(&log, params->verbosity, params->mq_name, params->log_file) ){
+        LOG_STDOUT(LOG_FATAL, "Couldn't not start logging. Shutting down.", errno, 1, &log);
         free(params);
         return 1;
     }

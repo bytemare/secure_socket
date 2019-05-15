@@ -42,6 +42,18 @@ bool log_start_thread(logging *log, uint8_t verbosity, char *mq_name, char *log_
 
 
 /**
+ * Starts the logging thread.
+ * @param log
+ */
+bool log_start(logging *log, uint8_t verbosity, char *mq_name, char *log_file){
+    return log_start_thread(log, verbosity, mq_name, log_file);
+}
+
+
+
+
+
+/**
  * Opens the specified file for writing and tries to obtain an exclusive write lock.
  * @param fd
  * @return 0, 1 on failure with stdout logging

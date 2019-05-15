@@ -178,6 +178,8 @@ void set_thread_attributes(pthread_attr_t *attr, logging *log);
 
 bool log_start_thread(logging *log, uint8_t verbosity, char *mq_name, char *log_file);
 
+bool log_start(logging *log, uint8_t verbosity, char *mq_name, char *log_file);
+
 void terminate_logging_thread_blocking(logging *log);
 
 void log_free_logging(logging *log);
