@@ -59,7 +59,7 @@ cd ..
 # Build Debug
 mkdir -p $DEBUG
 cd $DEBUG
-cmake -DCMAKE_C_COMPILER=/usr/bin/gcc -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
+cmake -DCMAKE_C_COMPILER=/usr/bin/gcc -DCMAKE_BUILD_TYPE=RelWithDebInfo VERBOSE=1 ..
 make
 
 
