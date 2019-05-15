@@ -5,6 +5,8 @@
        src="https://scan.coverity.com/projects/18404/badge.svg"/>
 </a>
 
+[![Build Status](https://travis-ci.com/bytemare/secure_socket.svg?branch=master)](https://travis-ci.com/bytemare/secure_socket)
+
 ## DRAFT
 
 secure_socket aims to provide an easy way to set up and manage a socket in C with advanced security properties.
