@@ -144,7 +144,7 @@ typedef struct _logging{
 /*#define LOG_TIME_LENGTH                 8*/
 #define LOG_MAX_TIMESTAMP_LENGTH        22
 #define LOG_MAX_ERRNO_LENGTH            100
-#define LOG_MAX_ERROR_MESSAGE_LENGTH    150
+#define LOG_MAX_ERROR_MESSAGE_LENGTH    150 + NAME_MAX
 
 #define LOG_DEBUG_MAX_PID_LENGTH                5
 #define LOG_DEBUG_MAX_THREAD_ID_LENGTH          20 /* obtained with (unsigned int) floor (log10 (UINTMAX_MAX)) + 1 */
