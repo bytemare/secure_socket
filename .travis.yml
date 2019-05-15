@@ -8,4 +8,5 @@ before_install:
   - sudo apt-get -y install libbsd-dev
 
 script:
-  - ./build.sh && ./run.sh
+  - ./build.sh
+  - ./run.sh
