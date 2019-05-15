@@ -6,7 +6,7 @@ project(secure_socket)
 
 set(COMPILATION_WARNINGS "-W -Wall -Wextra -Werror -ansi -pedantic -Wuninitialized -Wcast-align -Wmissing-braces -Wunused-result -Wpointer-arith -Wchkp -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -Wstack-protector -Wformat -Wformat-security -Wstrict-aliasing -Wunused-parameter")
 
-set(LINKER_LIBRARIES "-lbsd -lrt -pthread -lm")
+set(LINKER_LIBRARIES "-lbsd -pthread -lm -lrt")
 
 set(SECURITY_SANITISER_FLAGS "-fsanitize=address -fsanitize=leak -fsanitize=undefined")
 
@@ -19,7 +19,7 @@ set(SECURITY_FLAGS "${SECURITY_SANITISER_FLAGS} -fstack-protector-strong -pie -f
 set(PERFORMANCE_FLAGS "-finline-functions -O2 ")
 
 
-set(CMAKE_C_FLAGS " ${COMPILATION_WARNINGS} ${LINKER_LIBRARIES} ${SECURITY_FLAGS} ${PERFORMANCE_FLAGS} -D_GNU_SOURCE -std=c11")
+set(CMAKE_C_FLAGS " ${COMPILATION_WARNINGS} ${SECURITY_FLAGS} ${PERFORMANCE_FLAGS} -D_GNU_SOURCE -std=c11 ${LINKER_LIBRARIES}")
 
 # -D_XOPEN_SOURCE=700
 # -fpic is for shared libraries
