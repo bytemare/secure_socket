@@ -1,5 +1,10 @@
 # secure_socket
 
+<a href="https://scan.coverity.com/projects/bytemare-secure_socket">
+  <img alt="Coverity Scan Build Status"
+       src="https://scan.coverity.com/projects/18404/badge.svg"/>
+</a>
+
 ### DRAFT
 
 secure_socket aims to provide an easy way to set up and manage a socket in C with advanced security properties.
