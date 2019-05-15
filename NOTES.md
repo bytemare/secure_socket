@@ -1,6 +1,6 @@
 # Recent operated changes
 
-### Done :
+## Done
 
 - [x] General clean-up.
 - [x] [Sockets] Adaptive Sockets : depending on the need (unix or internet based communication) uses the **_correct_** type of socket (using an union on structs) and initialises it.
@@ -25,12 +25,10 @@
 - [x] [Socket] If default values are used, add a random value at end of filenames
 - [x] [Logging] Added mode to completely disable logging after the command line parsing
 - [x] [Compilation] Further hardened binary through compilation rules
- 
 
 ### Priorities
 
-0) change ctx->socket to non-pointer ?
-
+1) change ctx->socket to non-pointer ?
 1) Create socket under a dedicated, secured directory
 2) Handle SIGPIPE signal : https://blog.erratasec.com/2018/10/tcpip-sockets-and-sigpipe.html#.XMCGx-gzaUk
 4) Fallback mechanism if libbsd is not available
@@ -38,31 +36,24 @@
 6) add examples and copy/pastable code
 
 #### Logging
-0) When not cleanly shut down, the logging thread/process continues and holds the lock on the log file,
+
+1) When not cleanly shut down, the logging thread/process continues and holds the lock on the log file,
 furthers attemps to open are blocked. lslocks CL helps identifying.
-
 1) Ensure logs are syslog compliant, and add other logging formats.
-
 2) add mode to log everything to stdout
 4) separate logging macros from code for thread with mq, to enable genericity
 5) Add a parameter for log file size, to keep log files at a maximum size, and then log into different file with timestamp
 6) Compress old log files
 7) ability to send logs to a socket or network address
 
-
-### Doing :
-
+### Doing
 
 - [>] ucreds insertion in php socket : bypass php api macros and directly address underlying C socket
 
-
-
-### Todo :
-
+### Todo
 
 - benchmark performance differences between -fstack-protector-strong and -fstack-protector-all
 - check logging for snprintf return value
-- 
 - Graceful stop via signal handling from outside : take care of threads etc.
 - Explore necessity of always_inline'ing functions
 - check which option of fsanitize is better suited : adress, thread or leak ?
@@ -70,14 +61,12 @@ furthers attemps to open are blocked. lslocks CL helps identifying.
 - check if these are useful : -fsanitize-coverage=trace-pc-guard
 - Lookup what -D_POSIX_C_SOURCE=200112L is
 
-###### Later :
+### Later
 
 - get log writing non-blocking
 - Check why aio writes do not work
 - Signal handling. Protect against all signal and keep unavoidable for shutdown.
 - Check/analyse for eventual memory leaks (valgrind)
-
-
 
 ### Notes
 
