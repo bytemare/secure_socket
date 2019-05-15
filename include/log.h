@@ -28,6 +28,10 @@
 #include <bsd/string.h>
 
 
+#ifndef NAME_MAX
+    #define NAME_MAX 256
+#endif
+
 
 
 /**
