@@ -1,11 +1,6 @@
 language: c
 compiler: gcc
 os: linux
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - gcc-7.0
+
 script:
   - ./build.sh && ./run.sh
