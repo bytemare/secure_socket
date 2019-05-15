@@ -2,5 +2,13 @@ language: c
 compiler: gcc
 os: linux
 
+before_install:
+  - sudo apt-get remove --purge gcc-6 g++-6 gcc-6-multilib
+  - sudo apt autoremove
+  - sudo add-apt-repository ppa:jonathonf/gcc-6.3
+  - sudo apt-get update
+  - VER=6.3.0-21ubuntu1~16.04.york0
+  - sudo apt-get install gcc-6-base=$VER gcc-6=$VER g++-6=$VER cpp-6=$VER libgcc-6-dev=$VER libstdc++-6-dev=$VER libasan3=$VER
+
 script:
   - ./build.sh && ./run.sh
