@@ -32,7 +32,18 @@
     #define NAME_MAX 256
 #endif
 
+#ifndef PATH_MAX
+    #define PATH_MAX 256
+#endif
 
+#ifndef S_IRUSR
+    #define S_IRUSR 0400
+#endif
+
+
+#ifndef S_IWUSR
+    #define S_IWUSR 0200
+#endif
 
 /**
  * Logging verbosity levels
