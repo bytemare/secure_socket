@@ -50,8 +50,9 @@ chmod 700 $CLEANER
 # Build Release
 mkdir -p $RELEASE
 cd $RELEASE
-# cmake -DCMAKE_BUILD_TYPE=$RELEASE ..
-# make
+cmake -DCMAKE_BUILD_TYPE=$RELEASE ..
+make
+s="./$RELEASE/$LINK "
 
 
 cd ..
@@ -59,8 +60,9 @@ cd ..
 # Build Debug
 mkdir -p $DEBUG
 cd $DEBUG
-cmake -DCMAKE_C_COMPILER=/usr/bin/gcc -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
-make
+#cmake -DCMAKE_C_COMPILER=/usr/bin/gcc -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
+#make
+#s="./$DEBUG/$LINK "
 
 
 cd ..
