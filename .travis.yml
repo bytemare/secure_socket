@@ -9,4 +9,3 @@ before_install:
 
 script:
   - ./build.sh
-  - ./run.sh
