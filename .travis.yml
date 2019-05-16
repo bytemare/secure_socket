@@ -19,11 +19,11 @@ matrix:
             - shellcheck
             - devscripts
       before_install:
-        - git clone git@github.com:slimm609/checksec.sh.git
+        - wget https://github.com/slimm609/checksec.sh/archive/master.zip && unzip -q master.zip
       script:
         - shellcheck -x build.sh
         - ./build.sh
-        - ./checksec.sh/checksec -f Debug/secure_socket
+        - ./checksec.sh-master/checksec -f Debug/secure_socket && ./checksec.sh-master/checksec -ff Debug/secure_socket
         - hardening-check -c -v Debug/secure_socket
   
 
