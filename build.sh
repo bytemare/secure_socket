@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 
 set -e
+#set -ex
 
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2017-2018 Bytemare <d@bytema.re>. All Rights Reserved.
@@ -44,27 +45,30 @@ echo "$SHELL_H" > "$CLEANER"
 echo "$s" >> "$CLEANER"
 chmod 700 "$CLEANER"
 
+# Build project by calling cmake
+# arg1 : name of the directory to build the project in
+# arg2 : arguments to give to cmake
+build(){
+    build_directory="$1"
+    options="$2"
+    curr_dir=$(pwd)
+
+    mkdir -p "$build_directory"
+    # Use a subshell in case cd doesn't work, and don't mess with the directories
+    (
+        cd "$build_directory" || ( printf "[ERROR] Could not move into %s\n" "$build_directory" && exit 1 )
+        cmake "$options" "$curr_dir"
+        make
+        s="./$build_directory/$LINK "
+        cd "$curr_dir"
+    )
+}
 
 # Build Release
-mkdir -p "$RELEASE"
-cd "$RELEASE"
-cmake -DCMAKE_BUILD_TYPE="$RELEASE" ..
-make
-s="./$RELEASE/$LINK "
-
-
-cd ..
+#build "$RELEASE" "-DCMAKE_BUILD_TYPE=$RELEASE"
 
 # Build Debug
-mkdir -p "$DEBUG"
-cd "$DEBUG"
-#cmake -DCMAKE_C_COMPILER=/usr/bin/gcc -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
-#make
-#s="./$DEBUG/$LINK "
-
-
-cd ..
-
+build "$DEBUG" "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
 
 #ln -s ./$BUILD/$EXEC $LINK
 #chmod -R 500 *
