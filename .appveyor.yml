@@ -1,2 +1,2 @@
 build_script:
-  - ./build.sh
+  - build.sh
