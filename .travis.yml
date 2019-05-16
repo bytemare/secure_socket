@@ -18,7 +18,7 @@ matrix:
           packages:
             - shellcheck
       script:
-        - shellcheck build.sh
+        - shellcheck -x build.sh
 
 script:
   - ./build.sh
