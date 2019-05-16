@@ -19,8 +19,8 @@ check_file()
 
 echo -n "Checking for build files ..."
 
-PARAMETERS="./parameters.conf" && check_file ${PARAMETERS}
-CMAKELISTS="./CMakeLists.txt" && check_file ${CMAKELISTS}
+PARAMETERS="parameters.conf" && check_file ${PARAMETERS}
+CMAKELISTS="CMakeLists.txt" && check_file ${CMAKELISTS}
 
 echo " done."
 
