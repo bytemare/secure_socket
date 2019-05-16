@@ -14,7 +14,7 @@ set(SECURITY_FLAGS "${SECURITY_SANITISER_FLAGS} -fstack-protector-strong -pie -f
 # -O3 may make the code to big, thus not fitting into the cache, therefore loosing performance
 set(PERFORMANCE_FLAGS "-finline-functions -O2 ")
 
-set(CMAKE_C_FLAGS " ${COMPILATION_WARNINGS} ${SECURITY_FLAGS} ${PERFORMANCE_FLAGS} -D_GNU_SOURCE -D_XOPEN_SOURCE=700 -std=gnu11")
+set(CMAKE_C_FLAGS "${COMPILATION_WARNINGS} ${SECURITY_FLAGS} ${PERFORMANCE_FLAGS} -D_GNU_SOURCE -D_XOPEN_SOURCE=700 -std=gnu11")
 
 # -D_XOPEN_SOURCE=700
 # -fpic is for shared libraries

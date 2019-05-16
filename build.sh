@@ -68,7 +68,7 @@ build(){
 #build "$RELEASE" "-DCMAKE_BUILD_TYPE=$RELEASE"
 
 # Build Debug
-build "$DEBUG" "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
+build "$DEBUG" "-DCMAKE_C_COMPILER=/usr/bin/gcc"
 
 #ln -s ./$BUILD/$EXEC $LINK
 #chmod -R 500 *

@@ -21,7 +21,9 @@ matrix:
         - ./build.sh
         - ./checksec.sh-master/checksec -f Debug/secure_socket && ./checksec.sh-master/checksec -ff Debug/secure_socket
         - hardening-check -c -v Debug/secure_socket
-  
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
 
 notifications:
   email: false
