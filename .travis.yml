@@ -17,11 +17,15 @@ matrix:
         apt:
           packages:
             - shellcheck
+            - devscripts
+      before_install:
+        - git clone git@github.com:slimm609/checksec.sh.git
       script:
         - shellcheck -x build.sh
-
-script:
-  - ./build.sh
+        - ./build.sh
+        - ./checksec.sh/checksec -f Debug/secure_socket
+        - hardening-check -c -v Debug/secure_socket
+  
 
 notifications:
   email: false
