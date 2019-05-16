@@ -3,11 +3,6 @@ compiler: gcc
 os: linux
 dist: xenial
 
-addons:
-  apt:
-    packages: &default_packages
-      - libbsd-dev
-
 matrix:
   #fast_finish: True
   include:
@@ -15,7 +10,8 @@ matrix:
       name: Code checking
       addons:
         apt:
-          packages:
+          packages: &default_packages
+            - libbsd-dev
             - shellcheck
             - devscripts
       before_install:
