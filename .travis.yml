@@ -3,9 +3,25 @@ compiler: gcc
 os: linux
 dist: xenial
 
+addons:
+  apt:
+    packages: &default_packages
+      - libbsd-dev
 
-before_install:
-  - sudo apt-get -y install libbsd-dev
+matrix:
+  #fast_finish: True
+  include:
+    - stage: Tests
+      name: Code checking
+      addons:
+        apt:
+          packages:
+            - shellcheck
+      script:
+        - shellcheck build.sh
 
 script:
   - ./build.sh
+
+notifications:
+  email: false
