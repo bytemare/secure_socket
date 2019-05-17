@@ -344,7 +344,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
             if(is_valid_integer(q)){
                 long int verbosity = strtol(q, NULL, 10);
                 if (verbosity >= LOG_OFF && verbosity <= LOG_UNKNWON) {
-                    options->verbosity = (uint8_t) verbosity;
+                    options->verbosity = (int8_t) verbosity;
                     continue;
                 }
             }
