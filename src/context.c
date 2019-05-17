@@ -309,7 +309,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
             if(is_valid_integer(q)){
                 long int apid= strtol(q, NULL, 10);
                 if (apid >= 1 && apid <= (4194304 - 1) ){ /* Maximum value for a pid on 64-bit systems, 2^22*/
-                    options->authorised_peer_pid = (unsigned int) strtol(q, NULL, 10);
+                    options->authorised_peer_pid = (pid_t) strtol(q, NULL, 10);
                     continue;
                 }
             }
