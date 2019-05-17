@@ -136,7 +136,7 @@ typedef struct _logging{
 #define LOG_DEBUG_SUFFIX_FORMAT " - in file %s, function %s at line %d." /* Length of 33 characters without inserted strings */
 
 #define LOG_MQ_MAX_MESSAGE_SIZE         8192
-#define LOG_MQ_SOURCE_MAX_MESSAGE_SIZE "/proc/sys/fs/mqueue/msgsize_max"
+#define LOG_MQ_SOURCE_MAX_MESSAGE_SIZE_FILE "/proc/sys/fs/mqueue/msgsize_max"
 
 
 #define LOG_MAX_LVL_LENGTH              8

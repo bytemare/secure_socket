@@ -189,7 +189,7 @@ int get_mq_max_message_size(logging *log){
     FILE *fp;
     int max_size = 0, ret;
     char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
-    char *mq_max_message_size_source = LOG_MQ_SOURCE_MAX_MESSAGE_SIZE;
+    const char *mq_max_message_size_source = LOG_MQ_SOURCE_MAX_MESSAGE_SIZE_FILE;
 
     LOG_INIT;
 
