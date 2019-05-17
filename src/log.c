@@ -50,9 +50,6 @@ bool log_start(logging *log, int8_t verbosity, char *mq_name, char *log_file){
 }
 
 
-
-
-
 /**
  * Opens the specified file for writing and tries to obtain an exclusive write lock.
  * @param fd
@@ -146,7 +143,7 @@ uint8_t log_util_open_aio(logging *log){
  * @param filename
  * @return 0 on success, 1 on error
  */
-__always_inline uint8_t log_initialise_logging_s(logging *log, uint8_t verbosity, char *mq_name, char *filename) {
+__always_inline uint8_t log_initialise_logging_s(logging *log, int8_t verbosity, char *mq_name, char *filename) {
 
     LOG_INIT;
 
