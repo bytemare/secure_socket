@@ -19,8 +19,8 @@ set(WARNING_FLAGS "-W -Wall -Wextra -Werror -ansi -pedantic -Wwrite-strings -Wco
 set(DEBUG_FLAGS "-g")
 
 # Coverage Flags
-#set(COVERAGE_FLAGS "-fprofile-arcs -ftest-coverage")
-set(COVERAGE_FLAGS "--coverage")
+set(COVERAGE_FLAGS "-fprofile-arcs -ftest-coverage")
+#set(COVERAGE_FLAGS "-coverage")
 
 # C version flags
 set(VERSION_FLAGS "-D_GNU_SOURCE -D_XOPEN_SOURCE=700 -std=gnu11")
@@ -67,10 +67,11 @@ set(PERFORMANCE_FLAGS "-finline-functions -O2 ")
 ###
 
 
-message([STATUS] " Build type " ${CMAKE_BUILD_TYPE})
+message([STATUS] " Build type: " ${CMAKE_BUILD_TYPE})
 
 if ( CMAKE_BUILD_TYPE STREQUAL "Coverage" )
-        set(CMAKE_C_FLAGS "${DEBUG_FLAGS} ${WARNING_FLAGS} ${VERSION_FLAGS} ${COVERAGE_FLAGS}")
+        #set(CMAKE_C_FLAGS "${DEBUG_FLAGS} ${WARNING_FLAGS} ${VERSION_FLAGS} ${COVERAGE_FLAGS}")
+        set(CMAKE_C_FLAGS "-g -O0 -Wall -W -fprofile-arcs -ftest-coverage")
 endif ( CMAKE_BUILD_TYPE STREQUAL "Coverage" )
 
 if ( CMAKE_BUILD_TYPE STREQUAL "Release" )
@@ -105,7 +106,10 @@ include_directories(include/ src/)
 ### Build
 ###
 
+SET(CMAKE_EXE_LINKER_FLAGS="-fprofile-arcs -ftest-coverage")
+
 add_executable(secure_socket ${SOURCE_FILES} ${HEADERS})
-target_link_libraries(secure_socket ${LINKER_LIBRARIES})
+#target_link_libraries(secure_socket ${LINKER_LIBRARIES})
+target_link_libraries(secure_socket gcov ${LINKER_LIBRARIES})
 
 

@@ -33,7 +33,7 @@ printf " done.\n"
 
 
 # Targets to be created and deleted
-CREAT="$RELEASE $DEBUG $LINK $RUNNER $SOCKET_PATH $CLEANER"
+CREAT="$RELEASE $DEBUG $COVERAGE $LINK $RUNNER $SOCKET_PATH $CLEANER"
 
 # Clean up previous work
 s="rm --force -rf $CREAT"
@@ -64,11 +64,18 @@ build(){
     )
 }
 
+BUILD_TYPE="$DEBUG"
+
 # Build Release
 #build "$RELEASE" "-DCMAKE_BUILD_TYPE=$RELEASE"
 
 # Build Debug
-build "$DEBUG" "-DCMAKE_C_COMPILER=/usr/bin/gcc"
+# -D CMAKE_C_COMPILER=/usr/bin/gcc
+#build "$DEBUG" "-DCMAKE_BUILD_TYPE=$DEBUG"
+
+# Build Codecov
+build "$BUILD_TYPE" "-DCMAKE_BUILD_TYPE=$BUILD_TYPE"
+
 
 #ln -s ./$BUILD/$EXEC $LINK
 #chmod -R 500 *
@@ -77,7 +84,7 @@ build "$DEBUG" "-DCMAKE_C_COMPILER=/usr/bin/gcc"
 
 
 # Build launching script
-s="./$DEBUG/$LINK"
+s="./$BUILD_TYPE/$LINK"
 s=$s" socket_path=$SOCKET_PATH"
 s=$s" mq_name=$MQ_NAME"
 s=$s" log_file=$LOG_FILE"
