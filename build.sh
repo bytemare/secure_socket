@@ -66,14 +66,8 @@ build(){
 
 BUILD_TYPE="$DEBUG"
 
-# Build Release
-#build "$RELEASE" "-DCMAKE_BUILD_TYPE=$RELEASE"
-
-# Build Debug
+# Build
 # -D CMAKE_C_COMPILER=/usr/bin/gcc
-#build "$DEBUG" "-DCMAKE_BUILD_TYPE=$DEBUG"
-
-# Build Codecov
 build "$BUILD_TYPE" "-DCMAKE_BUILD_TYPE=$BUILD_TYPE"
 
 
