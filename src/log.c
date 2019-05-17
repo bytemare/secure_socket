@@ -19,7 +19,7 @@
  * Starts the logging thread.
  * @param log
  */
-bool log_start_thread(logging *log, uint8_t verbosity, char *mq_name, char *log_file){
+bool log_start_thread(logging *log, int8_t verbosity, char *mq_name, char *log_file){
 
     if( log->verbosity == LOG_OFF ){
         return true;
@@ -45,7 +45,7 @@ bool log_start_thread(logging *log, uint8_t verbosity, char *mq_name, char *log_
  * Starts the logging thread.
  * @param log
  */
-bool log_start(logging *log, uint8_t verbosity, char *mq_name, char *log_file){
+bool log_start(logging *log, int8_t verbosity, char *mq_name, char *log_file){
     return log_start_thread(log, verbosity, mq_name, log_file);
 }
 

@@ -17,7 +17,7 @@
 typedef struct _ipc_options{
 
     /* Logging related parameters */
-    uint8_t verbosity;
+    int8_t verbosity;
     char mq_name[PATH_MAX];
     char log_file[PATH_MAX];
 

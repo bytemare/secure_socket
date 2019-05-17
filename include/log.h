@@ -91,7 +91,7 @@
  * Structure to hold all necessary information regarding logging
  */
 typedef struct _logging{
-    uint8_t  verbosity;
+    int8_t  verbosity;
     mqd_t mq;
     char mq_name[NAME_MAX];
     int fd;
@@ -187,13 +187,13 @@ typedef struct _logging_buffs{
  * Function declaration
  */
 
-uint8_t log_initialise_logging_s(logging *log, uint8_t verbosity, char *mq_name, char *filename);
+uint8_t log_initialise_logging_s(logging *log, int8_t verbosity, char *mq_name, char *filename);
 
 void set_thread_attributes(pthread_attr_t *attr, logging *log);
 
-bool log_start_thread(logging *log, uint8_t verbosity, char *mq_name, char *log_file);
+bool log_start_thread(logging *log, int8_t verbosity, char *mq_name, char *log_file);
 
-bool log_start(logging *log, uint8_t verbosity, char *mq_name, char *log_file);
+bool log_start(logging *log, int8_t verbosity, char *mq_name, char *log_file);
 
 void terminate_logging_thread_blocking(logging *log);
 
@@ -391,7 +391,7 @@ __always_inline void log_assemble(logging_buffs *log_buffs, const int message_le
  * @param verbosity
  */
 __always_inline void log_build(logging_buffs *log_buffs, const int message_level, const char *message,
-                               const int error_number, const char *file, const char *function, const int line, const uint8_t verbosity){
+                               const int error_number, const char *file, const char *function, const int line, const int8_t verbosity){
     log_reset(log_buffs);
     log_get_date_time(log_buffs);
     log_debug_get_process_thread_id(log_buffs->log_debug_prefix_buffer, message_level, verbosity);
@@ -438,7 +438,7 @@ __always_inline void log_to_stdout(logging_buffs *log_buffs, const int message_l
     }
 
     if ( verbosity != -1 ){
-        log_build(log_buffs, message_level, message, error_number, file, function, line, (uint8_t) verbosity);
+        log_build(log_buffs, message_level, message, error_number, file, function, line, verbosity);
         printf("%s", log_buffs->log_entry_buffer);
     }
 }
