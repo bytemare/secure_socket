@@ -318,7 +318,7 @@ __always_inline void log_get_err_message(logging_buffs *log_buffs, const int err
  * @param message_level
  * @return
  */
-__always_inline char* interpret_log_level(const int message_level){
+__always_inline const char* interpret_log_level(const int message_level){
     switch (message_level){
         case LOG_FATAL:
             return LOG_FATAL_CHAR;
@@ -358,7 +358,7 @@ __always_inline char* interpret_log_level(const int message_level){
  * @param verbosity
  */
 __always_inline void log_assemble(logging_buffs *log_buffs, const int message_level, const char *message, int verbosity){
-    char *message_level_ch = interpret_log_level(message_level);
+    const char *message_level_ch = interpret_log_level(message_level);
 
     if(verbosity >= LOG_FATAL && verbosity < LOG_DEBUG) {
         snprintf(log_buffs->log_entry_buffer, LOG_MAX_LINE_LENGTH - 1, LOG_LINE_FORMAT,
