@@ -284,7 +284,7 @@ bool ipc_server_listen(server_context *ctx, const unsigned int nb_cnx){
     LOG_INIT;
 
     /* Listen for connections */
-    if (listen(ctx->socket->socket_fd, nb_cnx) != 0) {
+    if (listen(ctx->socket->socket_fd, (int)nb_cnx) != 0) {
         LOG(LOG_FATAL, "error on listening : ", errno, 1, ctx->log);
         secure_socket_free_from_context(ctx);
         return false;
