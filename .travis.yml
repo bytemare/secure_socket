@@ -12,7 +12,6 @@ matrix:
         apt:
           packages: &default_packages
             - libbsd-dev
-            - shellcheck
             - devscripts
             - hardening-includes
       before_install:
