@@ -54,7 +54,7 @@ fi
 
 
 # Clean up previous work
-if [ "$#" -ne 0 && "$2" = "clean" ]; then
+if [ "$#" -ne 0 ] && [ "$2" = "clean" ]; then
     s="rm --force -rf $CREAT"
     $s
 fi
