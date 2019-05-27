@@ -22,9 +22,10 @@ matrix:
         - wget https://github.com/slimm609/checksec.sh/archive/master.zip && unzip -q master.zip
       script:
         - shellcheck -x build.sh
-        - ./build.sh
-        - ./checksec.sh-master/checksec -f Debug/secure_socket && ./checksec.sh-master/checksec -ff Debug/secure_socket
-        - hardening-check -c -v Debug/secure_socket
+        - ./build.sh Coverage
+        - ./checksec.sh-master/checksec -f Coverage/secure_socket && ./checksec.sh-master/checksec -ff Coverage/secure_socket
+        - hardening-check -c -v Coverage/secure_socket
+        - sonar-scanner
 
 
 addons:
