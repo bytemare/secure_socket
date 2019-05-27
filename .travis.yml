@@ -32,8 +32,7 @@ matrix:
       script:
         - shellcheck -x build.sh
         - ./build.sh Coverage
-        - cd Coverage
-        - build-wrapper-linux-x86-64 --out-dir bw-output make clean all
+        - cd Coverage && build-wrapper-linux-x86-64 --out-dir bw-output make clean all && cd ..
         - sonar-scanner
 
 
