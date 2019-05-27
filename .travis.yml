@@ -27,10 +27,6 @@ matrix:
         - hardening-check -c -v Coverage/secure_socket
         - sonar-scanner
 
-
-
-addons:
-
 script:
   # other script steps might be done before running the actual analysis
   - sonar-scanner
