@@ -36,9 +36,10 @@ printf " done.\n"
 CREAT="$RELEASE $DEBUG $COVERAGE $LINK $RUNNER $SOCKET_PATH $CLEANER"
 
 # Clean up previous work
-s="rm --force -rf $CREAT"
-$s
-
+if [ "$1" = "clean" ]; then
+    s="rm --force -rf $CREAT"
+    $s
+fi
 
 # Build cleaner script
 echo "$SHELL_H" > "$CLEANER"
@@ -64,7 +65,7 @@ build(){
     )
 }
 
-BUILD_TYPE="$DEBUG"
+BUILD_TYPE="$COVERAGE"
 
 # Build
 # -D CMAKE_C_COMPILER=/usr/bin/gcc
