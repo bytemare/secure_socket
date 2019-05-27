@@ -44,7 +44,7 @@ typedef struct _secure_socket{
     int socket_fd; /* The sockets file descriptor */
 
     //struct sockaddr in_address; /* A internet address, for client e.g. */
-    int optval; /* the optval argument for bind function */
+    int optval; /* the optval pointer for bind function */
 
     /* Data relative to domain and, therefore, sockaddr type */
     union address{

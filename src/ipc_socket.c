@@ -46,6 +46,9 @@ secure_socket *secure_socket_allocate(server_context *ctx) {
         return NULL;
     }
 
+    sock->socket_fd = -1;
+    sock->optval = (int) NULL;
+
     //sock->addrlen = sizeof (sock->in_address); /* TODO what's this ? */
 
     return sock;
@@ -331,12 +334,12 @@ bool ipc_bind_set_and_listen(in_addr_t address, server_context *ctx) {
 secure_socket* ipc_accept_connection(server_context *ctx){
 
     socklen_t len;
-    secure_socket *client;
+    secure_socket *client_socket;
 
     LOG_INIT
 
-    client = secure_socket_allocate(ctx);
-    if (client == NULL) {
+    client_socket = secure_socket_allocate(ctx);
+    if (client_socket == NULL) {
         LOG(LOG_ALERT, "accept_connection() could not allocate socket : ", errno, 2, ctx->log)
         return NULL;
     }
@@ -347,25 +350,25 @@ secure_socket* ipc_accept_connection(server_context *ctx){
     switch(ctx->options->domain){
 
         case AF_UNIX:{
-            client->address.un.sun_family = AF_UNIX;
-            client->bind_address = (struct sockaddr*)&client->address.un;
+            client_socket->address.un.sun_family = AF_UNIX;
+            client_socket->bind_address = (struct sockaddr*)&client_socket->address.un;
             break;
         }
 
         default:
             LOG(LOG_ALERT, "Other domains than AF_UNIX are not handled yet !", errno, 0, ctx->log)
-            client = secure_socket_free(client, ctx->log);
-            secure_socket_free(client, ctx->log);
+            client_socket = secure_socket_free(client_socket, ctx->log);
+            secure_socket_free(client_socket, ctx->log);
             return NULL;
     }
 
-    len = sizeof(client->bind_address);
+    len = sizeof(client_socket->bind_address);
 
-    /*client->socket_fd = accept(server->socket_fd, (struct sockaddr *)&client->address, &client->addrlen);*/
-    client->socket_fd = accept(ctx->socket->socket_fd, client->bind_address, &len);
-    if (client->socket_fd < 0) {
+    /*client_socket->socket_fd = accept(server->socket_fd, (struct sockaddr *)&client_socket->address, &client_socket->addrlen);*/
+    client_socket->socket_fd = accept(ctx->socket->socket_fd, client_socket->bind_address, &len);
+    if (client_socket->socket_fd < 0) {
         LOG(LOG_ERROR, "accept() connection failed : ", errno, 0, ctx->log)
-        secure_socket_free(client, ctx->log);
+        secure_socket_free(client_socket, ctx->log);
         return NULL;
     }
 
@@ -373,13 +376,13 @@ secure_socket* ipc_accept_connection(server_context *ctx){
 
     if( !ipc_validate_peer(ctx)){
         LOG(LOG_ALERT, "Peer has not been authenticated. Dropping connection.", errno, 0, ctx->log)
-        secure_socket_free(client, ctx->log);
+        secure_socket_free(client_socket, ctx->log);
         return NULL;
     }
 
     LOG(LOG_INFO, "Peer successfully authenticated. Connection accepted.", errno, 0, ctx->log)
 
-    return client;
+    return client_socket;
 }
 
 /**
