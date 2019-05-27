@@ -35,6 +35,7 @@ printf " done.\n"
 # Targets to be created and deleted
 BUILDS="$RELEASE $DEBUG $COVERAGE"
 CREAT="$BUILDS $LINK $RUNNER $SOCKET_PATH $CLEANER"
+CMAKE_DIRS="cmake-build-debug"
 
 
 # Check if requested build exists. If not, default to Debug
@@ -46,16 +47,16 @@ if [ "$#" -ne 0 ]; then
         exit 1
     else
         BUILD_TYPE="$1"
-        printf '[INFO] Building %s\n' "$BUILD_TYPE"
+        printf -- '-- [INFO] Building %s\n' "$BUILD_TYPE"
     fi
 else
-    printf '[INFO] Building %s (default build)\n' "$BUILD_TYPE"
+    printf -- '-- [INFO] Building %s (default build)\n' "$BUILD_TYPE"
 fi
 
 
 # Clean up previous work
+s="rm --force -rf $CREAT $CMAKE_DIRS"
 if [ "$#" -ne 0 ] && [ "$2" = "clean" ]; then
-    s="rm --force -rf $CREAT"
     $s
 fi
 

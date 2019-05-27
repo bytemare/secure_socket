@@ -3,17 +3,19 @@ run.sh
 clean.sh
 
 # cmake stuff #
-cmake-build-debug/*
+cmake-build-debug
+cmake-build-wsl_profile
 
 # Build directories
 bin
 Debug
 Release
+Coverage
 
 # other
 .old
 .idea
 sonar-project.properties
 .test
-.scannerwork/*
-src/tools_file_ops.*
+.scannerwork
+.vscode
