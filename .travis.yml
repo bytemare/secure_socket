@@ -31,7 +31,7 @@ matrix:
             secure: ${SONAR_TOKEN}
       script:
         - shellcheck -x build.sh
-        - build-wrapper --out-dir bw-output "./build.sh Coverage"
+        - build-wrapper -linux-x86-64 --out-dir ../bw-output "./build.sh Coverage"
         - sonar-scanner
       after_success:
         - bash <(curl -s https://codecov.io/bash)
