@@ -123,7 +123,8 @@ ipc_options* initialise_options(){
 bool parse_options(ipc_options *options, int argc, char **argv){
 
     int i;
-    char *p, *q;
+    char *p;
+    char *q;
     char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH];
 
     LOG_INIT
