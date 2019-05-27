@@ -144,7 +144,7 @@ typedef struct _logging{
 /*#define LOG_TIME_LENGTH                 8*/
 #define LOG_MAX_TIMESTAMP_LENGTH        22
 #define LOG_MAX_ERRNO_LENGTH            100
-#define LOG_MAX_ERROR_MESSAGE_LENGTH    150 + NAME_MAX
+#define LOG_MAX_ERROR_MESSAGE_LENGTH    (150 + NAME_MAX)
 
 #define LOG_DEBUG_MAX_PID_LENGTH                5
 #define LOG_DEBUG_MAX_THREAD_ID_LENGTH          20 /* obtained with (unsigned int) floor (log10 (UINTMAX_MAX)) + 1 */
@@ -451,8 +451,8 @@ __always_inline void log_to_stdout(logging_buffs *log_buffs, const int message_l
  */
 __always_inline void log_write_to_file(logging *log, char *message){
     if (write(log->fd, message, strlen(message)) == -1){
-        LOG_INIT;
-        LOG_STDOUT(LOG_ALERT, "Call to write() to log to file failed. Cannot log.", errno, 1, log);
+        LOG_INIT
+        LOG_STDOUT(LOG_ALERT, "Call to write() to log to file failed. Cannot log.", errno, 1, log)
         if(log->verbosity >= LOG_NOTICE){
             printf("\tOriginal log message :\n");
             printf("\t%s", message);
