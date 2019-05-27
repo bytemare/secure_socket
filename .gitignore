@@ -15,7 +15,5 @@ Coverage
 # other
 .old
 .idea
-sonar-project.properties
 .test
-.scannerwork
 .vscode
