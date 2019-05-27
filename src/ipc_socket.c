@@ -175,9 +175,13 @@ bool ipc_server_bind(in_addr_t address, server_context *ctx){
         return false;
     }
 
-    /* Set SO_PASSCRED and REUSEADDR socket option */
-    if( setsockopt(ctx->socket->socket_fd, SOL_SOCKET, SO_PASSCRED || SO_REUSEADDR, &ctx->socket->optval, sizeof(ctx->socket->optval)) == -1){
-        LOG(LOG_ALERT, "set socket option messed up for some reason : ", errno, 1, ctx->log)
+    /* Set socket options */
+    if( setsockopt(ctx->socket->socket_fd, SOL_SOCKET, SO_REUSEADDR, &ctx->socket->optval, sizeof(ctx->socket->optval)) == -1){
+        LOG(LOG_ALERT, "SO_REUSEADDR socket option messed up for some reason : ", errno, 1, ctx->log)
+    }
+
+    if( setsockopt(ctx->socket->socket_fd, SOL_SOCKET, SO_PASSCRED, &ctx->socket->optval, sizeof(ctx->socket->optval)) == -1){
+        LOG(LOG_ALERT, "SO_PASSCRED socket option messed up for some reason : ", errno, 1, ctx->log)
     }
 
     /* Bind to address */
