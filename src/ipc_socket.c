@@ -67,7 +67,7 @@ void ipc_close_socket(secure_socket *sock){
 /**
  * Closes the socket file descriptor and frees the structure. This function returns à NULL pointer to be affected
  * to the pointer given in argument, to avoid heap-use-after-free bugs.
- * E.g. : sock = secure_socket_free(sock, log);
+ * Usage example : sock = secure_socket_free(sock, log)
  * @param sock
  * @param log
  * @return NULL
