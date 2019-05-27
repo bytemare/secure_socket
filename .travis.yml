@@ -6,31 +6,35 @@ dist: xenial
 matrix:
   #fast_finish: True
   include:
-    - stage: Tests
+    - stage: Hardening
+        name: Hardening Checks
+        addons:
+          apt:
+            packages: &default_packages
+              - libbsd-dev
+              - devscripts
+              - hardening-includes
+        before_install:
+          - wget https://github.com/slimm609/checksec.sh/archive/master.zip && unzip -q master.zip
+        script:
+          - ./build.sh Debug
+          - ./checksec.sh-master/checksec -f Debug/secure_socket && ./checksec.sh-master/checksec -ff Debug/secure_socket
+          - hardening-check -c -v Debug/secure_socket
+
+    - stage: Code checking
       name: Code checking
       addons:
         apt:
           packages: &default_packages
             - libbsd-dev
-            - devscripts
-            - hardening-includes
         sonarcloud:
           organization: "bytemare-github"
           token:
-            secure: ${SONAR_TOKEN_SECURE_SOCKET}
-      before_install:
-        - wget https://github.com/slimm609/checksec.sh/archive/master.zip && unzip -q master.zip
+            secure: ${SONAR_TOKEN}
       script:
         - shellcheck -x build.sh
         - ./build.sh Coverage
-        - ./checksec.sh-master/checksec -f Coverage/secure_socket && ./checksec.sh-master/checksec -ff Coverage/secure_socket
-        - hardening-check -c -v Coverage/secure_socket
         - sonar-scanner
-
-script:
-  # other script steps might be done before running the actual analysis
-  - sonar-scanner
-
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
