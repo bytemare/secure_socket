@@ -33,10 +33,28 @@ printf " done.\n"
 
 
 # Targets to be created and deleted
-CREAT="$RELEASE $DEBUG $COVERAGE $LINK $RUNNER $SOCKET_PATH $CLEANER"
+BUILDS="$RELEASE $DEBUG $COVERAGE"
+CREAT="$BUILDS $LINK $RUNNER $SOCKET_PATH $CLEANER"
+
+
+# Check if requested build exists. If not, default to Debug
+BUILD_TYPE="$DEBUG"
+if [ "$#" -ne 0 ]; then
+    if test "${BUILDS#*$1}" = "$BUILDS"; then
+        echo "Invalid argument !"
+        printf '[ERROR] Invalid build type "%s". Please specify a build type among : %s.\n\n' "$1" "$BUILDS"
+        exit 1
+    else
+        BUILD_TYPE="$1"
+        printf '[INFO] Building %s\n' "$BUILD_TYPE"
+    fi
+else
+    printf '[INFO] Building %s (default build)\n' "$BUILD_TYPE"
+fi
+
 
 # Clean up previous work
-if [ "$1" = "clean" ]; then
+if [ "$#" -ne 0 && "$2" = "clean" ]; then
     s="rm --force -rf $CREAT"
     $s
 fi
@@ -64,8 +82,6 @@ build(){
         cd "$curr_dir"
     )
 }
-
-BUILD_TYPE="$COVERAGE"
 
 # Build
 # -D CMAKE_C_COMPILER=/usr/bin/gcc
