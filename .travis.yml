@@ -20,7 +20,7 @@ matrix:
         - ./checksec.sh-master/checksec -f Debug/secure_socket && ./checksec.sh-master/checksec -ff Debug/secure_socket
         - hardening-check -c -v Debug/secure_socket
 
-    - name: Sonar checking
+    - name: Sonar Checking
       addons:
         apt:
           packages: &default_packages
@@ -31,7 +31,7 @@ matrix:
             secure: ${SONAR_TOKEN}
       script:
         - shellcheck -x build.sh
-        #- ./build.sh Coverage
+        - ./build.sh Coverage
         - cd Coverage
         - build-wrapper-linux-x86-64 --out-dir bw-output make clean all
         - sonar-scanner
