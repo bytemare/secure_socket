@@ -83,35 +83,35 @@ ipc_options* initialise_options(){
     memset(options->mq_name, '\0', mq_name_max_size);
     strlcpy(options->mq_name, IPC_MQ_NAME, (size_t) (mq_name_max_size - 1));
     secure_random_string(rand_buffer, sizeof(rand_buffer));
-    strlcat(options->mq_name, rand_buffer, sizeof(rand_buffer));
+    strlcat(options->mq_name, rand_buffer, sizeof(options->mq_name));
 
     /* Set log file */
     log_name_max_size = sizeof(options->log_file);
     memset(options->log_file, '\0', log_name_max_size);
     strncpy(options->log_file, IPC_LOG_FILE, (size_t) (log_name_max_size - 1));
     secure_random_string(rand_buffer, sizeof(rand_buffer));
-    strlcat(options->log_file, rand_buffer, sizeof(rand_buffer));
+    strlcat(options->log_file, rand_buffer, sizeof(options->log_file));
 
     /* Set socket data */
     socket_name_max_size = sizeof(options->socket_path);
     memset(options->socket_path, '\0', socket_name_max_size);
     strncpy(options->socket_path, IPC_SOCKET_PATH_BASE, (size_t) (socket_name_max_size - 1));
     secure_random_string(rand_buffer, sizeof(rand_buffer));
-    strlcat(options->log_file, rand_buffer, sizeof(rand_buffer));
+    strlcat(options->log_file, rand_buffer, sizeof(options->log_file));
 
     options->domain = IPC_DOMAIN;
     options->protocol = IPC_PROTOCOL;
     options->port = IPC_PORT;
     options->max_connections = IPC_NB_CNX;
-    strcpy(options->socket_permissions, IPC_SOCKET_PERMS);
+    strlcpy(options->socket_permissions, IPC_SOCKET_PERMS, sizeof(options->socket_permissions));
 
     /* Socket oriented security */
-    strcpy(options->authorised_peer_username, IPC_AUTHORIZED_PEER_USERNAME);
+    strlcpy(options->authorised_peer_username, IPC_AUTHORIZED_PEER_USERNAME, sizeof(options->authorised_peer_username));
     options->authorised_peer_uid = IPC_AUTHORIZED_PEER_PID;
     options->authorised_peer_gid = IPC_AUTHORIZED_PEER_UID;
     options->authorised_peer_pid = IPC_AUTHORIZED_PEER_GID;
-    strcpy(options->authorised_peer_process_name, "");
-    strcpy(options->authorised_peer_cli_args, "");
+    strlcpy(options->authorised_peer_process_name, "", sizeof(options->authorised_peer_process_name));
+    strlcpy(options->authorised_peer_cli_args, "", sizeof(options->authorised_peer_cli_args));
 
     return options;
 }
