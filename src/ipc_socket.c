@@ -265,20 +265,14 @@ secure_socket* ipc_accept_connection(server_context *ctx){
 
     LOG(LOG_INFO, "Allocated memory for communication secure_socket : ", errno, 0, ctx->log)
 
-
-    switch(ctx->options->domain){
-
-        case AF_UNIX:{
-            client_socket->address.un.sun_family = AF_UNIX;
-            client_socket->bind_address = (struct sockaddr*)&client_socket->address.un;
-            break;
-        }
-
-        default:
-            LOG(LOG_ALERT, "Other domains than AF_UNIX are not handled yet !", errno, 0, ctx->log)
-            client_socket = secure_socket_free(client_socket, ctx->log);
-            secure_socket_free(client_socket, ctx->log);
-            return NULL;
+    if (ctx->options->domain) {
+        client_socket->address.un.sun_family = AF_UNIX;
+        client_socket->bind_address = (struct sockaddr*)&client_socket->address.un;
+    } else {
+        LOG(LOG_ALERT, "Other domains than AF_UNIX are not handled yet !", errno, 0, ctx->log)
+        client_socket = secure_socket_free(client_socket, ctx->log);
+        secure_socket_free(client_socket, ctx->log);
+        return NULL;
     }
 
     len = sizeof(client_socket->bind_address);
