@@ -48,7 +48,7 @@ secure_socket *secure_socket_allocate(server_context *ctx) {
     sock->socket_fd = -1;
     sock->optval = 1;
 
-    //sock->addrlen = sizeof (sock->in_address); /* TODO what's this ? */
+    /*  TODO what's this ? : sock->addrlen = sizeof (sock->in_address) */
 
     return sock;
 }
@@ -412,8 +412,8 @@ struct ucred* ipc_get_ucred(server_context *ctx){
  * Returns the pid of the correspondent process on the other side of the socket
  * @param sock
  * @return
- */
-/*
+ *
+
 pid_t ipc_get_peer_pid(secure_socket *sock){
     struct ucred *creds = ipc_get_ucred(sock);
     pid_t pid = creds->pid;
