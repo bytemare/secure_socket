@@ -19,7 +19,7 @@ set(WARNING_FLAGS "-W -Wall -Wextra -Werror -ansi -pedantic -Wwrite-strings -Wco
 set(DEBUG_FLAGS "-g")
 
 # Coverage Flags
-set(COVERAGE_FLAGS "-fprofile-arcs -ftest-coverage")
+set(COVERAGE_FLAGS "-fprofile-arcs -ftest-coverage --coverage")
 #set(COVERAGE_FLAGS "-coverage")
 
 # C version flags
@@ -70,18 +70,19 @@ set(PERFORMANCE_FLAGS "-finline-functions -O2 ")
 message([STATUS] " Build type: " ${CMAKE_BUILD_TYPE})
 
 if ( CMAKE_BUILD_TYPE STREQUAL "Coverage" )
-        #set(CMAKE_C_FLAGS "${DEBUG_FLAGS} ${WARNING_FLAGS} ${VERSION_FLAGS} ${COVERAGE_FLAGS}")
-        set(CMAKE_C_FLAGS "-g -O0 -Wall -W -fprofile-arcs -ftest-coverage")
-endif ( CMAKE_BUILD_TYPE STREQUAL "Coverage" )
+        set(CMAKE_C_FLAGS "${DEBUG_FLAGS} ${WARNING_FLAGS} ${VERSION_FLAGS} ${COVERAGE_FLAGS}")
+        #set(CMAKE_C_FLAGS "-g -O0 -Wall -W -fprofile-arcs -ftest-coverage")
+        #target_link_libraries("-g -O0 --coverage")
+#endif ( CMAKE_BUILD_TYPE STREQUAL "Coverage" )
 
-if ( CMAKE_BUILD_TYPE STREQUAL "Release" )
+elseif ( CMAKE_BUILD_TYPE STREQUAL "Release" )
         set(CMAKE_C_FLAGS "${WARNING_FLAGS} ${SECURITY_FLAGS} ${PERFORMANCE_FLAGS} ${VERSION_FLAGS}")
-endif ( CMAKE_BUILD_TYPE STREQUAL "Release" )
+#endif ( CMAKE_BUILD_TYPE STREQUAL "Release" )
 
-if ( CMAKE_BUILD_TYPE STREQUAL "Debug" )
+elseif ( CMAKE_BUILD_TYPE STREQUAL "Debug" )
         set(CMAKE_C_FLAGS "${DEBUG_FLAGS} ${WARNING_FLAGS} ${SECURITY_FLAGS} ${PERFORMANCE_FLAGS} ${VERSION_FLAGS}")
-endif ( CMAKE_BUILD_TYPE STREQUAL "Debug" )
-
+#endif ( CMAKE_BUILD_TYPE STREQUAL "Debug" )
+endif()
 
 #####################
 #####################
@@ -109,7 +110,9 @@ include_directories(include/ src/)
 SET(CMAKE_EXE_LINKER_FLAGS="-fprofile-arcs -ftest-coverage")
 
 add_executable(secure_socket ${SOURCE_FILES} ${HEADERS})
-#target_link_libraries(secure_socket ${LINKER_LIBRARIES})
-target_link_libraries(secure_socket gcov ${LINKER_LIBRARIES})
 
-
+if ( CMAKE_BUILD_TYPE STREQUAL "Coverage" )
+        target_link_libraries(secure_socket gcov ${LINKER_LIBRARIES})
+else()
+        target_link_libraries(secure_socket ${LINKER_LIBRARIES})
+endif()
