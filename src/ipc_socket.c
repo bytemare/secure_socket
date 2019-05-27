@@ -6,7 +6,7 @@
 
 /*#define _GNU_SOURCE  declare this before anything else */
 #ifndef _GNU_SOURCE
-    #define _GNU_SOURCE
+#define _GNU_SOURCE
 #endif
 
 #include <unistd.h>
@@ -42,7 +42,6 @@ secure_socket *secure_socket_allocate(server_context *ctx) {
 
     if( sock == NULL){
         LOG(LOG_FATAL, "malloc() failed for : secure_socket. ", errno, 3, ctx->log)
-        //printf("malloc failed for ipc socket.\n");
         return NULL;
     }
 
@@ -138,83 +137,15 @@ uint8_t set_bind_address(server_context *ctx, in_addr_t address){
         return 0;
     }
 
+    if ( ctx->options->domain == AF_INET6){
+        LOG(LOG_CRITICAL, "IPv6 domain type is not supported.", errno, 0, ctx->log)
+    } else {
+        LOG(LOG_CRITICAL, "domain type is invalid or not recognised !", errno, 0, ctx->log)
+    }
 
-    LOG(LOG_CRITICAL, "domain type is invalid or not recognised !", errno, 0, ctx->log)
     ctx->socket->addrlen = 0;
 
     return 1;
-
-    /*
-
-    server->bind_address = socket_bind_inet(&server->address.in, ctx->options->domain, ctx->options->port, address, &ctx->socket->addrlen);
-
-
-
-    switch(ctx->options->domain){
-
-        case AF_UNIX:{
-
-        //server->address.sa_family = (sa_family_t) domain;
-        //strcpy(server->address.sa_data, socket_address);
-        //unlink(server->address.sa_data);
-
-        //len = (socklen_t) (strlen(socket_address) + sizeof(domain));
-        //server->bind_address = &server->address;
-
-
-            // Destroy ancient socket if interrupted abruptly
-            //unlink(ctx->options->socket_path);
-
-            // Make sure we do not overflow the path buffer
-            if( strlen(ctx->options->socket_path) >= sizeof(server->address.un.sun_path)){
-                LOG(LOG_CRITICAL, "Socket path is too long : overflow avoided !", errno, 1, ctx->log);
-                len = -1;
-                break;
-            }
-
-            server->address.un.sun_family = AF_UNIX;
-
-            //bzero((char*)server->address.un.sun_path, sizeof(server->address.un.sun_path));
-            bzero(server->address.un.sun_path, sizeof(server->address.un.sun_path));
-            strncpy(server->address.un.sun_path, ctx->options->socket_path, sizeof(server->address.un.sun_path) - 1);
-
-            len = (socklen_t) (strlen(server->address.un.sun_path) + sizeof(server->address.un.sun_family));
-
-            server->bind_address = (struct sockaddr*)&server->address.un;
-            break;
-
-
-            server->bind_address = socket_bind_unix(&server->address.un, ctx->options->socket_path, &ctx->socket->addrlen);
-
-            if ( server->bind_address == NULL ){
-                LOG(LOG_CRITICAL, "Socket path is too long : overflow avoided !", errno, 1, ctx->log);
-                ctx->socket->addrlen = 0;
-            }
-
-            break;
-        }
-
-        case AF_INET:{
-
-            server->address.in.sin_family = (sa_family_t) ctx->options->domain;
-            server->address.in.sin_port = htons(ctx->options->port);
-            server->address.in.sin_addr.s_addr = address;
-
-            len = sizeof(struct sockaddr_in);
-
-            server->bind_address = (struct sockaddr*)&server->address.in;
-
-            server->bind_address = socket_bind_inet(&server->address.in, ctx->options->domain, ctx->options->port, address, &ctx->socket->addrlen);
-            break;
-        }
-
-        default:
-            LOG(LOG_CRITICAL, "domain type is invalid or not recognised !", errno, 0, ctx->log);
-            ctx->socket->addrlen = 0;
-
-    }
-
-    */
 }
 
 
@@ -238,29 +169,13 @@ bool ipc_server_bind(in_addr_t address, server_context *ctx){
         }
     }
 
-    /*ctx->socket = secure_socket_allocate(ctx);
-    if (ctx->socket == NULL) {
-        LOG(LOG_FATAL, "server_bind() could not allocate socket : ", errno, 2, ctx->log);
-        return false;
-    }
-
-    LOG(LOG_INFO, "Allocated memory for server secure_socket : ", errno, 0, ctx->log);*/
-
-    /* Socket creation */
-    /*if( secure_socket_create_socket(ctx) == false ){
-        secure_socket_free(ctx->socket, ctx->log);
-        return false;
-    }
-
-    LOG(LOG_INFO, "Socket created.", errno, 0, ctx->log);*/
-
     if ( set_bind_address(ctx, address) ){
         LOG(LOG_FATAL, "Could not properly set socket address type.", errno, 1, ctx->log)
         secure_socket_free_from_context(ctx);
         return false;
     }
 
-    /* Set REUSEADDR socket option */
+    /* Set SO_PASSCRED and REUSEADDR socket option */
     if( setsockopt(ctx->socket->socket_fd, SOL_SOCKET, SO_PASSCRED || SO_REUSEADDR, &ctx->socket->optval, sizeof(ctx->socket->optval)) == -1){
         LOG(LOG_ALERT, "set socket option messed up for some reason : ", errno, 1, ctx->log)
     }
@@ -364,7 +279,8 @@ secure_socket* ipc_accept_connection(server_context *ctx){
 
     len = sizeof(client_socket->bind_address);
 
-    /*client_socket->socket_fd = accept(server->socket_fd, (struct sockaddr *)&client_socket->address, &client_socket->addrlen);*/
+    /* Old code :
+     * client_socket->socket_fd = accept(server->socket_fd, (struct sockaddr *)&client_socket->address, &client_socket->addrlen);*/
     client_socket->socket_fd = accept(ctx->socket->socket_fd, client_socket->bind_address, &len);
     if (client_socket->socket_fd < 0) {
         LOG(LOG_ERROR, "accept() connection failed : ", errno, 0, ctx->log)
@@ -393,7 +309,6 @@ secure_socket* ipc_accept_connection(server_context *ctx){
  */
 bool ipc_send(secure_socket *sock, int length, char *data, thread_context *ctx){
 
-    /* unsigned const int length = (unsigned const int ) strlen(data); */
     int sent;
     char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
 
@@ -406,7 +321,6 @@ bool ipc_send(secure_socket *sock, int length, char *data, thread_context *ctx){
         LOG(LOG_ALERT, "Either data is NULL or length is lower or equal to 0. Can't send that on socket.", errno, 0, ctx->log)
         return false;
     }
-
 
    while(length > 0){
 
@@ -506,8 +420,6 @@ pid_t ipc_get_peer_pid(secure_socket *sock){
 */
 
 
-
-
 /**
  * Closes a socket and frees the memory allocated to the ipc_socket
  * @param com
@@ -517,7 +429,6 @@ void secure_socket_free_from_context(server_context *ctx){
         ctx->socket = secure_socket_free(ctx->socket, ctx->log);
     }
 }
-
 
 
 /**

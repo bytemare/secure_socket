@@ -33,7 +33,7 @@ bool log_start_thread(logging *log, int8_t verbosity, char *mq_name, char *log_f
     }
 
     if ( (ret = pthread_create(&log->thread, NULL, &logging_thread, log) ) ){
-        LOG_STDOUT(LOG_FATAL, "Error creating logging thread : ", ret, 1, log);
+        LOG_STDOUT(LOG_FATAL, "Error creating logging thread : ", ret, 1, log)
         return false;
     }
 
@@ -64,10 +64,10 @@ uint8_t log_util_open_file_lock(logging *log, const char *filename){
     log->fd = flopen(filename, O_CREAT|O_WRONLY|O_APPEND|O_SYNC|O_NONBLOCK, S_IRUSR|S_IWUSR);
     if( log->fd == -1 ){
         if( errno == EWOULDBLOCK){
-            LOG_STDOUT(LOG_FATAL, "The log file is locked by another process. Free the file and try again.", errno, 3, log);
+            LOG_STDOUT(LOG_FATAL, "The log file is locked by another process. Free the file and try again.", errno, 3, log)
         }
         else{
-            LOG_STDOUT(LOG_FATAL, "Error in opening log file.", errno, 6, log);
+            LOG_STDOUT(LOG_FATAL, "Error in opening log file.", errno, 6, log)
         }
         return 1;
     }
@@ -91,17 +91,17 @@ uint8_t log_util_open_mq(logging *log, const char *mq_name){
 
     /* Check bounds to avoid overlow */
     if (strlen(mq_name) >= sizeof(log->mq_name)){
-        LOG_STDOUT(LOG_FATAL, "Error in opening the logging messaging queue. Size is >= to maximum buffer size.", errno, 1, log);
+        LOG_STDOUT(LOG_FATAL, "Error in opening the logging messaging queue. Size is >= to maximum buffer size.", errno, 1, log)
         return 1;
     }
 
     if ( strlcpy(log->mq_name, mq_name, sizeof(log->mq_name)) >= sizeof(log->mq_name) ){
-        LOG_STDOUT(LOG_WARNING, "Message queue name is too long and got truncated to maximum authorised size.", errno, 1, log);
+        LOG_STDOUT(LOG_WARNING, "Message queue name is too long and got truncated to maximum authorised size.", errno, 1, log)
     }
 
     /* Opening Message Queue */
     if( (log->mq = mq_open(log->mq_name, O_RDWR | O_CREAT | O_EXCL, 0600, NULL)) == (mqd_t)-1) {
-        LOG_STDOUT(LOG_FATAL, "Error in opening the logging messaging queue.", errno, 1, log);
+        LOG_STDOUT(LOG_FATAL, "Error in opening the logging messaging queue.", errno, 1, log)
         return 1;
     }
 
@@ -119,7 +119,7 @@ uint8_t log_util_open_aio(logging *log){
 
     log->aio = malloc(sizeof(struct aiocb));
     if(!log->aio){
-        LOG_FILE(LOG_ALERT, "malloc failed allocation space for the logging aiocb structure.", errno, 2, log);
+        LOG_FILE(LOG_ALERT, "malloc failed allocation space for the logging aiocb structure.", errno, 2, log)
         return 1;
     }
 
@@ -173,7 +173,7 @@ __always_inline uint8_t log_initialise_logging_s(logging *log, int8_t verbosity,
         return 1;
     }
 
-    LOG_FILE(LOG_INFO, "Initialised logging structure.", -1, 0, log);
+    LOG_FILE(LOG_INFO, "Initialised logging structure.", -1, 0, log)
 
     return 0;
 }
@@ -194,12 +194,12 @@ int get_mq_max_message_size(logging *log){
     LOG_INIT
 
 
-    LOG_FILE(LOG_TRACE, "Logging Thread : getting maximum message size from system", errno, 0, log);
+    LOG_FILE(LOG_TRACE, "Logging Thread : getting maximum message size from system", errno, 0, log)
 
     fp = fopen(mq_max_message_size_source, "r");
     if (fp == NULL) {
         snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Logging Thread : Could not open '%s'. Taking default max value %d.", mq_max_message_size_source, LOG_MQ_MAX_MESSAGE_SIZE);
-        LOG_FILE(LOG_TRACE, log_buffer, errno, 3, log);
+        LOG_FILE(LOG_TRACE, log_buffer, errno, 3, log)
     }
     else {
         errno = 0;
@@ -209,19 +209,19 @@ int get_mq_max_message_size(logging *log){
         if (ret == 1){
             fclose(fp);
             snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Maximum size message for messaging queue is %d.", max_size);
-            LOG_FILE(LOG_INFO, log_buffer, errno, 5, log);
+            LOG_FILE(LOG_INFO, log_buffer, errno, 5, log)
         }
         else if ( errno != 0){
-            LOG_FILE(LOG_WARNING, "Error in fscanf(). Message size set to default.", errno, 8, log);
+            LOG_FILE(LOG_WARNING, "Error in fscanf(). Message size set to default.", errno, 8, log)
             max_size = LOG_MQ_MAX_MESSAGE_SIZE;
         }
         else{
-            LOG_FILE(LOG_WARNING, "Message queue : no matching pattern to an integer in file for message size. Message size set to default.", errno, 12, log);
+            LOG_FILE(LOG_WARNING, "Message queue : no matching pattern to an integer in file for message size. Message size set to default.", errno, 12, log)
             max_size = LOG_MQ_MAX_MESSAGE_SIZE;
         }
     }
 
-    LOG_FILE(LOG_TRACE, "Size for message in mq is set.", errno, 0, log);
+    LOG_FILE(LOG_TRACE, "Size for message in mq is set.", errno, 0, log)
 
     return max_size;
 }
@@ -248,27 +248,27 @@ void set_thread_attributes(pthread_attr_t *attr, logging *log){
 
     /* Initialise structure */
     if( pthread_attr_init(attr) != 0 ) {
-        LOG(LOG_ERROR, "Error in thread attribute initialisation : ", errno, 1, log);
+        LOG(LOG_ERROR, "Error in thread attribute initialisation : ", errno, 1, log)
     }
 
     /* Makes the threads KERNEL THREADS, thus allowing multi-processor execution */
     if( pthread_attr_setscope(attr, PTHREAD_SCOPE_SYSTEM) != 0) {
-        LOG(LOG_ERROR, "Error in thread setscope : ", errno, 1, log);
+        LOG(LOG_ERROR, "Error in thread setscope : ", errno, 1, log)
     }
 
     /* Launches threads as detached, since there's no need to sync whith them after they ended */
     if( pthread_attr_setdetachstate(attr, PTHREAD_CREATE_DETACHED) != 0 ){
-        LOG(LOG_ERROR, "Error in thread setdetachstate : ", errno, 1, log);
+        LOG(LOG_ERROR, "Error in thread setdetachstate : ", errno, 1, log)
     }
 
-    LOG(LOG_TRACE, "Thread attributes set.", 0, 0, log);
+    LOG(LOG_TRACE, "Thread attributes set.", 0, 0, log)
 }
 
 void terminate_logging_thread_blocking(logging *log){
 
     LOG_INIT
 
-    LOG(LOG_INFO, "Terminating logging thread. Awaiting for mutex.", errno, 0, log);
+    LOG(LOG_INFO, "Terminating logging thread. Awaiting for mutex.", errno, 0, log)
 
     /* Wait for logging thread to terminate */
     pthread_mutex_lock(&log->mutex);
@@ -276,7 +276,7 @@ void terminate_logging_thread_blocking(logging *log){
     pthread_mutex_unlock(&log->mutex);
 
     /* Put a message to unblock logging thread on message queue */
-    LOG(LOG_INFO, "Server awaiting logging thread to terminate ...", errno, 0, log);
+    LOG(LOG_INFO, "Server awaiting logging thread to terminate ...", errno, 0, log)
 
     pthread_join(log->thread, NULL);
 }
@@ -308,10 +308,6 @@ void log_close(logging *log) {
 }
 
 
-
-
-
-
 /**
  * Thread handler for log related actions. Waits on a POSIX messaging queue for incoming messages, and writes them into log file.
  * @param args
@@ -329,18 +325,18 @@ void* logging_thread(void *args){
 
     LOG_INIT
 
-    LOG_FILE(LOG_TRACE, "Logging thread started.", errno, 0, log);
+    LOG_FILE(LOG_TRACE, "Logging thread started.", errno, 0, log)
 
     mq_max_size = get_mq_max_message_size(log);
     prio = 0;
     buffer = calloc((size_t )mq_max_size+1, sizeof(char));
 
     if(!buffer){
-        LOG_FILE(LOG_ALERT, "calloc() failed for buffer. Logging thread is not working !!! Exiting now.", errno, 3, log);
+        LOG_FILE(LOG_ALERT, "calloc() failed for buffer. Logging thread is not working !!! Exiting now.", errno, 3, log)
     }
     else {
 
-        LOG_FILE(LOG_TRACE, "Logging thread awaiting new messages.", errno, 0, log);
+        LOG_FILE(LOG_TRACE, "Logging thread awaiting new messages.", errno, 0, log)
 
         pthread_mutex_lock(&log->mutex);
 
@@ -355,7 +351,7 @@ void* logging_thread(void *args){
             nb_bytes = (int) mq_receive(log->mq, buffer, (size_t )mq_max_size, &prio);
 
             if (nb_bytes == -1) {
-                LOG_FILE(LOG_ALERT, "Logging : Error in mq_receive", errno, 3, log);
+                LOG_FILE(LOG_ALERT, "Logging : Error in mq_receive", errno, 3, log)
             }
             else {
                 log_write_to_file(log, buffer);
@@ -371,7 +367,7 @@ void* logging_thread(void *args){
         free(buffer);
     }
 
-    LOG_FILE(LOG_TRACE, "Logging thread now quitting.", errno, 0, log);
+    LOG_FILE(LOG_TRACE, "Logging thread now quitting.", errno, 0, log)
 
     log->quit_logging = false;
 

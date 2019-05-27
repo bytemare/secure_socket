@@ -33,7 +33,9 @@ struct sockaddr *socket_bind_unix(struct sockaddr_un *un, const char* socket_pat
 
     if ( socket_path ){
 
-        //bzero((char*)server->address.un.sun_path, sizeof(server->address.un.sun_path));
+        /* Previously
+         * bzero((char*)server->address.un.sun_path, sizeof(server->address.un.sun_path));
+         * */
         bzero(un->sun_path, sizeof(un->sun_path));
         strlcpy(un->sun_path, socket_path, sizeof(un->sun_path) - 1);
 
