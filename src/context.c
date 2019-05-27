@@ -64,7 +64,6 @@ bool is_valid_integer(char *number){
  */
 ipc_options* initialise_options(){
 
-    uint16_t mq_name_max_size;
     uint16_t log_name_max_size;
     uint8_t socket_name_max_size;
     char rand_buffer[IPC_RAND_LENGTH + 1];
@@ -79,23 +78,20 @@ ipc_options* initialise_options(){
     }
 
     /* Set message queue name */
-    mq_name_max_size = sizeof(options->mq_name);
-    memset(options->mq_name, '\0', mq_name_max_size);
-    strlcpy(options->mq_name, IPC_MQ_NAME, (size_t) (mq_name_max_size - 1));
+    memset(options->mq_name, '\0', sizeof(options->mq_name));
+    strlcpy(options->mq_name, IPC_MQ_NAME, sizeof(options->mq_name) - sizeof(rand_buffer));
     secure_random_string(rand_buffer, sizeof(rand_buffer));
     strlcat(options->mq_name, rand_buffer, sizeof(options->mq_name));
 
     /* Set log file */
-    log_name_max_size = sizeof(options->log_file);
-    memset(options->log_file, '\0', log_name_max_size);
-    strncpy(options->log_file, IPC_LOG_FILE, (size_t) (log_name_max_size - 1));
+    memset(options->log_file, '\0', sizeof(options->log_file);
+    strncpy(options->log_file, IPC_LOG_FILE, sizeof(options->log_file) - sizeof(rand_buffer));
     secure_random_string(rand_buffer, sizeof(rand_buffer));
     strlcat(options->log_file, rand_buffer, sizeof(options->log_file));
 
     /* Set socket data */
-    socket_name_max_size = sizeof(options->socket_path);
-    memset(options->socket_path, '\0', socket_name_max_size);
-    strncpy(options->socket_path, IPC_SOCKET_PATH_BASE, (size_t) (socket_name_max_size - 1));
+    memset(options->socket_path, '\0', sizeof(options->socket_path));
+    strncpy(options->socket_path, IPC_SOCKET_PATH_BASE, sizeof(options->socket_path) - sizeof(rand_buffer));
     secure_random_string(rand_buffer, sizeof(rand_buffer));
     strlcat(options->log_file, rand_buffer, sizeof(options->log_file));
 
