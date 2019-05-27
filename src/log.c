@@ -26,7 +26,7 @@ bool log_start_thread(logging *log, int8_t verbosity, char *mq_name, char *log_f
     }
 
     int ret;
-    LOG_INIT;
+    LOG_INIT
 
     if ( log_initialise_logging_s(log, verbosity, mq_name, log_file) ){
         return false;
@@ -57,7 +57,7 @@ bool log_start(logging *log, int8_t verbosity, char *mq_name, char *log_file){
  */
 uint8_t log_util_open_file_lock(logging *log, const char *filename){
 
-    LOG_INIT;
+    LOG_INIT
 
     /* Open log file with BSD function to obtain exclusive lock on file */
     /* This may not be the best idea. TODO: study what, between BSD and POSIX locks, is better suited. We may want to detect a lock and kill another process to get it."*/
@@ -84,7 +84,7 @@ uint8_t log_util_open_file_lock(logging *log, const char *filename){
  */
 uint8_t log_util_open_mq(logging *log, const char *mq_name){
 
-    LOG_INIT;
+    LOG_INIT
 
     /* Unlink potential previous message queue if it had the same name */
     mq_unlink(mq_name);
@@ -115,7 +115,7 @@ uint8_t log_util_open_mq(logging *log, const char *mq_name){
  */
 uint8_t log_util_open_aio(logging *log){
 
-    LOG_INIT;
+    LOG_INIT
 
     log->aio = malloc(sizeof(struct aiocb));
     if(!log->aio){
@@ -145,7 +145,7 @@ uint8_t log_util_open_aio(logging *log){
  */
 __always_inline uint8_t log_initialise_logging_s(logging *log, int8_t verbosity, char *mq_name, char *filename) {
 
-    LOG_INIT;
+    LOG_INIT
 
     log->verbosity = verbosity;
     log->aio = NULL;
@@ -191,7 +191,7 @@ int get_mq_max_message_size(logging *log){
     char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
     const char *mq_max_message_size_source = LOG_MQ_SOURCE_MAX_MESSAGE_SIZE_FILE;
 
-    LOG_INIT;
+    LOG_INIT
 
 
     LOG_FILE(LOG_TRACE, "Logging Thread : getting maximum message size from system", errno, 0, log);
@@ -244,7 +244,7 @@ void log_to_file(server_context *ctx, char *message){
  */
 void set_thread_attributes(pthread_attr_t *attr, logging *log){
 
-    LOG_INIT;
+    LOG_INIT
 
     /* Initialise structure */
     if( pthread_attr_init(attr) != 0 ) {
@@ -266,7 +266,7 @@ void set_thread_attributes(pthread_attr_t *attr, logging *log){
 
 void terminate_logging_thread_blocking(logging *log){
 
-    LOG_INIT;
+    LOG_INIT
 
     LOG(LOG_INFO, "Terminating logging thread. Awaiting for mutex.", errno, 0, log);
 
@@ -327,7 +327,7 @@ void* logging_thread(void *args){
 
     log = (logging*) args;
 
-    LOG_INIT;
+    LOG_INIT
 
     LOG_FILE(LOG_TRACE, "Logging thread started.", errno, 0, log);
 
