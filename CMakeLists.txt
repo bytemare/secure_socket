@@ -19,8 +19,8 @@ set(WARNING_FLAGS "-W -Wall -Wextra -Werror -ansi -pedantic -Wwrite-strings -Wco
 set(DEBUG_FLAGS "-g")
 
 # Coverage Flags
-set(COVERAGE_FLAGS "-fprofile-arcs -ftest-coverage --coverage")
-#set(COVERAGE_FLAGS "-coverage")
+set(COVERAGE_FLAGS "-fprofile-arcs -ftest-coverage")
+#set(COVERAGE_FLAGS "--coverage") # synonym for -fprofile-arcs -ftest-coverage (when compiling)
 
 # C version flags
 set(VERSION_FLAGS "-D_GNU_SOURCE -D_XOPEN_SOURCE=700 -std=gnu11")
@@ -112,7 +112,7 @@ SET(CMAKE_EXE_LINKER_FLAGS="-fprofile-arcs -ftest-coverage")
 add_executable(secure_socket ${SOURCE_FILES} ${HEADERS})
 
 if ( CMAKE_BUILD_TYPE STREQUAL "Coverage" )
-        target_link_libraries(secure_socket gcov ${LINKER_LIBRARIES})
+        target_link_libraries(secure_socket --coverage ${LINKER_LIBRARIES})
 else()
         target_link_libraries(secure_socket ${LINKER_LIBRARIES})
 endif()
