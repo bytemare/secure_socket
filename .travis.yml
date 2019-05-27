@@ -17,7 +17,7 @@ matrix:
         sonarcloud:
           organization: "bytemare-github"
           token:
-            secure: SONAR_TOKEN
+            secure: ${SONAR_TOKEN}
       before_install:
         - wget https://github.com/slimm609/checksec.sh/archive/master.zip && unzip -q master.zip
       script:
