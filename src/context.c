@@ -64,8 +64,6 @@ bool is_valid_integer(char *number){
  */
 ipc_options* initialise_options(){
 
-    uint16_t log_name_max_size;
-    uint8_t socket_name_max_size;
     char rand_buffer[IPC_RAND_LENGTH + 1];
 
     LOG_INIT
@@ -132,17 +130,11 @@ bool parse_options(ipc_options *options, int argc, char **argv){
     for( i = 1; i < argc; i++ ) {
         p = argv[i];
 
-        //snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Parsing argument : %s", p);
-        //LOG_STDOUT(LOG_TRACE, log_buffer, 0, 3)
-
         if ((q = strchr(p, '=')) == NULL) {
             LOG_STDOUT(LOG_FATAL, "Invalid argument entry format. USAGE : [option]=[value].", 0, 1, NULL)
             return false;
         }
         *q++ = '\0';
-
-        //snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Argument value : %s", q);
-        //LOG_STDOUT(LOG_TRACE, log_buffer, 0, 3)
 
         if (strcmp(p, "mq_name") == 0) {
             uint16_t mq_name_max_size = sizeof(options->mq_name);
@@ -363,10 +355,6 @@ bool parse_options(ipc_options *options, int argc, char **argv){
 
 server_context* make_server_context(ipc_options *params, logging *log){
 
-    /*
-    time_t t;
-    struct tm timer;
-    */
     server_context *ctx;
 
     LOG_INIT
@@ -392,7 +380,7 @@ server_context* make_server_context(ipc_options *params, logging *log){
         return false;
     }
 
-    //LOG(LOG_INFO, "Allocated memory for server secure_socket : ", errno, 0, ctx->log);
+    LOG(LOG_INFO, "Allocated memory for server secure_socket : ", errno, 0, ctx->log)
 
     /* Socket creation */
     if( secure_socket_create_socket(ctx) == false ){
