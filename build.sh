@@ -35,7 +35,7 @@ printf " done.\n"
 # Targets to be created and deleted
 BUILDS="$RELEASE $DEBUG $COVERAGE"
 CREAT="$BUILDS $LINK $RUNNER $SOCKET_PATH $CLEANER"
-CMAKE_DIRS="cmake-build-debug"
+CMAKE_DIRS="cmake-build-debug cmake-build-wsl_profile"
 
 
 # Check if requested build exists. If not, default to Debug
