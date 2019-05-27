@@ -21,8 +21,8 @@ matrix:
           - ./checksec.sh-master/checksec -f Debug/secure_socket && ./checksec.sh-master/checksec -ff Debug/secure_socket
           - hardening-check -c -v Debug/secure_socket
 
-    - stage: Code checking
-      name: Code checking
+    - stage: Sonar checking
+      name: Sonar checking
       addons:
         apt:
           packages: &default_packages
@@ -33,8 +33,9 @@ matrix:
             secure: ${SONAR_TOKEN}
       script:
         - shellcheck -x build.sh
-        - ./build.sh Coverage
+        #- ./build.sh Coverage
         - sonar-scanner
+
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
