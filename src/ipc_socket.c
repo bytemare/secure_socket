@@ -469,7 +469,7 @@ gid_t get_group_id(char *group_name, logging *log){
         temp = realloc(gr_buf, (size_t) getgr_buf_size);
         if ( temp == NULL ) {
             free(gr_buf);
-            snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "realloc() failed for group '%s' with size %ld. Could not retrieve group ID structure. Access to group will not be applied.", group_name, getgr_buf_size);
+            snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "realloc() failed for group '%s' with size %ld.", group_name, getgr_buf_size);
             LOG(LOG_ERROR, log_buffer, errno, 2, log)
             return 0;
         }
@@ -492,7 +492,7 @@ gid_t get_group_id(char *group_name, logging *log){
 
                 /* Others errors are not handles yet */
                 free(gr_buf);
-                LOG(LOG_ERROR, "Error: getgrnam_r failed with an unhandled error. Could not retrieve group structure. Access to group will not be applied.", err_r, 4, log)
+                LOG(LOG_ERROR, "Error: getgrnam_r failed with an unhandled error.", err_r, 4, log)
                 return 0;
             }
         } else {
@@ -501,7 +501,7 @@ gid_t get_group_id(char *group_name, logging *log){
             free(gr_buf);
 
             if ( gr_ptr == NULL ){
-                snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not find group '%s'. Access to group will not be applied.", group_name);
+                snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not find group '%s'.", group_name);
                 LOG(LOG_ERROR, log_buffer, 0, 2,log)
                 return 0;
             }
@@ -513,7 +513,7 @@ gid_t get_group_id(char *group_name, logging *log){
 
     if ( getgr_buf_size > secure_socket_max_grbuf_size ){
         /* Here, we could not allocate enough space, so we quit */
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not allocate enough space for group '%s' with size %ld. Access to group will not be applied.", group_name, getgr_buf_size);
+        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not allocate enough space for group '%s' with size %ld.", group_name, getgr_buf_size);
         LOG(LOG_ERROR, log_buffer, 0, 2, log)
     }
 
@@ -552,12 +552,12 @@ bool set_socket_owner_and_permissions(server_context *ctx, gid_t real_gid, mode_
     if(!real_gid){
         if ( (real_gid = get_group_id(ctx->options->authorised_peer_username, ctx->log)) == 0 ){
             //TODO : log impossibility of perms
+            LOG(LOG_ERROR, "Could not retrieve group ID structure. Access to group will not be applied.", errno, 0, ctx->log)
             return false;
         }
     }
 
     /* Now that real_gid is set, we can grant access */
-
     if (chown(ctx->options->socket_path, uid, real_gid) == -1) {
         snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not chown for user '%u' and group '%s' on socket '%s'. Access to group will not be applied.", uid, ctx->options->authorised_peer_username, ctx->options->socket_path);
         LOG(LOG_ALERT, log_buffer, errno, 2, ctx->log)
