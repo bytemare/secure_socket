@@ -79,19 +79,19 @@ ipc_options* initialise_options(){
     memset(options->mq_name, '\0', sizeof(options->mq_name));
     strlcpy(options->mq_name, IPC_MQ_NAME, sizeof(options->mq_name) - sizeof(rand_buffer));
     secure_random_string(rand_buffer, sizeof(rand_buffer));
-    strlcat(options->mq_name, rand_buffer, sizeof(options->mq_name));
+    strlcat(options->mq_name, rand_buffer, sizeof(options->mq_name) - sizeof(IPC_MQ_NAME));
 
     /* Set log file */
     memset(options->log_file, '\0', sizeof(options->log_file));
     strncpy(options->log_file, IPC_LOG_FILE, sizeof(options->log_file) - sizeof(rand_buffer));
     secure_random_string(rand_buffer, sizeof(rand_buffer));
-    strlcat(options->log_file, rand_buffer, sizeof(options->log_file));
+    strlcat(options->log_file, rand_buffer, sizeof(options->log_file) - sizeof(IPC_LOG_FILE));
 
     /* Set socket data */
     memset(options->socket_path, '\0', sizeof(options->socket_path));
     strncpy(options->socket_path, IPC_SOCKET_PATH_BASE, sizeof(options->socket_path) - sizeof(rand_buffer));
     secure_random_string(rand_buffer, sizeof(rand_buffer));
-    strlcat(options->log_file, rand_buffer, sizeof(options->log_file));
+    strlcat(options->log_file, rand_buffer, sizeof(options->log_file) - sizeof(IPC_SOCKET_PATH_BASE));
 
     options->domain = IPC_DOMAIN;
     options->protocol = IPC_PROTOCOL;
