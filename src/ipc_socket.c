@@ -160,13 +160,12 @@ bool ipc_server_bind(in_addr_t address, server_context *ctx){
 
     LOG_INIT
 
-    if (ctx->options->domain != AF_UNIX) {
-        if (ctx->options->domain != AF_LOCAL && ctx->options->domain != AF_INET) {
-            LOG(LOG_FATAL,
-                    "This server does not support other socket types than Unix Sockets, yet. Please use AF_UNIX.",
-                    0, 1, ctx->log)
-            return false;
-        }
+    if (ctx->options->domain != AF_UNIX && (ctx->options->domain != AF_LOCAL && ctx->options->domain != AF_INET) ) {
+        LOG(LOG_FATAL,
+                "This server does not support other socket types than Unix Sockets, yet. Please use AF_UNIX.",
+                0, 1, ctx->log)
+        return false;
+
     }
 
     if ( set_bind_address(ctx, address) ){
@@ -394,7 +393,6 @@ struct ucred* ipc_get_ucred(server_context *ctx){
     len = sizeof(struct ucred);
 
     if ( getsockopt(ctx->socket->socket_fd, SOL_SOCKET, SO_PEERCRED, creds, &len) < 0 ){
-
         LOG(LOG_TRACE, "ipc_get_ucred() : could not retrieve ucred.", errno, 0, ctx->log)
         return NULL;
     }
@@ -511,6 +509,8 @@ gid_t get_group_id(char *group_name, logging *log){
             return group_buff.gr_gid;
         }
     } while ( getgr_buf_size <= secure_socket_max_grbuf_size); /* Loop until we hit a maximum */
+
+    free(gr_buf);
 
     if ( getgr_buf_size > secure_socket_max_grbuf_size ){
         /* Here, we could not allocate enough space, so we quit */
