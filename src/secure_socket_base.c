@@ -33,10 +33,7 @@ struct sockaddr *socket_bind_unix(struct sockaddr_un *un, const char* socket_pat
 
     if ( socket_path ){
 
-        /* Previously
-         * bzero((char*)server->address.un.sun_path, sizeof(server->address.un.sun_path));
-         * */
-        bzero(un->sun_path, sizeof(un->sun_path));
+        memset(un->sun_path, 0, sizeof(un->sun_path));
         strlcpy(un->sun_path, socket_path, sizeof(un->sun_path) - 1);
 
         *socklen = (socklen_t) (strlen(un->sun_path) + sizeof(un->sun_family));
