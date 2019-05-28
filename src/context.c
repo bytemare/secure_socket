@@ -82,7 +82,7 @@ ipc_options* initialise_options(){
     strlcat(options->mq_name, rand_buffer, sizeof(options->mq_name));
 
     /* Set log file */
-    memset(options->log_file, '\0', sizeof(options->log_file);
+    memset(options->log_file, '\0', sizeof(options->log_file));
     strncpy(options->log_file, IPC_LOG_FILE, sizeof(options->log_file) - sizeof(rand_buffer));
     secure_random_string(rand_buffer, sizeof(rand_buffer));
     strlcat(options->log_file, rand_buffer, sizeof(options->log_file));
@@ -123,7 +123,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
     int i;
     char *p;
     char *q;
-    char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH];
+    char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
 
     LOG_INIT
 
