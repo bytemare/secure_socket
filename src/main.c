@@ -20,18 +20,18 @@ int main(int argc, char** argv) {
     LOG_INIT
 
 
-    #ifdef __linux__
-        #define WELCOME_STRING "Linux"
-    #else
-        #define WELCOME_STRING "Windows"
-    #endif
+#ifdef __linux__
+#define WELCOME_STRING "Linux"
+#else
+#define WELCOME_STRING "Windows"
+#endif
 
-    // hardware
-    #if __x86_64__ || __ppc64__
-        #define ARCH "64 bit"
-    #else
-        #define ARCH "not 64 bit"
-    #endif
+// hardware
+#if __x86_64__ || __ppc64__
+#define ARCH "64 bit"
+#else
+#define ARCH "not 64 bit"
+#endif
 
     printf("Executing on %s %s.\n", ARCH, WELCOME_STRING);
 
