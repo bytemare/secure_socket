@@ -101,9 +101,9 @@ ipc_options* initialise_options(){
 
     /* Socket oriented security */
     strlcpy(options->authorised_peer_username, IPC_AUTHORIZED_PEER_USERNAME, sizeof(options->authorised_peer_username));
-    options->authorised_peer_uid = IPC_AUTHORIZED_PEER_PID;
-    options->authorised_peer_gid = IPC_AUTHORIZED_PEER_UID;
-    options->authorised_peer_pid = IPC_AUTHORIZED_PEER_GID;
+    options->authorised_peer_uid = IPC_AUTHORIZED_PEER_UID;
+    options->authorised_peer_pid = IPC_AUTHORIZED_PEER_PID;
+    options->authorised_peer_gid = IPC_AUTHORIZED_PEER_GID;
     strlcpy(options->authorised_peer_process_name, "", sizeof(options->authorised_peer_process_name));
     strlcpy(options->authorised_peer_cli_args, "", sizeof(options->authorised_peer_cli_args));
 
