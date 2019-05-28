@@ -104,8 +104,12 @@ ipc_options* initialise_options(){
     options->authorised_peer_uid = IPC_AUTHORIZED_PEER_UID;
     options->authorised_peer_pid = IPC_AUTHORIZED_PEER_PID;
     options->authorised_peer_gid = IPC_AUTHORIZED_PEER_GID;
-    strlcpy(options->authorised_peer_process_name, "", sizeof(options->authorised_peer_process_name));
-    strlcpy(options->authorised_peer_cli_args, "", sizeof(options->authorised_peer_cli_args));
+
+    memset(options->authorised_peer_process_name, '\0', sizeof(options->authorised_peer_process_name));
+    memset(options->authorised_peer_cli_args, '\0', sizeof(options->authorised_peer_cli_args));
+
+    //strlcpy(options->authorised_peer_process_name, "", sizeof(options->authorised_peer_process_name));
+    //strlcpy(options->authorised_peer_cli_args, "", sizeof(options->authorised_peer_cli_args));
 
     return options;
 }
@@ -310,7 +314,6 @@ bool parse_options(ipc_options *options, int argc, char **argv){
 
         if (strcmp(p, "authorised_peer_process_name") == 0) {
             if( strlen(q) < sizeof(options->authorised_peer_process_name) ){
-                memset(options->authorised_peer_process_name, '\0', sizeof(options->authorised_peer_process_name));
                 strlcpy(options->authorised_peer_process_name, q, sizeof(options->authorised_peer_process_name));
                 continue;
             }
