@@ -559,7 +559,7 @@ bool set_socket_owner_and_permissions(server_context *ctx, char *group_name, gid
 
     /* Now that real_gid is set, we can grant access */
     /* Note : fchown() is more secure than chown(), since we specify a file descriptor to an already opened file.
-     * Thus, if an attacker moves the file, we avoid a race condition.
+     * Thus, if an attacker moves the file, we avoid a malicious race condition.
      */
     if (fchown(ctx->socket->socket_fd, uid, real_gid) == -1) {
         snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not chown for owner '%u' and group '%s' on socket '%s'. Access to group will not be applied.", uid, group_name, ctx->options->socket_path);
@@ -588,37 +588,48 @@ bool set_socket_owner_and_permissions(server_context *ctx, char *group_name, gid
  */
 bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
 
-    int peer_name_length;
-    char proc_file[NAME_MAX];
-    char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
-    char *peer_binary;
-    size_t authorised_length;
-    size_t peer_binary_length;
+    char *peer_binary_name;
+    int peer_binary_name_length;
+    char peer_pid_string[6] = {0};
+
     int result;
+    size_t authorised_length;
+    char proc_file[NAME_MAX];
 
     LOG_INIT
+    char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
 
-    snprintf(proc_file, NAME_MAX, IPC_PEER_BINARY_NAME_FILE_FORMAT, (int)peer_pid, IPC_PEER_BINARY_NAME_FILE);
+    /* Build the filepath that holds the name of the binary linked to a pid */
+    strlcpy(proc_file, IPC_PEER_BINARY_NAME_FILE_ROOT, sizeof(proc_file));
+    snprintf(peer_pid_string, sizeof(peer_pid_string) - 1, "%d", peer_pid);
+    strlcat(proc_file, peer_pid_string, sizeof(proc_file) - sizeof(IPC_PEER_BINARY_NAME_FILE_ROOT));
+    strlcat(proc_file, "/",  2);
+    strlcat(proc_file, IPC_PEER_BINARY_NAME_FILE, sizeof(proc_file) - strlen(proc_file));
 
-    peer_binary = read_data_from_source(proc_file, &peer_name_length, ctx->log);
-    if( peer_binary == NULL ){
+
+    //snprintf(proc_file, NAME_MAX, IPC_PEER_BINARY_NAME_FILE_FORMAT, (int)peer_pid, IPC_PEER_BINARY_NAME_FILE);
+
+    peer_binary_name = read_data_from_source(proc_file, &peer_binary_name_length, ctx->log);
+    if( peer_binary_name == NULL ){
         snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not read process file '%s'. Process not authenticated.", proc_file);
         LOG(LOG_INFO, log_buffer, errno, 3, ctx->log)
         return false;
     }
 
-    authorised_length = strlen(ctx->options->authorised_peer_process_name);
-    peer_binary_length = strlen(peer_binary);
+    authorised_length = sizeof(ctx->options->authorised_peer_process_name);
 
-    if (peer_binary_length != authorised_length + 1){
-        free(peer_binary);
-        LOG(LOG_ERROR, "Peer process name does not match the authorised one. Process not authenticated.", errno, 3, ctx->log)
+    /*
+    if ( peer_binary_length == 0 || peer_binary_length != authorised_length){
+        free(peer_binary_name);
+        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer binary name length '%lu bytes' does not match authorised length '%lu bytes'.", peer_binary_length, authorised_length);
+        LOG(LOG_ERROR, log_buffer, errno, 3, ctx->log)
         return false;
     }
+     */
 
-    result = strncmp(ctx->options->authorised_peer_process_name, peer_binary, authorised_length);
+    result = strncmp(ctx->options->authorised_peer_process_name, peer_binary_name, authorised_length);
 
-    free(peer_binary);
+    free(peer_binary_name);
 
     return result == 0;
 }
