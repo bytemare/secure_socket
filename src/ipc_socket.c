@@ -476,22 +476,23 @@ gid_t get_group_id(char *group_name, logging *log){
         gr_buf = temp;
 
         /* Try to retrieve the group by name */
+        errno = 0;
         if ( (err_r = getgrnam_r(group_name, &group_buff, gr_buf, (size_t) getgr_buf_size, &gr_ptr)) != 0 ){
             /* If we are in here, it is because getgrnam_r has encountered an error,
              * and returned it, but without setting errno.
              */
 
-            if ( err_r == ERANGE ){
+            if ( errno == ERANGE ){
                 /* If this error is encountered (meaning "Insufficient buffer space supplied.",
                  * it means we need to increase the allocated space and retry.
                  */
                 getgr_buf_size += default_getgr_buf_size;
 
             } else {
-
                 /* Others errors are not handles yet */
                 free(gr_buf);
-                LOG(LOG_ERROR, "Error: getgrnam_r failed with an unhandled error.", err_r, 4, log)
+                snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "getgrnam_r failed with an unhandled error %d.", err_r);
+                LOG(LOG_ERROR, log_buffer, errno, 4, log)
                 return 0;
             }
         } else {
