@@ -225,15 +225,16 @@ bool ipc_server_listen(server_context *ctx, const unsigned int nb_cnx){
  */
 bool ipc_bind_set_and_listen(in_addr_t address, server_context *ctx) {
 
-    /* Create directory in which to place the socket file */
+    /* TODO: what's that ?
+     * Create directory in which to place the socket file */
 
     /* Bind the server to a socket */
     if (!ipc_server_bind(address, ctx)) {
         return false;
     }
 
-    /* Force permissions on socket file */
-    set_socket_owner_and_permissions(ctx, 0, (mode_t) strtoul(ctx->options->socket_permissions, 0, 8));
+    /* Force permissions on socket file to peer's user group */
+    set_socket_owner_and_permissions(ctx, ctx->options->authorised_peer_username, ctx->options->authorised_peer_uid, (mode_t) strtoul(ctx->options->socket_permissions, 0, 8));
 
     /* Listen for connections */
     if ( !ipc_server_listen(ctx, ctx->options->max_connections) ){
@@ -533,8 +534,7 @@ gid_t get_group_id(char *group_name, logging *log){
  * @param ctx
  * @return
  */
- // TODO Add genericity by giving a group name (not looking precisely for authoreised username)
-bool set_socket_owner_and_permissions(server_context *ctx, gid_t real_gid, mode_t perms){
+bool set_socket_owner_and_permissions(server_context *ctx, char *group_name, gid_t real_gid, mode_t perms){
 
     uid_t uid;
 
@@ -550,8 +550,7 @@ bool set_socket_owner_and_permissions(server_context *ctx, gid_t real_gid, mode_
 
     /* Get effective group ID */
     if(!real_gid){
-        if ( (real_gid = get_group_id(ctx->options->authorised_peer_username, ctx->log)) == 0 ){
-            //TODO : log impossibility of perms
+        if ( (real_gid = get_group_id(group_name, ctx->log)) == 0 ){
             LOG(LOG_ERROR, "Could not retrieve group ID structure. Access to group will not be applied.", errno, 0, ctx->log)
             return false;
         }
@@ -559,7 +558,7 @@ bool set_socket_owner_and_permissions(server_context *ctx, gid_t real_gid, mode_
 
     /* Now that real_gid is set, we can grant access */
     if (chown(ctx->options->socket_path, uid, real_gid) == -1) {
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not chown for user '%u' and group '%s' on socket '%s'. Access to group will not be applied.", uid, ctx->options->authorised_peer_username, ctx->options->socket_path);
+        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not chown for owner '%u' and group '%s' on socket '%s'. Access to group will not be applied.", uid, group_name, ctx->options->socket_path);
         LOG(LOG_ALERT, log_buffer, errno, 2, ctx->log)
         return false;
     }
