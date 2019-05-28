@@ -28,14 +28,23 @@
 
 ### Priorities
 
+- ipc_socket.c:179 : make mulitple calls to setsockopt
+- check whether SO_PASSCRED credentials are verified by the kernel
+- check SO_PEERSEC mechanism
+- document about use of SCM_CREDENTIALS and SCM_SECURITY
+- See other* socket options 
+
 1) change ctx->socket to non-pointer ?
 1) Create socket under a dedicated, secured directory
 2) Handle SIGPIPE signal : https://blog.erratasec.com/2018/10/tcpip-sockets-and-sigpipe.html#.XMCGx-gzaUk
 4) Fallback mechanism if libbsd is not available
 5) refactor code for socket to be used as component/library
 6) add examples and copy/pastable code
+7) Discuss use of SGX
 
 #### Logging
+
+- replace all log snprintfs calls with call to macro
 
 1) When not cleanly shut down, the logging thread/process continues and holds the lock on the log file,
 furthers attemps to open are blocked. lslocks CL helps identifying.
