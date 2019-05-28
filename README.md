@@ -2,6 +2,7 @@
 
 
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/41577c53b2444516a2f6dbc09af84cf0)](https://app.codacy.com/app/bytemare/secure_socket?utm_source=github.com&utm_medium=referral&utm_content=bytemare/secure_socket&utm_campaign=Badge_Grade_Dashboard)
 [![Build Status](https://travis-ci.com/bytemare/secure_socket.svg?branch=master)](https://travis-ci.com/bytemare/secure_socket)  
 <!---
 ![Badges](https://img.shields.io/badge/It%20has%20so%20many-badges-success.svg)
