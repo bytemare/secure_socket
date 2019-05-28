@@ -143,7 +143,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         if (strcmp(p, "mq_name") == 0) {
             uint16_t mq_name_max_size = sizeof(options->mq_name);
             if( q[0] != '/' && strlen(q) >= mq_name_max_size ){
-                snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Invalid name for message queue. First character must be '/' and must be shorter than %d characters.", mq_name_max_size);
+                LOG_BUILD("Invalid name for message queue. First character must be '/' and must be shorter than %d characters.", mq_name_max_size)
                 LOG_STDOUT(LOG_FATAL, log_buffer, 0, 2, NULL)
                 return false;
             }
@@ -156,7 +156,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         if (strcmp(p, "socket_path") == 0) {
             uint8_t socket_name_max_size = sizeof(options->socket_path);
             if( strlen(q) >= socket_name_max_size ){
-                snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Invalid name for socket path. Must be shorter than %d characters.", socket_name_max_size);
+                LOG_BUILD("Invalid name for socket path. Must be shorter than %d characters.", socket_name_max_size)
                 LOG_STDOUT(LOG_FATAL, log_buffer, 0, 2, NULL)
                 return false;
             }
@@ -170,7 +170,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         if (strcmp(p, "log_file") == 0) {
             uint16_t log_name_max_size = sizeof(options->log_file);
             if( strlen(q) >= log_name_max_size ){
-                snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Invalid name for log file. Must be shorter than %d characters.", log_name_max_size);
+                LOG_BUILD("Invalid name for log file. Must be shorter than %d characters.", log_name_max_size)
                 LOG_STDOUT(LOG_FATAL, log_buffer, 0, 2, NULL)
                 return false;
             }
@@ -346,7 +346,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
             return false;
         }
 
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Invalid argument : %s", p);
+        LOG_BUILD("Invalid argument : %s", p)
         LOG_STDOUT(LOG_FATAL, log_buffer, 0, 1, NULL)
         return false;
     }

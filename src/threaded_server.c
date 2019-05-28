@@ -62,7 +62,7 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
 
     LOG_INIT
 
-    snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Attempting to read data from file '%s' ", filename);
+    LOG_BUILD("Attempting to read data from file '%s' ", filename)
     LOG(LOG_TRACE, log_buffer, 0, -2, log)
 
     /*
@@ -70,18 +70,18 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
      */
     file = flopen(filename, O_RDONLY);
     if(file == -1){
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Unable to open file '%s', open() failed. ", filename);
+        LOG_BUILD("Unable to open file '%s', open() failed. ", filename)
         LOG(LOG_ALERT, log_buffer, errno, 3, log)
         return NULL;
     }
 
-    snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Successfully opened file for reading.");
+    LOG_BUILD("Successfully opened file for reading.")
     LOG(LOG_TRACE, log_buffer, 0, 9, log)
 
     fstat(file, &file_info);
 
     if (!S_ISREG(file_info.st_mode)) {
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Error : '%s' is not a regular file !", filename);
+        LOG_BUILD("Error : '%s' is not a regular file !", filename)
         LOG(LOG_ALERT, log_buffer, errno, 4, log)
         close(file);
         return NULL;
@@ -89,7 +89,7 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
 
     length = (size_t) file_info.st_size;
 
-    snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "File '%s' is '%d' bytes long.", filename, (int)length);
+    LOG_BUILD("File '%s' is '%d' bytes long.", filename, (int)length)
     LOG(LOG_TRACE, log_buffer, errno, 0, log)
 
 
@@ -102,7 +102,7 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
 
     length = (size_t) read(file, destination, length);
 
-    snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Read '%d' bytes from '%s'", (int)length, filename);
+    LOG_BUILD("Read '%d' bytes from '%s'", (int)length, filename)
     LOG(LOG_TRACE, log_buffer, 0, 3, log)
     close(file);
 

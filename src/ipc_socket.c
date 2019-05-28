@@ -312,7 +312,7 @@ bool ipc_send(secure_socket *sock, int length, char *data, thread_context *ctx){
 
     LOG_INIT
 
-    snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Attempting to send %d bytes.", length);
+    LOG_BUILD("Attempting to send %d bytes.", length)
     LOG(LOG_TRACE, log_buffer, errno, 0, ctx->log)
 
     if ( data == NULL || length <= 0 ){
@@ -326,7 +326,7 @@ bool ipc_send(secure_socket *sock, int length, char *data, thread_context *ctx){
             LOG(LOG_ALERT, "send() failed : ", errno, 1, ctx->log)
 	        return false;
 	    }
-       snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Send %d bytes.", sent);
+       LOG_BUILD("Send %d bytes.", sent)
        LOG(LOG_TRACE, log_buffer, errno, 5, ctx->log)
 
 	data += sent;
@@ -361,7 +361,7 @@ int ipc_recv(secure_socket *sock, char *data, unsigned int length, thread_contex
         return -1;
     }
 
-    snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Received %d bytes.", received);
+    LOG_BUILD("Received %d bytes.", received)
     LOG(LOG_TRACE, log_buffer, errno, 8, ctx->log)
 
     if (received <= (int) length) {
@@ -468,7 +468,7 @@ gid_t get_group_id(char *group_name, logging *log){
         temp = realloc(gr_buf, (size_t) getgr_buf_size);
         if ( temp == NULL ) {
             free(gr_buf);
-            snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "realloc() failed for group '%s' with size %ld.", group_name, getgr_buf_size);
+            LOG_BUILD("realloc() failed for group '%s' with size %ld.", group_name, getgr_buf_size)
             LOG(LOG_ERROR, log_buffer, errno, 2, log)
             return 0;
         }
@@ -491,7 +491,7 @@ gid_t get_group_id(char *group_name, logging *log){
             } else {
                 /* Others errors are not handles yet */
                 free(gr_buf);
-                snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "getgrnam_r failed with an unhandled error %d.", err_r);
+                LOG_BUILD("getgrnam_r failed with an unhandled error %d.", err_r)
                 LOG(LOG_ERROR, log_buffer, errno, 4, log)
                 return 0;
             }
@@ -501,7 +501,7 @@ gid_t get_group_id(char *group_name, logging *log){
             free(gr_buf);
 
             if ( gr_ptr == NULL ){
-                snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not find group '%s'.", group_name);
+                LOG_BUILD("Could not find group '%s'.", group_name)
                 LOG(LOG_ERROR, log_buffer, 0, 2,log)
                 return 0;
             }
@@ -515,7 +515,7 @@ gid_t get_group_id(char *group_name, logging *log){
 
     if ( getgr_buf_size > secure_socket_max_grbuf_size ){
         /* Here, we could not allocate enough space, so we quit */
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not allocate enough space for group '%s' with size %ld.", group_name, getgr_buf_size);
+        LOG_BUILD("Could not allocate enough space for group '%s' with size %ld.", group_name, getgr_buf_size)
         LOG(LOG_ERROR, log_buffer, 0, 2, log)
     }
 
@@ -562,7 +562,7 @@ bool set_socket_owner_and_permissions(server_context *ctx, char *group_name, gid
      * Thus, if an attacker moves the file, we avoid a malicious race condition.
      */
     if (fchown(ctx->socket->socket_fd, uid, real_gid) == -1) {
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not chown for owner '%u' and group '%s' on socket '%s'. Access to group will not be applied.", uid, group_name, ctx->options->socket_path);
+        LOG_BUILD("Could not chown for owner '%u' and group '%s' on socket '%s'. Access to group will not be applied.", uid, group_name, ctx->options->socket_path)
         LOG(LOG_ALERT, log_buffer, errno, 2, ctx->log)
         return false;
     }
@@ -571,7 +571,7 @@ bool set_socket_owner_and_permissions(server_context *ctx, char *group_name, gid
      * Change file permissions
      */
     if( fchmod(ctx->socket->socket_fd, perms) < 0){
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not chmod '%u' on socket '%s'. Permissions will not be applied.", perms, ctx->options->socket_path);
+        LOG_BUILD("Could not chmod '%u' on socket '%s'. Permissions will not be applied.", perms, ctx->options->socket_path)
         LOG(LOG_ALERT, log_buffer, errno, 2, ctx->log)
         return false;
     }
@@ -610,7 +610,7 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
 
     peer_binary_name = read_data_from_source(proc_file, &peer_binary_name_length, ctx->log);
     if( peer_binary_name == NULL ){
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not read process file '%s'. Process not authenticated.", proc_file);
+        LOG_BUILD("Could not read process file '%s'. Process not authenticated.", proc_file)
         LOG(LOG_INFO, log_buffer, errno, 3, ctx->log)
         return false;
     }
@@ -620,7 +620,7 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
     /*
     if ( peer_binary_length == 0 || peer_binary_length != authorised_length){
         free(peer_binary_name);
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer binary name length '%lu bytes' does not match authorised length '%lu bytes'.", peer_binary_length, authorised_length);
+        LOG_BUILD("Peer binary name length '%lu bytes' does not match authorised length '%lu bytes'.", peer_binary_length, authorised_length)
         LOG(LOG_ERROR, log_buffer, errno, 3, ctx->log)
         return false;
     }
@@ -669,13 +669,13 @@ bool ipc_validate_peer(server_context *ctx){
 
     /* Check consistency between methods */
     if ( peer_uid_bsd != 0 && peer_uid_bsd != peer_uid ){
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Inconsistency in peer uid : ucreds %d vs bsd getpeerid %d.", peer_pid, peer_uid_bsd);
+        LOG_BUILD("Inconsistency in peer uid : ucreds %d vs bsd getpeerid %d.", peer_pid, peer_uid_bsd)
         LOG(LOG_CRITICAL, log_buffer, 0, 2, ctx->log)
         return false;
     }
 
     if ( peer_gid_bsd != 0 && peer_gid_bsd != peer_gid ){
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Inconsistency in peer gid : ucreds %d vs bsd getpeerid %d.", peer_gid, peer_gid_bsd);
+        LOG_BUILD("Inconsistency in peer gid : ucreds %d vs bsd getpeerid %d.", peer_gid, peer_gid_bsd)
         LOG(LOG_CRITICAL, log_buffer, 0, 2, ctx->log)
         return false;
     }
@@ -683,34 +683,34 @@ bool ipc_validate_peer(server_context *ctx){
     /* Test against authorised values */
     if(ctx->options->authorised_peer_pid){
         if( ctx->options->authorised_peer_pid != peer_pid) {
-            snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer pid %d is not authorised.", peer_pid);
+            LOG_BUILD("Peer pid %d is not authorised.", peer_pid)
             LOG(LOG_INFO, log_buffer, errno, 2, ctx->log)
             return false;
         }
 
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer authenticated by pid %d.", peer_pid);
+        LOG_BUILD("Peer authenticated by pid %d.", peer_pid)
         LOG(LOG_INFO, log_buffer, errno, 0, ctx->log)
     }
 
     if(ctx->options->authorised_peer_uid){
         if( ctx->options->authorised_peer_uid != peer_uid) {
-            snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer uid %d, is not authorised.", peer_uid);
+            LOG_BUILD("Peer uid %d, is not authorised.", peer_uid)
             LOG(LOG_INFO, log_buffer, errno, 2, ctx->log)
             return false;
         }
 
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer authenticated by uid %d.", peer_uid);
+        LOG_BUILD("Peer authenticated by uid %d.", peer_uid)
         LOG(LOG_INFO, log_buffer, errno, 0, ctx->log)
     }
 
     if(ctx->options->authorised_peer_gid){
         if( ctx->options->authorised_peer_gid != peer_gid){
-            snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer gid %d is not authorised.", peer_gid);
+            LOG_BUILD("Peer gid %d is not authorised.", peer_gid)
             LOG(LOG_INFO, log_buffer, errno, 2, ctx->log)
             return false;
         }
 
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer authenticated by gid %d.", peer_gid);
+        LOG_BUILD("Peer authenticated by gid %d.", peer_gid)
         LOG(LOG_INFO, log_buffer, errno, 0, ctx->log)
     }
 
@@ -721,7 +721,7 @@ bool ipc_validate_peer(server_context *ctx){
             return false;
         }
 
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Peer authenticated by process name '%s'.", ctx->options->authorised_peer_process_name);
+        LOG_BUILD("Peer authenticated by process name '%s'.", ctx->options->authorised_peer_process_name)
         LOG(LOG_INFO, log_buffer, errno, 0, ctx->log)
     }
 

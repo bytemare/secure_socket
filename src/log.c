@@ -199,7 +199,7 @@ int get_mq_max_message_size(logging *log){
 
     fp = fopen(mq_max_message_size_source, "r");
     if (fp == NULL) {
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Logging Thread : Could not open '%s'. Taking default max value %d.", mq_max_message_size_source, LOG_MQ_MAX_MESSAGE_SIZE);
+        LOG_BUILD("Logging Thread : Could not open '%s'. Taking default max value %d.", mq_max_message_size_source, LOG_MQ_MAX_MESSAGE_SIZE)
         LOG_FILE(LOG_TRACE, log_buffer, errno, 3, log)
     }
     else {
@@ -209,7 +209,7 @@ int get_mq_max_message_size(logging *log){
 
         if (ret == 1){
             fclose(fp);
-            snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Maximum size message for messaging queue is %d.", max_size);
+            LOG_BUILD("Maximum size message for messaging queue is %d.", max_size)
             LOG_FILE(LOG_INFO, log_buffer, errno, 5, log)
         }
         else if ( errno != 0){
