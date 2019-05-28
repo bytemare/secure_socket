@@ -72,7 +72,7 @@ void ipc_close_socket(secure_socket *sock){
  * @param log
  * @return NULL
  */
-secure_socket *secure_socket_free(secure_socket *sock, logging *log){
+secure_socket* secure_socket_free(secure_socket *sock, logging *log){
     LOG_INIT
     ipc_close_socket(sock);
     free(sock);
@@ -428,10 +428,106 @@ void secure_socket_free_from_context(server_context *ctx){
 }
 
 
+
+/**
+ * Retrieve group ID from group list given the name.
+ * @param group_name
+ * @return gid on success; 0 on failure
+ */
+gid_t get_group_id(char *group_name, logging *log){
+
+    int err_r;
+
+    char *temp;
+    char *gr_buf = NULL;
+    long getgr_buf_size;
+    long default_getgr_buf_size = 4096;
+    const long int secure_socket_max_grbuf_size = 65536;
+    struct group *gr_ptr = NULL;
+    struct group group_buff;
+
+    LOG_INIT
+    char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
+
+    /* Get size for buffer memory
+     * Idea comes from https://github.com/collectd/collectd/pull/2937
+     */
+    getgr_buf_size = sysconf(_SC_GETGR_R_SIZE_MAX);
+    if (getgr_buf_size <= 0) {
+        getgr_buf_size = sysconf(_SC_PAGESIZE);
+    }
+    if (getgr_buf_size <= 0) {
+        getgr_buf_size = default_getgr_buf_size;
+    }
+
+    /* Plot :
+     * The getgr{nam/id}_r reentrant functions need space allocated for the buffer to contain a list. If the group
+     * you are retrieving contains too many elements, there might be a chance not enough space was allocated
+     * beforehand. So we increase that space until a sufficiently large space was allocated or a maximum reached.
+     */
+    do {
+        temp = realloc(gr_buf, (size_t) getgr_buf_size);
+        if ( temp == NULL ) {
+            free(gr_buf);
+            snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "realloc() failed for group '%s' with size %ld. Could not retrieve group ID structure. Access to group will not be applied.", group_name, getgr_buf_size);
+            LOG(LOG_ERROR, log_buffer, errno, 2, log)
+            return 0;
+        }
+
+        gr_buf = temp;
+
+        /* Try to retrieve the group by name */
+        if ( (err_r = getgrnam_r(group_name, &group_buff, gr_buf, (size_t) getgr_buf_size, &gr_ptr)) != 0 ){
+            /* If we are in here, it is because getgrnam_r has encountered an error,
+             * and returned it, but without setting errno.
+             */
+
+            if ( err_r == ERANGE ){
+                /* If this error is encountered (meaning "Insufficient buffer space supplied.",
+                 * it means we need to increase the allocated space and retry.
+                 */
+                getgr_buf_size += default_getgr_buf_size;
+
+            } else {
+
+                /* Others errors are not handles yet */
+                free(gr_buf);
+                LOG(LOG_ERROR, "Error: getgrnam_r failed with an unhandled error. Could not retrieve group structure. Access to group will not be applied.", err_r, 4, ctx->log)
+                return 0;
+            }
+        } else {
+
+            /* Whatever happens next, we will free the buffer */
+            free(gr_buf);
+
+            if ( gr_ptr == NULL ){
+                snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not find group '%s'. Access to group will not be applied.", ctx->options->authorised_peer_username);
+                LOG(LOG_ERROR, log_buffer, 0, 2,log)
+                return 0;
+            }
+
+            /* Here, we have found the group ID and everything went fine */
+            return group_buff.gr_gid;
+        }
+    } while ( getgr_buf_size <= secure_socket_max_grbuf_size); /* Loop until we hit a maximum */
+
+    if ( getgr_buf_size > secure_socket_max_grbuf_size ){
+        /* Here, we could not allocate enough space, so we quit */
+        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not allocate enough space for group '%s' with size %ld. Access to group will not be applied.", ctx->options->authorised_peer_username, getgr_buf_size);
+        LOG(LOG_ERROR, log_buffer, 0, 2, log)
+    }
+
+    return 0;
+}
+
+
+
+
+
 /**
  * Changes access and permissions on socket.
  * If real_gid is given (i.e. different from 0) than grants group access to this group. If real_gid is 0, than the
- * group_name is used to retrieve the gid to grant access to.
+ * group_name given in context is used to retrieve the gid to grant access to.
  * perms is the mode_t describing the permissions to apply, like "0770" : use strtoul("0770", 0, 8)
  * @param file_path
  * @param real_gid
