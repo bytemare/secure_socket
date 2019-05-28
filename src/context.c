@@ -83,13 +83,13 @@ ipc_options* initialise_options(){
 
     /* Set log file */
     memset(options->log_file, '\0', sizeof(options->log_file));
-    strncpy(options->log_file, IPC_LOG_FILE, sizeof(options->log_file) - sizeof(rand_buffer));
+    strlcpy(options->log_file, IPC_LOG_FILE, sizeof(options->log_file) - sizeof(rand_buffer));
     secure_random_string(rand_buffer, sizeof(rand_buffer));
     strlcat(options->log_file, rand_buffer, sizeof(options->log_file) - sizeof(IPC_LOG_FILE));
 
     /* Set socket data */
     memset(options->socket_path, '\0', sizeof(options->socket_path));
-    strncpy(options->socket_path, IPC_SOCKET_PATH_BASE, sizeof(options->socket_path) - sizeof(rand_buffer));
+    strlcpy(options->socket_path, IPC_SOCKET_PATH_BASE, sizeof(options->socket_path) - sizeof(rand_buffer));
     secure_random_string(rand_buffer, sizeof(rand_buffer));
     strlcat(options->log_file, rand_buffer, sizeof(options->log_file) - sizeof(IPC_SOCKET_PATH_BASE));
 
