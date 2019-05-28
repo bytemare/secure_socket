@@ -21,13 +21,37 @@
 
 
 /**
+ * Thread handler : executes associated action for client communication
+ * @param args
+ * @return
+ */
+static void* handle_client(void *args){
+
+    thread_context *ctx;
+
+    LOG_INIT
+
+    ctx = (thread_context*)args;
+
+    LOG(LOG_TRACE, "Thread launched. Calling handler.", 0, 0, ctx->log)
+
+    /*handle_client_connection(client);*/
+    //handler(ctx);
+
+    LOG(LOG_TRACE, "Connexion closed. Thread now exiting.", 0, 0, ctx->log)
+
+    pthread_exit((void*)0);
+}
+
+
+/**
  * Given a path to filename, reads the file and returns an appropriate buffer containing its content and appropriately
  * sets the size pointer to the number of bytes read.
  * @param filename
  * @param length
  * @return
  */
-char *read_data_from_source (const char *filename, int *size, logging *log){
+char* read_data_from_source(const char *filename, int *size, logging *log){
 
     char *destination;
     int file;
@@ -37,7 +61,6 @@ char *read_data_from_source (const char *filename, int *size, logging *log){
     char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH];
 
     LOG_INIT
-
 
     snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Attempting to read data from file '%s' ", filename);
     LOG(LOG_TRACE, log_buffer, 0, -2, log)
@@ -72,6 +95,7 @@ char *read_data_from_source (const char *filename, int *size, logging *log){
 
     destination = malloc(length);
     if( !destination ){
+        // TODO : give filename and buffer size in error
         LOG(LOG_ALERT, "malloc for file reading failed : ", errno, 2, log)
         return NULL;
     }
@@ -84,30 +108,6 @@ char *read_data_from_source (const char *filename, int *size, logging *log){
 
     *size = (int)length;
     return destination;
-}
-
-
-/**
- * Thread handler : executes associated action for client communication
- * @param args
- * @return
- */
-static void* handle_client(void *args){
-
-    thread_context *ctx;
-
-    LOG_INIT
-
-    ctx = (thread_context*)args;
-
-    LOG(LOG_TRACE, "Thread launched. Calling handler.", 0, 0, ctx->log)
-
-    /*handle_client_connection(client);*/
-    //handler(ctx);
-
-    LOG(LOG_TRACE, "Connexion closed. Thread now exiting.", 0, 0, ctx->log)
-
-    pthread_exit((void*)0);
 }
 
 
@@ -142,6 +142,7 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
 
     client_ctx = malloc(nb_cnx * sizeof(thread_context*));
     if( client_ctx == NULL){
+        //TODO give size of failed malloc
         LOG(LOG_FATAL, "malloc failed for client/thread_contexts ", errno, 2, ctx->log)
         return;
     }
@@ -166,6 +167,7 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
         new_client = ipc_accept_connection(ctx);
 
         if( new_client == NULL ){
+            //TODO give more context on why connection was denied
             LOG(LOG_ALERT, "Connection denied.", errno, 3, ctx->log)
             count--;
             nb_authorised_errors--;
@@ -177,6 +179,7 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
 
         /* (void*)handle_client */
         if( pthread_create(&tid, &ctx->attr, &handle_client, client_ctx[offset]) != 0 ){
+            //TODO give more context on why thread could not be created
             LOG(LOG_ALERT, "error creating thread. Connection closed.", errno, 1, ctx->log)
             client_ctx[offset] = free_thread_context(client_ctx[offset]);
             nb_authorised_errors--;
