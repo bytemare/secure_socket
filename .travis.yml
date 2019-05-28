@@ -6,19 +6,19 @@ dist: xenial
 matrix:
   #fast_finish: True
   include:
-    - name: Hardening Checks
-      addons:
-        apt:
-          packages: &default_packages
-            - libbsd-dev
-            - devscripts
-            - hardening-includes
-      before_install:
-        - wget https://github.com/slimm609/checksec.sh/archive/master.zip && unzip -q master.zip
-      script:
-        - ./build.sh Debug
-        - ./checksec.sh-master/checksec -f Debug/secure_socket && ./checksec.sh-master/checksec -ff Debug/secure_socket
-        - hardening-check -c -v Debug/secure_socket
+    #- name: Hardening Checks
+    #  addons:
+    #    apt:
+    #      packages: &default_packages
+    #        - libbsd-dev
+    #        - devscripts
+    #        - hardening-includes
+    #  before_install:
+    #    - wget https://github.com/slimm609/checksec.sh/archive/master.zip && unzip -q master.zip
+    #  script:
+    #    - ./build.sh Debug
+    #    - ./checksec.sh-master/checksec -f Debug/secure_socket && ./checksec.sh-master/checksec -ff Debug/secure_socket
+    #    - hardening-check -c -v Debug/secure_socket
 
     - name: Sonar Checking
       addons:
