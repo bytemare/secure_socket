@@ -5,7 +5,10 @@
        src="https://scan.coverity.com/projects/18404/badge.svg"/>
 </a>
 
-[![Build Status](https://travis-ci.com/bytemare/secure_socket.svg?branch=master)](https://travis-ci.com/bytemare/secure_socket)
+[![Build Status](https://travis-ci.com/bytemare/secure_socket.svg?branch=master)](https://travis-ci.com/bytemare/secure_socket)  
+<!---
+![Badges](https://img.shields.io/badge/It%20has%20so%20many-badges-success.svg)
+--->
 
 ## DRAFT
 
