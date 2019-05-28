@@ -1,14 +1,29 @@
 # secure_socket
 
-<a href="https://scan.coverity.com/projects/bytemare-secure_socket">
-  <img alt="Coverity Scan Build Status"
-       src="https://scan.coverity.com/projects/18404/badge.svg"/>
-</a>
+
 
 [![Build Status](https://travis-ci.com/bytemare/secure_socket.svg?branch=master)](https://travis-ci.com/bytemare/secure_socket)  
 <!---
 ![Badges](https://img.shields.io/badge/It%20has%20so%20many-badges-success.svg)
 --->
+
+#### Quality
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=bytemare_secure_socket&metric=ncloc)](https://sonarcloud.io/dashboard?id=bytemare_secure_socket)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=bytemare_secure_socket&metric=security_rating)](https://sonarcloud.io/dashboard?id=bytemare_secure_socket)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=bytemare_secure_socket&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=bytemare_secure_socket)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=bytemare_secure_socket&metric=bugs)](https://sonarcloud.io/dashboard?id=bytemare_secure_socket)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=bytemare_secure_socket&metric=alert_status)](https://sonarcloud.io/dashboard?id=bytemare_secure_socket)
+
+#### Coverage
+
+<a href="https://scan.coverity.com/projects/bytemare-secure_socket">
+  <img alt="Coverity Scan Build Status"
+       src="https://scan.coverity.com/projects/18404/badge.svg"/>
+</a>
+
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=bytemare_secure_socket&metric=coverage)](https://sonarcloud.io/dashboard?id=bytemare_secure_socket)
+
+
 
 ## DRAFT
 
