@@ -146,7 +146,7 @@ typedef struct _logging{
 #define LOG_MAX_ERRNO_LENGTH            100
 #define LOG_MAX_ERROR_MESSAGE_LENGTH    (150 + NAME_MAX)
 
-#define LOG_DEBUG_MAX_PID_LENGTH                5
+#define LOG_DEBUG_MAX_PID_LENGTH                5 /* Maximum PID is 32768 */
 #define LOG_DEBUG_MAX_THREAD_ID_LENGTH          20 /* obtained with (unsigned int) floor (log10 (UINTMAX_MAX)) + 1 */
 #define LOG_DEBUG_MAX_FILE_NAME_LENGTH          NAME_MAX
 #define LOG_DEBUG_MAX_FUNCTION_NAME_LENGTH      61
@@ -219,6 +219,13 @@ void* logging_thread(void *args);
  */
 #define LOG(message_level, message, error_number, error_delta, log)\
     log_to_mq(&log_buffs, message_level, message, error_number, __FILE__, __func__, __LINE__ + 1 - (error_delta), log);\
+
+/**
+ * Build a log entry with runtime values
+ */
+#define LOG_BUILD(error_message_format, ...)\
+    snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, error_message_format, ##__VA_ARGS__);\
+
 
 /**
  * Same as LOG, but writes directly to log file
