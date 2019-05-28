@@ -558,7 +558,10 @@ bool set_socket_owner_and_permissions(server_context *ctx, char *group_name, gid
     }
 
     /* Now that real_gid is set, we can grant access */
-    if (chown(ctx->options->socket_path, uid, real_gid) == -1) {
+    /* Note : fchown() is more secure than chown(), since we specify a file descriptor to an already opened file.
+     * Thus, if an attacker moves the file, we avoid a race condition.
+     */
+    if (fchown(ctx->socket->socket_fd, uid, real_gid) == -1) {
         snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not chown for owner '%u' and group '%s' on socket '%s'. Access to group will not be applied.", uid, group_name, ctx->options->socket_path);
         LOG(LOG_ALERT, log_buffer, errno, 2, ctx->log)
         return false;
@@ -567,7 +570,7 @@ bool set_socket_owner_and_permissions(server_context *ctx, char *group_name, gid
     /**
      * Change file permissions
      */
-    if( chmod(ctx->options->socket_path, perms) < 0){
+    if( fchmod(ctx->socket->socket_fd, perms) < 0){
         snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not chmod '%u' on socket '%s'. Permissions will not be applied.", perms, ctx->options->socket_path);
         LOG(LOG_ALERT, log_buffer, errno, 2, ctx->log)
         return false;
