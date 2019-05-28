@@ -187,7 +187,8 @@ __always_inline uint8_t log_initialise_logging_s(logging *log, int8_t verbosity,
 int get_mq_max_message_size(logging *log){
 
     FILE *fp;
-    int max_size = 0, ret;
+    int max_size = 0;
+    int ret;
     char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
     const char *mq_max_message_size_source = LOG_MQ_SOURCE_MAX_MESSAGE_SIZE_FILE;
 
