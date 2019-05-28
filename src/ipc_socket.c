@@ -606,7 +606,6 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
     strlcat(proc_file, "/",  2);
     strlcat(proc_file, IPC_PEER_BINARY_NAME_FILE, sizeof(proc_file) - strlen(proc_file));
 
-
     //snprintf(proc_file, NAME_MAX, IPC_PEER_BINARY_NAME_FILE_FORMAT, (int)peer_pid, IPC_PEER_BINARY_NAME_FILE);
 
     peer_binary_name = read_data_from_source(proc_file, &peer_binary_name_length, ctx->log);
@@ -716,7 +715,7 @@ bool ipc_validate_peer(server_context *ctx){
     }
 
 
-    if(strlen(ctx->options->authorised_peer_process_name) > 0){
+    if( ctx->options->authorised_peer_process_name[0] != '\0'){
         if(!ipc_validate_proc(ctx, peer_pid)){
             LOG(LOG_ERROR, "Peer process name does not match the authorised one. Process not authenticated.", errno, 2, ctx->log)
             return false;
