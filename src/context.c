@@ -145,7 +145,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
             }
 
             memset(options->mq_name, '\0', mq_name_max_size);
-            strncpy(options->mq_name, q, (size_t) (mq_name_max_size - 1));
+            strlcpy(options->mq_name, q, sizeof(options->mq_name));
             continue;
         }
 
@@ -158,7 +158,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
             }
 
             memset(options->socket_path, '\0', socket_name_max_size);
-            strncpy(options->socket_path, q, (size_t) (socket_name_max_size - 1));
+            strlcpy(options->socket_path, q, sizeof(options->socket_path));
 
             continue;
         }
@@ -172,7 +172,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
             }
 
             memset(options->log_file, '\0', log_name_max_size);
-            strncpy(options->log_file, q, (size_t) (log_name_max_size - 1));
+            strlcpy(options->log_file, q, sizeof(options->log_file));
 
             continue;
         }
@@ -234,11 +234,12 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                     }
                     else{
 
+                        // TODO
                     }
                 }
                 if(valid){
                     memset(options->socket_permissions, '\0', sizeof(options->socket_permissions));
-                    strncpy(options->socket_permissions, q, sizeof(options->socket_permissions) - 1);
+                    strlcpy(options->socket_permissions, q, sizeof(options->socket_permissions));
                     continue;
                 }
             }
@@ -251,7 +252,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         if (strcmp(p, "authorised_peer_username") == 0) {
             if( strlen(q) < 31 ){
                 memset(options->authorised_peer_username, '\0', sizeof(options->authorised_peer_username));
-                strncpy(options->authorised_peer_username, q, sizeof(options->authorised_peer_username) - 1);
+                strlcpy(options->authorised_peer_username, q, sizeof(options->authorised_peer_username));
                 continue;
             }
 
@@ -310,7 +311,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         if (strcmp(p, "authorised_peer_process_name") == 0) {
             if( strlen(q) < sizeof(options->authorised_peer_process_name) ){
                 memset(options->authorised_peer_process_name, '\0', sizeof(options->authorised_peer_process_name));
-                strncpy(options->authorised_peer_process_name, q, sizeof(options->authorised_peer_process_name) - 1);
+                strlcpy(options->authorised_peer_process_name, q, sizeof(options->authorised_peer_process_name));
                 continue;
             }
 
@@ -321,7 +322,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         if (strcmp(p, "authorised_peer_cli_args") == 0) {
             if( strlen(q) < sizeof(options->authorised_peer_cli_args) ){
                 memset(options->authorised_peer_cli_args, '\0', sizeof(options->authorised_peer_cli_args));
-                strncpy(options->authorised_peer_cli_args, q, sizeof(options->authorised_peer_cli_args) - 1);
+                strlcpy(options->authorised_peer_cli_args, q, sizeof(options->authorised_peer_cli_args));
                 continue;
             }
 
