@@ -401,7 +401,7 @@ struct ucred* ipc_get_ucred(server_context *ctx){
     return creds;
 }
 
-/* TODO */
+/* TODO : keep it or delete it*/
 /**
  * Returns the pid of the correspondent process on the other side of the socket
  * @param sock
@@ -428,9 +428,9 @@ void secure_socket_free_from_context(server_context *ctx){
 }
 
 
-
 /**
- * Retrieve group ID from group list given the name.
+ * Retrieve effective group ID from group list given the name.
+ * Using reentrant function getgrnam_r instead of getgrnam.
  * @param group_name
  * @return gid on success; 0 on failure
  */
@@ -492,7 +492,7 @@ gid_t get_group_id(char *group_name, logging *log){
 
                 /* Others errors are not handles yet */
                 free(gr_buf);
-                LOG(LOG_ERROR, "Error: getgrnam_r failed with an unhandled error. Could not retrieve group structure. Access to group will not be applied.", err_r, 4, ctx->log)
+                LOG(LOG_ERROR, "Error: getgrnam_r failed with an unhandled error. Could not retrieve group structure. Access to group will not be applied.", err_r, 4, log)
                 return 0;
             }
         } else {
@@ -501,7 +501,7 @@ gid_t get_group_id(char *group_name, logging *log){
             free(gr_buf);
 
             if ( gr_ptr == NULL ){
-                snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not find group '%s'. Access to group will not be applied.", ctx->options->authorised_peer_username);
+                snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not find group '%s'. Access to group will not be applied.", group_name);
                 LOG(LOG_ERROR, log_buffer, 0, 2,log)
                 return 0;
             }
@@ -513,15 +513,12 @@ gid_t get_group_id(char *group_name, logging *log){
 
     if ( getgr_buf_size > secure_socket_max_grbuf_size ){
         /* Here, we could not allocate enough space, so we quit */
-        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not allocate enough space for group '%s' with size %ld. Access to group will not be applied.", ctx->options->authorised_peer_username, getgr_buf_size);
+        snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not allocate enough space for group '%s' with size %ld. Access to group will not be applied.", group_name, getgr_buf_size);
         LOG(LOG_ERROR, log_buffer, 0, 2, log)
     }
 
     return 0;
 }
-
-
-
 
 
 /**
@@ -536,19 +533,10 @@ gid_t get_group_id(char *group_name, logging *log){
  * @param ctx
  * @return
  */
- // TODO : implement a return value to signal success or failure to caller
-void set_socket_owner_and_permissions(server_context *ctx, gid_t real_gid, mode_t perms){
+ // TODO Add genericity by giving a group name (not looking precisely for authoreised username)
+bool set_socket_owner_and_permissions(server_context *ctx, gid_t real_gid, mode_t perms){
 
-    int err_r;
     uid_t uid;
-
-    char *temp;
-    char *gr_buf = NULL;
-    long getgr_buf_size;
-    long default_getgr_buf_size = 4096;
-    const long int secure_socket_max_grbuf_size = 65536;
-    struct group *gr_ptr = NULL;
-    struct group group_buff;
 
     LOG_INIT
     char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
@@ -560,88 +548,20 @@ void set_socket_owner_and_permissions(server_context *ctx, gid_t real_gid, mode_
      */
     uid = getuid();
 
-    /* Get effective group ID from group name (structure) using reentrant function getgrnam_r instead of getgrnam */
-    // TODO : maybe put this verification in a separate function and use that function to check group existence at argument checking.
+    /* Get effective group ID */
     if(!real_gid){
-
-        /* Get size for buffer memory
-         * Idea comes from https://github.com/collectd/collectd/pull/2937
-         */
-        getgr_buf_size = sysconf(_SC_GETGR_R_SIZE_MAX);
-        if (getgr_buf_size <= 0) {
-            getgr_buf_size = sysconf(_SC_PAGESIZE);
+        if ( (real_gid = get_group_id(ctx->options->authorised_peer_username, ctx->log)) == 0 ){
+            //TODO : log impossibility of perms
+            return false;
         }
-        if (getgr_buf_size <= 0) {
-            getgr_buf_size = default_getgr_buf_size;
-        }
-
-        /* Plot :
-         * The getgr{nam/id}_r reentrant functions need space allocated for the buffer to contain a list. If the group
-         * you are retrieving contains too many elements, there might be a chance not enough space was allocated
-         * beforehand. So we increase that space until a sufficiently large space was allocated or a maximum reached.
-         */
-        do {
-            temp = realloc(gr_buf, (size_t) getgr_buf_size);
-            if ( temp == NULL ) {
-                free(gr_buf);
-                snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "realloc() failed for group '%s' with size %ld. Could not retrieve group ID structure. Access to group will not be applied.", ctx->options->authorised_peer_username, getgr_buf_size);
-                LOG(LOG_ERROR, log_buffer, errno, 2, ctx->log)
-                //return -1;
-            }
-
-            gr_buf = temp;
-
-            /* Try to retrieve the group by name */
-            if ( (err_r = getgrnam_r(ctx->options->authorised_peer_username, &group_buff, gr_buf, (size_t) getgr_buf_size, &gr_ptr)) != 0 ){
-                /* If we are in here, it is because getgrnam_r has encountered an error,
-                 * and returned it, but without setting errno.
-                 */
-
-                if ( err_r == ERANGE ){
-                    /* If this error is encountered (meaning "Insufficient buffer space supplied.",
-                     * it means we need to increase the allocated space and retry.
-                     */
-                    getgr_buf_size += default_getgr_buf_size;
-
-                } else {
-
-                    /* Others errors are not handles yet */
-                    free(gr_buf);
-                    LOG(LOG_ERROR, "Error: getgrnam_r failed with an unhandled error. Could not retrieve group structure. Access to group will not be applied.", err_r, 4, ctx->log)
-                    //return -1;
-                }
-            } else {
-
-                /* Whatever happens next, we will free the buffer */
-                free(gr_buf);
-
-                if ( gr_ptr == NULL ){
-                    snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not find group '%s'. Access to group will not be applied.", ctx->options->authorised_peer_username);
-                    LOG(LOG_ERROR, log_buffer, 0, 2, ctx->log)
-                    // return -1;
-                }
-
-                /* Here, we have found the group ID and everything went fine */
-                real_gid = group_buff.gr_gid;
-                break;
-            }
-        } while ( getgr_buf_size <= secure_socket_max_grbuf_size); /* Loop until we hit a maximum */
-
-        if ( getgr_buf_size > secure_socket_max_grbuf_size ){
-            /* Here, we could not allocate enough space, so we quit */
-            snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not allocate enough space for group '%s' with size %ld. Access to group will not be applied.", ctx->options->authorised_peer_username, getgr_buf_size);
-            LOG(LOG_ERROR, log_buffer, 0, 2, ctx->log)
-            // return -1;
-        }
-
     }
 
     /* Now that real_gid is set, we can grant access */
 
-    if (real_gid && chown(ctx->options->socket_path, uid, real_gid) == -1) {
+    if (chown(ctx->options->socket_path, uid, real_gid) == -1) {
         snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not chown for user '%u' and group '%s' on socket '%s'. Access to group will not be applied.", uid, ctx->options->authorised_peer_username, ctx->options->socket_path);
         LOG(LOG_ALERT, log_buffer, errno, 2, ctx->log)
-        //return -1;
+        return false;
     }
 
     /**
@@ -650,10 +570,10 @@ void set_socket_owner_and_permissions(server_context *ctx, gid_t real_gid, mode_
     if( chmod(ctx->options->socket_path, perms) < 0){
         snprintf(log_buffer, LOG_MAX_ERROR_MESSAGE_LENGTH, "Could not chmod '%u' on socket '%s'. Permissions will not be applied.", perms, ctx->options->socket_path);
         LOG(LOG_ALERT, log_buffer, errno, 2, ctx->log)
-        //return -1;
+        return false;
     }
 
-    //return 0;
+    return true;
 }
 
 
