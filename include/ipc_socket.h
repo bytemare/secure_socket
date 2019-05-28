@@ -13,7 +13,6 @@
 
 #include <secure_socket_types.h>
 
-
 secure_socket* secure_socket_allocate(server_context *ctx);
 
 bool secure_socket_create_socket(server_context *ctx);
