@@ -30,11 +30,11 @@ struct ucred* ipc_get_ucred(server_context *ctx);
 
 void ipc_close_socket(secure_socket *sock);
 
-secure_socket *secure_socket_free(secure_socket *sock, logging *log);
+secure_socket* secure_socket_free(secure_socket *sock, logging *log);
 
 void secure_socket_free_from_context(server_context *ctx);
 
-void set_socket_owner_and_permissions(server_context *ctx, gid_t real_gid, mode_t perms);
+bool set_socket_owner_and_permissions(server_context *ctx, char *group_name, gid_t real_gid, mode_t perms);
 
 bool ipc_validate_peer(server_context *ctx);
 
