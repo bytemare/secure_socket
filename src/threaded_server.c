@@ -107,7 +107,7 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
             // @TODO handle this case
         }
     }
-    destination[length] = '\0';
+    destination[sizeof(destination) - 1] = '\0';
 
     LOG_BUILD("Read '%d' bytes from '%s'", (int)length, filename)
     LOG(LOG_TRACE, log_buffer, 0, 3, log)
