@@ -356,7 +356,7 @@ void* logging_thread(void *args){
                 LOG_FILE(LOG_ALERT, "Logging : Error in mq_receive", errno, 3, log)
             }
             else {
-                log_write_to_file(log, buffer);
+                log_write_to_file(log, buffer, (size_t) nb_bytes);
             }
 
             pthread_mutex_lock(&log->mutex);

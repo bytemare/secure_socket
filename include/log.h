@@ -461,8 +461,8 @@ __always_inline void log_to_stdout(logging_buffs *log_buffs, const int message_l
  * @param log
  * @param message
  */
-__always_inline void log_write_to_file(logging *log, char *message){
-    if (write(log->fd, message, strlen(message)) == -1){
+__always_inline void log_write_to_file(logging *log, char *message, size_t message_len){
+    if (write(log->fd, message, message_len) == -1){
         LOG_INIT
         LOG_STDOUT(LOG_ALERT, "Call to write() to log to file failed. Cannot log.", errno, 1, log)
         if(log->verbosity >= LOG_NOTICE){
@@ -470,7 +470,7 @@ __always_inline void log_write_to_file(logging *log, char *message){
             printf("\t%s", message);
         }
     }
-    memset(message, 0, strlen(message));
+    memset(message, 0, message_len);
 }
 
 /**
@@ -488,7 +488,7 @@ __always_inline void log_to_file(logging_buffs *log_buffs, const int message_lev
                               const int error_number, const char *file, const char *function, const int line, logging *log){
     if(log->verbosity > LOG_OFF){
         log_build(log_buffs, message_level, message, error_number, file, function, line, log->verbosity);
-        log_write_to_file(log, log_buffs->log_entry_buffer);
+        log_write_to_file(log, log_buffs->log_entry_buffer, strnlen(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer)));
     }
 
 }
