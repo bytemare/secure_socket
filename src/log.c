@@ -189,7 +189,6 @@ int get_mq_max_message_size(logging *log){
 
     FILE *fp;
     int max_size = 0;
-    int ret;
     char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
     const char *mq_max_message_size_source = LOG_MQ_SOURCE_MAX_MESSAGE_SIZE_FILE;
 
@@ -204,6 +203,7 @@ int get_mq_max_message_size(logging *log){
         LOG_FILE(LOG_TRACE, log_buffer, errno, 3, log)
     }
     else {
+        int ret;
         errno = 0;
 
         ret = fscanf(fp, "%d", &max_size); /* TODO clean this here up, there should be a better way of doing this*/
@@ -318,7 +318,6 @@ void log_close(logging *log) {
 void* logging_thread(void *args){
 
     logging *log;
-    int nb_bytes;
     int mq_max_size;
     unsigned int prio;
     char *buffer;
@@ -347,6 +346,7 @@ void* logging_thread(void *args){
         }
         while (!log->quit_logging || log->mq_attr.mq_curmsgs) {
 
+            int nb_bytes;
             pthread_mutex_unlock(&log->mutex);
 
             memset(buffer, '\0', (size_t )mq_max_size+1);

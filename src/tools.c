@@ -20,14 +20,13 @@
 void secure_random_string(char *rand, uint32_t size){
 
     static char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    uint32_t n;
-    //uint32_t charset_length = (uint32_t) strlen(charset);
 
     if (size){
         --size;
-        for (n = 0; n < size; n++){
-            rand[n] = charset[arc4random_uniform(sizeof(charset))];
-        }
         rand[size] = '\0';
+        for (; size >= 0 ; size--){
+            rand[size] = charset[arc4random_uniform(sizeof(charset))];
+        }
+
     }
 }

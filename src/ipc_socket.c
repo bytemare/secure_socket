@@ -305,7 +305,6 @@ secure_socket* ipc_accept_connection(server_context *ctx){
  */
 bool ipc_send(secure_socket *sock, int length, char *data, thread_context *ctx){
 
-    int sent;
     char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
 
     LOG_INIT
@@ -319,11 +318,11 @@ bool ipc_send(secure_socket *sock, int length, char *data, thread_context *ctx){
     }
 
    while(length > 0){
-
-	    if ((sent = (int) send(sock->socket_fd, data, (size_t) length, 0)) == -1 ){
-            LOG(LOG_ALERT, "send() failed : ", errno, 1, ctx->log)
-	        return false;
-	    }
+       int sent;
+       if ((sent = (int) send(sock->socket_fd, data, (size_t) length, 0)) == -1 ){
+           LOG(LOG_ALERT, "send() failed : ", errno, 1, ctx->log)
+           return false;
+       }
        LOG_BUILD("Send %d bytes.", sent)
        LOG(LOG_TRACE, log_buffer, errno, 5, ctx->log)
 
@@ -433,8 +432,6 @@ void secure_socket_free_from_context(server_context *ctx){
  */
 gid_t get_group_id(char *group_name, logging *log){
 
-    int err_r;
-
     char *temp;
     char *gr_buf = NULL;
     long getgr_buf_size;
@@ -463,6 +460,7 @@ gid_t get_group_id(char *group_name, logging *log){
      * beforehand. So we increase that space until a sufficiently large space was allocated or a maximum reached.
      */
     do {
+        int err_r;
         temp = realloc(gr_buf, (size_t) getgr_buf_size);
         if ( temp == NULL ) {
             free(gr_buf);
