@@ -55,7 +55,7 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
 
     char *destination;
     int file;
-    size_t length;
+    ssize_t length;
     struct stat file_info;
 
     char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
@@ -86,20 +86,28 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
         return NULL;
     }
 
-    length = (size_t) file_info.st_size;
+    length = file_info.st_size;
 
     LOG_BUILD("File '%s' is '%d' bytes long.", filename, (int)length)
     LOG(LOG_TRACE, log_buffer, errno, 0, log)
 
 
-    destination = calloc(length + 1, sizeof(char));
+    destination = calloc((unsigned long) (length + 1), sizeof(char));
     if( !destination ){
         // TODO : give filename and buffer size in error
-        LOG(LOG_ALERT, "malloc for file reading failed : ", errno, 2, log)
+        LOG(LOG_ALERT, "calloc for file reading failed : ", errno, 2, log)
         return NULL;
     }
 
-    length = (size_t) read(file, destination, sizeof(destination) - 1);
+    length = read(file, destination, sizeof(destination) - 1);
+    if (length == -1) {
+        // @TODO handle error
+    } else {
+        if (length != (sizeof(destination) - 1)) {
+            // @TODO handle this case
+        }
+    }
+    destination[length] = '\0';
 
     LOG_BUILD("Read '%d' bytes from '%s'", (int)length, filename)
     LOG(LOG_TRACE, log_buffer, 0, 3, log)
