@@ -21,20 +21,20 @@
  */
 struct sockaddr *socket_bind_unix(struct sockaddr_un *un, const char* socket_path, socklen_t *socklen){
 
-    /* Destroy ancient socket if it was abruptly interrupted */
-    unlink(socket_path);
-
     /* Make sure we do not overflow the path buffer */
-    if( strlen(socket_path) >= sizeof(un->sun_path)){
+    if( socket_path == NULL || strlen(socket_path) >= sizeof(un->sun_path)){
         return NULL;
     }
+
+    /* Destroy ancient socket if it was abruptly interrupted */
+    unlink(socket_path);
 
     un->sun_family = AF_UNIX;
 
     if ( socket_path ){
 
         memset(un->sun_path, 0, sizeof(un->sun_path));
-        strlcpy(un->sun_path, socket_path, sizeof(un->sun_path) - 1);
+        strlcpy(un->sun_path, socket_path, sizeof(un->sun_path));
 
         *socklen = (socklen_t) (strlen(un->sun_path) + sizeof(un->sun_family));
     }
