@@ -594,7 +594,7 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
 
     int result;
     size_t authorised_length;
-    char proc_file[NAME_MAX];
+    char proc_file[NAME_MAX]= {0};
 
     LOG_INIT
     char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};

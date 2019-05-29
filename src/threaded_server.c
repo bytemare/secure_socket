@@ -58,7 +58,7 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
     size_t length;
     struct stat file_info;
 
-    char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH];
+    char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
 
     LOG_INIT
 
@@ -75,8 +75,7 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
         return NULL;
     }
 
-    LOG_BUILD("Successfully opened file for reading.")
-    LOG(LOG_TRACE, log_buffer, 0, 9, log)
+    LOG(LOG_TRACE, "Successfully opened file for reading.", 0, 9, log)
 
     fstat(file, &file_info);
 
