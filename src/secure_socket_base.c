@@ -22,7 +22,8 @@
 struct sockaddr *socket_bind_unix(struct sockaddr_un *un, const char* socket_path, socklen_t *socklen){
 
     /* Make sure we do not overflow the path buffer */
-    if( socket_path == NULL || strlen(socket_path) >= sizeof(un->sun_path)){
+    size_t socket_path_len = strnlen(socket_path, sizeof(un->sun_path));
+    if( socket_path == NULL || socket_path_len == sizeof(un->sun_path)){
         return NULL;
     }
 
@@ -36,7 +37,7 @@ struct sockaddr *socket_bind_unix(struct sockaddr_un *un, const char* socket_pat
         memset(un->sun_path, 0, sizeof(un->sun_path));
         strlcpy(un->sun_path, socket_path, sizeof(un->sun_path));
 
-        *socklen = (socklen_t) (strlen(un->sun_path) + sizeof(un->sun_family));
+        *socklen = (socklen_t) (socket_path_len + sizeof(un->sun_family));
     }
 
     return (struct sockaddr*)un;
