@@ -24,7 +24,7 @@ void secure_random_string(char *rand, uint32_t size){
     if (size){
         --size;
         rand[size] = '\0';
-        for (; size >= 0 ; size--){
+        for (; (int) size >= 0 ; size--){
             rand[size] = charset[arc4random_uniform(sizeof(charset))];
         }
 
