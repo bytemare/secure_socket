@@ -118,10 +118,6 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
  */
 void threaded_server(server_context *ctx, const unsigned int nb_cnx){
 
-    /* Variables for timestamping */
-    /*time_t t;
-    struct tm timer;*/
-
     /* List of threads system id's */
     unsigned int count; /* Total accumulated amount of accepted connections */
     unsigned int offset; /* Index between 0 and nb_cnx */
@@ -146,12 +142,6 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
         return;
     }
 
-    /*t = time(NULL);
-    timer = *localtime(&t);
-
-    printf("%04d-%d-%d - %02d:%02d:%02d : Server now running and awaiting connections.\n\tpid : %d\n\tlog file : %s\n\tsocket : %s\n\n",
-           timer.tm_year + 1900, timer.tm_mon + 1, timer.tm_mday, timer.tm_hour, timer.tm_min, timer.tm_sec,
-           getpid(), ctx->options->log_file, ctx->options->socket_path);*/
     LOG(LOG_INFO, "Server now ready and awaiting incoming connections.", 0, 0, ctx->log)
 
     /* Enter Daemon mode */
