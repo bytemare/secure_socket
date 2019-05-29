@@ -46,10 +46,16 @@ thread_context* make_thread_context(secure_socket *socket, server_context *s_ctx
 }
 
 
-bool is_valid_integer(char *number){
-    int index;
+bool is_valid_integer(char *number, uint8_t authorised_length){
+    uint32_t index;
     bool valid = true;
-    for (index = 0 ; index < (int) strlen(number); index++){
+    size_t len = strnlen(number, authorised_length + 1);
+
+    if ( len == authorised_length + 1){
+        return false;
+    }
+
+    for (index = 0 ; index < len; index++){
         if( !isdigit(number[index]) ){
             valid = false;
         }
@@ -300,7 +306,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         }
 
         if (strcmp(p, "authorised_peer_pid") == 0) {
-            if(is_valid_integer(q)){
+            if(is_valid_integer(q, IPC_MAX_PID_LENGTH)){
                 long int apid= strtol(q, NULL, 10);
                 if (apid >= 1 && apid <= (4194304 - 1) ){ /* Maximum value for a pid on 64-bit systems, 2^22*/
                     options->authorised_peer_pid = (pid_t) strtol(q, NULL, 10);
@@ -334,7 +340,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         }
 
         if (strcmp(p, "verbosity") == 0){
-            if(is_valid_integer(q)){
+            if(is_valid_integer(q, 2)){
                 long int verbosity = strtol(q, NULL, 10);
                 if (verbosity >= LOG_OFF && verbosity <= LOG_UNKNWON) {
                     options->verbosity = (int8_t) verbosity;
