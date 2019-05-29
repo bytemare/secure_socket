@@ -12,9 +12,8 @@ Quality
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=bytemare_secure_socket&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=bytemare_secure_socket)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=bytemare_secure_socket&metric=bugs)](https://sonarcloud.io/dashboard?id=bytemare_secure_socket)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=bytemare_secure_socket&metric=alert_status)](https://sonarcloud.io/dashboard?id=bytemare_secure_socket)
-<!---
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/25f1bf2516a148cc9104b1b6b18a379c)](https://www.codacy.com/app/bytemare/secure_socket)
---->
+
 Coverage
 
 <a href="https://scan.coverity.com/projects/bytemare-secure_socket">
@@ -34,17 +33,17 @@ Integrated, you'll also find an advanced logging mecanism, that will later be ex
 
 Among functional properties, you'll find :
 
-  - Single or multi-threaded server daemon
-- UNIX socket for IPC
+- UNIX sockets for IPC with lots of customisable security parameters
+- Single or multi-threaded server daemon
 
-Choice is seemless and requires minimal effort.
+Choice is seamless and requires minimal effort.
 
 Among security properties, you'll have :
 
-  - Advanced access protection on the socket
+- Advanced access protection on the socket
   - Lock down access to a single authorised unix user
   - Lock down access to a single authorised unix group
-    - Lock down access to a single authorised system process (P2P)
+  - Lock down access to a single authorised system process (P2P)
 - Dedicated, secured and locked down directory
 - Abuse detection and prevention through advanced protection mechanisms integrated at compile time
   - Use of BSD functions when needed to protect against known abuse of common un-protected functions
@@ -55,9 +54,9 @@ Among logging properties, you'll benefit :
 - Easy integration of a logging mecanism through macros
 - Reduced performance overhead due to inlining, threaded logging and asynchronous writes
 - Broad logging targets : choose between stdout, a message queue, files, or remote destination.
-- Leveled verbosity on a scale of 0 (Fatal) to 10 (very verbose)
+- Leveled verbosity on a scale of 0 (Fatal only) to 10 (very verbose)
 - Ability to pinpoint the file, function and line in your code where you want a log line to point to
-  - Set your desired log file size. When full, a new one is used and the old compressed.
+- Log rolling : Set your desired log file size. When full, a new one is used and the old compressed.
 
 ## Use in development stage
 
