@@ -601,9 +601,11 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
     asprintf_printed = asprintf(&peer_pid_string, "%d", peer_pid);
     if ( asprintf_printed == -1 || peer_pid_string == NULL){
         // TODO handle error
+        return false;
     }
     if ( strnlen(peer_pid_string, IPC_MAX_PID_LENGTH) == IPC_MAX_PID_LENGTH || asprintf_printed > IPC_MAX_PID_LENGTH ){
         // TODO handle this
+        return false;
     }
     strlcat(proc_file, peer_pid_string, sizeof(proc_file) - sizeof(IPC_PEER_BINARY_NAME_FILE_ROOT));
     free(peer_pid_string);
