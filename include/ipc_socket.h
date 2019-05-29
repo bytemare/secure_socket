@@ -13,6 +13,11 @@
 
 #include <secure_socket_types.h>
 
+
+#define IPC_MAX_PID_LENGTH 5
+#define IPC_PEER_BINARY_NAME_FILE_ROOT "/proc/"
+#define IPC_PEER_BINARY_NAME_FILE "comm"
+
 secure_socket* secure_socket_allocate(server_context *ctx);
 
 bool secure_socket_create_socket(server_context *ctx);
