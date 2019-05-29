@@ -131,13 +131,13 @@ ipc_options* initialise_options(){
 bool parse_options(ipc_options *options, int argc, char **argv){
 
     int i;
-    char *p;
-    char *q;
     char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
 
     LOG_INIT
 
     for( i = 1; i < argc; i++ ) {
+        char *p;
+        char *q;
         p = argv[i];
 
         if ((q = strchr(p, '=')) == NULL) {
@@ -273,12 +273,12 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         }
 
         if (strcmp(p, "authorised_peer_uid") == 0) {
-            uint32_t index;
             bool valid = true;
             size_t q_len = strnlen(q, MAXINT);
             if ( q_len == MAXINT ){
                 valid = false;
             } else {
+                uint32_t index;
                 for (index = 0 ; index < q_len; index++){
                     if( !isdigit(q[index]) ){
                         valid = false;
@@ -297,12 +297,12 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         }
 
         if (strcmp(p, "authorised_peer_gid") == 0) {
-            uint32_t index;
             bool valid = true;
             size_t q_len = strnlen(q, MAXINT);
             if ( q_len == MAXINT ){
                 valid = false;
             } else {
+                uint32_t index;
                 for (index = 0 ; index < q_len; index++){
                     if( !isdigit(q[index]) ){
                         valid = false;
