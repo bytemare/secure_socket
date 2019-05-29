@@ -158,8 +158,13 @@ typedef struct _logging{
 #define LOG_MAX_LINE_LENGTH (LOG_MAX_TIMESTAMP_LENGTH + 4 + LOG_MAX_LVL_LENGTH + 2 + LOG_MAX_ERROR_MESSAGE_LENGTH + LOG_MAX_ERRNO_LENGTH + 3)
 #define LOG_MAX_DEBUG_LINE_LENGTH (LOG_MAX_LINE_LENGTH + LOG_DEBUG_PREFIX_MAX_LENGTH + LOG_DEBUG_SUFFIX_MAX_LENGTH) /* 637 */
 
+#if LOG_MAX_LINE_LENGTH >= LOG_MQ_MAX_MESSAGE_SIZE
+#error "Maximum log line length is too long. Must be strictly inferior to LOG_MQ_MAX_MESSAGE_SIZE."
+#endif
 
-
+#if LOG_MAX_DEBUG_LINE_LENGTH >= LOG_MQ_MAX_MESSAGE_SIZE
+#error "Maximum debug log line length is too long. Must be strictly inferior to LOG_MQ_MAX_MESSAGE_SIZE."
+#endif
 
 
 
@@ -424,7 +429,7 @@ __always_inline void log_to_mq(logging_buffs *log_buffs, const int message_level
         const int error_number, const char *file, const char *function, const int line, logging *log){
     if(log->verbosity > LOG_OFF){
         log_build(log_buffs, message_level, message, error_number, file, function, line, log->verbosity);
-        mq_send(log->mq, log_buffs->log_entry_buffer, strlen(log_buffs->log_entry_buffer), 1);
+        mq_send(log->mq, log_buffs->log_entry_buffer, strnlen(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer)), 1);
     }
 }
 
