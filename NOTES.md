@@ -83,6 +83,7 @@ General
 
 - Graceful stop via signal handling from outside : take care of threads etc.
 - check logging for snprintf return value
+- Add ability to restrain that the peer's binary hash matches and authorised hash or signature
 
 Compilation
 
