@@ -224,7 +224,7 @@ void* logging_thread(void *args);
  * Build a log entry with runtime values
  */
 #define LOG_BUILD(error_message_format, ...)\
-    snprintf(log_buffer, sizeof(log_buffer) - 1, error_message_format, ##__VA_ARGS__);\
+    snprintf(log_buffer, sizeof(log_buffer), error_message_format, ##__VA_ARGS__);\
 
 
 /**
@@ -266,7 +266,7 @@ __always_inline void log_reset(logging_buffs *log_buffs){
  * @param log_timer
  */
 __always_inline void log_get_date_time(logging_buffs *log_buffs){
-    snprintf(log_buffs->log_date_buffer, sizeof(log_buffs->log_date_buffer) - 1, DATE_FORMAT, log_buffs->log_timer.tm_year + 1900, log_buffs->log_timer.tm_mon + 1, log_buffs->log_timer.tm_mday, log_buffs->log_timer.tm_hour, log_buffs->log_timer.tm_min, log_buffs->log_timer.tm_sec);
+    snprintf(log_buffs->log_date_buffer, sizeof(log_buffs->log_date_buffer), DATE_FORMAT, log_buffs->log_timer.tm_year + 1900, log_buffs->log_timer.tm_mon + 1, log_buffs->log_timer.tm_mday, log_buffs->log_timer.tm_hour, log_buffs->log_timer.tm_min, log_buffs->log_timer.tm_sec);
 }
 
 
@@ -280,7 +280,7 @@ __always_inline void log_debug_get_process_thread_id(char *log_debug_prefix_buff
                                                      const int verbosity){
     memset(log_debug_prefix_buffer, '\0', LOG_DEBUG_PREFIX_MAX_LENGTH);
     if(message_level >= verbosity){
-        snprintf(log_debug_prefix_buffer, sizeof(log_debug_prefix_buffer) - 1, LOG_DEBUG_PREFIX_FORMAT, (int) getpid(), (unsigned long int)pthread_self());
+        snprintf(log_debug_prefix_buffer, LOG_DEBUG_PREFIX_MAX_LENGTH, LOG_DEBUG_PREFIX_FORMAT, (int) getpid(), (unsigned long int)pthread_self());
     }
 }
 
@@ -298,7 +298,7 @@ __always_inline void log_debug_get_bug_location(char *log_debug_suffix_buffer, c
     memset(log_debug_suffix_buffer, '\0', LOG_DEBUG_SUFFIX_MAX_LENGTH);
     if(message_level >= verbosity){
     //if( message_level >= LOG_ALERT && message_level <= verbosity){
-        snprintf(log_debug_suffix_buffer, sizeof(log_debug_suffix_buffer) - 1, LOG_DEBUG_SUFFIX_FORMAT, file, function, line);
+        snprintf(log_debug_suffix_buffer, LOG_DEBUG_SUFFIX_MAX_LENGTH, LOG_DEBUG_SUFFIX_FORMAT, file, function, line);
     }
 }
 
@@ -312,7 +312,7 @@ __always_inline void log_debug_get_bug_location(char *log_debug_suffix_buffer, c
  */
 __always_inline void log_get_err_message(logging_buffs *log_buffs, const int error_number, const int message_level){
     if(error_number && message_level > LOG_OFF){
-        sprintf(log_buffs->log_err, ": ");
+        strlcpy(log_buffs->log_err, ": ", 2);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-result"
         strerror_r(error_number, log_buffs->log_err, LOG_MAX_ERRNO_LENGTH - 1);
@@ -368,7 +368,7 @@ __always_inline void log_assemble(logging_buffs *log_buffs, const int message_le
     const char *message_level_ch = interpret_log_level(message_level);
 
     if(verbosity >= LOG_FATAL && verbosity < LOG_DEBUG) {
-        snprintf(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer) - 1, LOG_LINE_FORMAT,
+        snprintf(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer), LOG_LINE_FORMAT,
                  log_buffs->log_date_buffer,
                  message_level_ch,
                  log_buffs->log_debug_prefix_buffer,
@@ -376,7 +376,7 @@ __always_inline void log_assemble(logging_buffs *log_buffs, const int message_le
                  log_buffs->log_err,
                  "");
     } else {
-        snprintf(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer) - 1, LOG_LINE_FORMAT,
+        snprintf(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer), LOG_LINE_FORMAT,
                  log_buffs->log_date_buffer,
                  message_level_ch,
                  log_buffs->log_debug_prefix_buffer,
