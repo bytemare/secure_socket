@@ -40,7 +40,7 @@
 
   - [x] Automated Coding Style checks
   - [x] Automated checks with Sonar
-  - [x] Automated checks with Flawchecker
+  - [x] Automated checks with Flawfinder
 
 ### Priorities
 
