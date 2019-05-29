@@ -584,19 +584,31 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
 
     char *peer_binary_name;
     int peer_binary_name_length;
-    char peer_pid_string[IPC_MAX_PID_LENGTH + 1] = {0};
+    //char peer_pid_string[IPC_MAX_PID_LENGTH + 1] = {0};
+    char *peer_pid_string = NULL;
 
     int result;
     size_t authorised_length;
     char proc_file[NAME_MAX]= {0};
+
+    int asprintf_printed = 0;
 
     LOG_INIT
     char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
 
     /* Build the filepath that holds the name of the binary linked to a pid */
     strlcpy(proc_file, IPC_PEER_BINARY_NAME_FILE_ROOT, sizeof(proc_file));
-    snprintf(peer_pid_string, sizeof(peer_pid_string) - 1, "%d", peer_pid);
+    asprintf_printed = asprintf(&peer_pid_string, "%d", peer_pid);
+    if ( asprintf_printed == -1 ){
+        // TODO handle error
+    }
+    if ( asprintf_printed > IPC_MAX_PID_LENGTH ){
+        // TODO handle this
+    }
     strlcat(proc_file, peer_pid_string, sizeof(proc_file) - sizeof(IPC_PEER_BINARY_NAME_FILE_ROOT));
+    free(peer_pid_string);
+    //snprintf(peer_pid_string, sizeof(peer_pid_string) - 1, "%d", peer_pid);
+    //strlcat(proc_file, peer_pid_string, sizeof(proc_file) - sizeof(IPC_PEER_BINARY_NAME_FILE_ROOT));
     strlcat(proc_file, "/",  2);
     strlcat(proc_file, IPC_PEER_BINARY_NAME_FILE, sizeof(proc_file) - strnlen(proc_file, sizeof(proc_file)));
 
