@@ -51,6 +51,45 @@ bool log_start(logging *log, int8_t verbosity, char *mq_name, char *log_file){
 
 
 /**
+ * Prints given arguments into buffer pointed to by target given a string format.
+ *
+ * Format string function used is vasprintf. It uses an intermediary buffer and allocate enough space to hold the whole
+ * string, therefore avoiding memory corruption, leaks, and format string vulnerabilities. Because of variable argument
+ * list, this function can not be inlined.
+ *
+ * String insertion is operated by strlcpy.
+ * @param target
+ * @param max_buf_size
+ * @param size_dec
+ * @param format
+ * @param ...
+ * @return
+ */
+bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const char *format, ...){
+
+    int bytes = 0;
+    char *buffer = NULL;
+
+    va_list va;
+    va_start(va, format);
+    bytes = vasprintf(&buffer, DATE_FORMAT, va);
+    va_end(va);
+    if ( bytes == -1 || buffer == NULL){
+        // TODO handle error
+        return false;
+    }
+    if ( strnlen(buffer, max_buf_size) == max_buf_size || (size_t) bytes > max_buf_size - 1 ){
+        // TODO handle this
+        free(buffer);
+        return false;
+    }
+    strlcpy(target, buffer, max_buf_size - size_dec);
+    free(buffer);
+    return true;
+}
+
+
+/**
  * Opens the specified file for writing and tries to obtain an exclusive write lock.
  * @param fd
  * @return 0, 1 on failure with stdout logging
