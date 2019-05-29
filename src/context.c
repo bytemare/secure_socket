@@ -97,7 +97,7 @@ ipc_options* initialise_options(){
     memset(options->socket_path, '\0', sizeof(options->socket_path));
     strlcpy(options->socket_path, IPC_SOCKET_PATH_BASE, sizeof(options->socket_path) - sizeof(rand_buffer));
     secure_random_string(rand_buffer, sizeof(rand_buffer));
-    strlcat(options->log_file, rand_buffer, sizeof(options->log_file) - sizeof(IPC_SOCKET_PATH_BASE));
+    strlcat(options->socket_path, rand_buffer, sizeof(options->socket_path) - sizeof(IPC_SOCKET_PATH_BASE));
 
     options->domain = IPC_DOMAIN;
     options->protocol = IPC_PROTOCOL;
@@ -149,6 +149,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         if (strcmp(p, "mq_name") == 0) {
             uint16_t mq_name_max_size = sizeof(options->mq_name);
             if( q[0] != '/' && strnlen(q, mq_name_max_size) == mq_name_max_size ){
+                //TODO : check all conditions of mq_name, cf 'man mq_overview'
                 LOG_BUILD("Invalid name for message queue. First character must be '/' and must be shorter than %d characters.", mq_name_max_size)
                 LOG_STDOUT(LOG_FATAL, log_buffer, 0, 2, NULL)
                 return false;

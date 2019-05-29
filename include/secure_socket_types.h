@@ -18,7 +18,7 @@ typedef struct _ipc_options{
 
     /* Logging related parameters */
     int8_t verbosity;
-    char mq_name[PATH_MAX];
+    char mq_name[NAME_MAX];
     char log_file[PATH_MAX];
 
     /* Socket related data */
