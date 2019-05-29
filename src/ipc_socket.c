@@ -550,11 +550,9 @@ bool set_socket_owner_and_permissions(server_context *ctx, char *group_name, gid
     uid = getuid();
 
     /* Get effective group ID */
-    if(!real_gid){
-        if ( (real_gid = get_group_id(group_name, ctx->log)) == 0 ){
-            LOG(LOG_ERROR, "Could not retrieve group ID structure. Access to group will not be applied.", errno, 0, ctx->log)
-            return false;
-        }
+    if(!real_gid && (real_gid = get_group_id(group_name, ctx->log)) == 0 ){
+        LOG(LOG_ERROR, "Could not retrieve group ID structure. Access to group will not be applied.", errno, 0, ctx->log)
+        return false;
     }
 
     /* Now that real_gid is set, we can grant access */
