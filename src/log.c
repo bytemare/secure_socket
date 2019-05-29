@@ -90,7 +90,7 @@ uint8_t log_util_open_mq(logging *log, const char *mq_name){
     mq_unlink(mq_name);
 
     /* Check bounds to avoid overlow */
-    if (strlen(mq_name) >= sizeof(log->mq_name)){
+    if (strnlen(mq_name, sizeof(log->mq_name)) == sizeof(log->mq_name)){
         LOG_STDOUT(LOG_FATAL, "Error in opening the logging messaging queue. Size is >= to maximum buffer size.", errno, 1, log)
         return 1;
     }
@@ -100,6 +100,7 @@ uint8_t log_util_open_mq(logging *log, const char *mq_name){
     }
 
     /* Opening Message Queue */
+    // TODO : check arguments here
     if( (log->mq = mq_open(log->mq_name, O_RDWR | O_CREAT | O_EXCL, 0600, NULL)) == (mqd_t)-1) {
         LOG_STDOUT(LOG_FATAL, "Error in opening the logging messaging queue.", errno, 1, log)
         return 1;
