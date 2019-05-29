@@ -4,6 +4,19 @@
  * Copyright (C) 2017-2018 Bytemare <d@bytema.re>. All Rights Reserved.
  */
 
+#ifdef __linux__
+#define WELCOME_STRING "Linux"
+#else
+#define WELCOME_STRING "Windows"
+#endif
+
+// hardware
+#if __x86_64__ || __ppc64__
+#define ARCH "64 bit"
+#else
+#define ARCH "not 64 bit"
+#endif
+
 #include <stdlib.h>
 #include <threaded_server.h>
 #include <log.h>
@@ -18,20 +31,6 @@ int main(int argc, char** argv) {
     logging log;
 
     LOG_INIT
-
-
-#ifdef __linux__
-#define WELCOME_STRING "Linux"
-#else
-#define WELCOME_STRING "Windows"
-#endif
-
-// hardware
-#if __x86_64__ || __ppc64__
-#define ARCH "64 bit"
-#else
-#define ARCH "not 64 bit"
-#endif
 
     printf("Executing on %s %s.\n", ARCH, WELCOME_STRING);
 

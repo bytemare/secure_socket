@@ -118,13 +118,11 @@ uint8_t set_bind_address(server_context *ctx, in_addr_t address){
 
     LOG(LOG_TRACE, "Setting up address to bind on ...", errno, 0, ctx->log)
 
-
-
     if ( ctx->options->domain == AF_UNIX ){
         server->bind_address = socket_bind_unix(&server->address.un, ctx->options->socket_path, &ctx->socket->addrlen);
 
         if ( server->bind_address == NULL ){
-            LOG(LOG_CRITICAL, "Socket path is too long : overflow avoided !", errno, 1, ctx->log)
+            LOG(LOG_CRITICAL, "Socket path non-existent or too long : overflow avoided !", errno, 1, ctx->log)
             ctx->socket->addrlen = 0;
             return 1;
         }
