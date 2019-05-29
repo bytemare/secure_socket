@@ -92,14 +92,14 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
     LOG(LOG_TRACE, log_buffer, errno, 0, log)
 
 
-    destination = malloc(length);
+    destination = calloc(length + 1, sizeof(char));
     if( !destination ){
         // TODO : give filename and buffer size in error
         LOG(LOG_ALERT, "malloc for file reading failed : ", errno, 2, log)
         return NULL;
     }
 
-    length = (size_t) read(file, destination, length);
+    length = (size_t) read(file, destination, sizeof(destination) - 1);
 
     LOG_BUILD("Read '%d' bytes from '%s'", (int)length, filename)
     LOG(LOG_TRACE, log_buffer, 0, 3, log)
