@@ -13,7 +13,9 @@
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=bytemare_secure_socket&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=bytemare_secure_socket)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=bytemare_secure_socket&metric=bugs)](https://sonarcloud.io/dashboard?id=bytemare_secure_socket)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=bytemare_secure_socket&metric=alert_status)](https://sonarcloud.io/dashboard?id=bytemare_secure_socket)
-
+<!---
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/25f1bf2516a148cc9104b1b6b18a379c)](https://www.codacy.com/app/bytemare/secure_socket)
+--->
 #### Coverage
 
 <a href="https://scan.coverity.com/projects/bytemare-secure_socket">
