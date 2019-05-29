@@ -46,7 +46,7 @@ thread_context* make_thread_context(secure_socket *socket, server_context *s_ctx
 }
 
 
-bool is_valid_integer(char *number, uint8_t authorised_length){
+bool is_valid_integer(char *number, size_t authorised_length){
     uint32_t index;
     bool valid = true;
     size_t len = strnlen(number, authorised_length + 1);
@@ -148,7 +148,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
 
         if (strcmp(p, "mq_name") == 0) {
             uint16_t mq_name_max_size = sizeof(options->mq_name);
-            if( q[0] != '/' && strlen(q) >= mq_name_max_size ){
+            if( q[0] != '/' && strnlen(q, mq_name_max_size) == mq_name_max_size ){
                 LOG_BUILD("Invalid name for message queue. First character must be '/' and must be shorter than %d characters.", mq_name_max_size)
                 LOG_STDOUT(LOG_FATAL, log_buffer, 0, 2, NULL)
                 return false;
@@ -161,7 +161,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
 
         if (strcmp(p, "socket_path") == 0) {
             uint8_t socket_name_max_size = sizeof(options->socket_path);
-            if( strlen(q) >= socket_name_max_size ){
+            if( strnlen(q, socket_name_max_size) == socket_name_max_size ){
                 LOG_BUILD("Invalid name for socket path. Must be shorter than %d characters.", socket_name_max_size)
                 LOG_STDOUT(LOG_FATAL, log_buffer, 0, 2, NULL)
                 return false;
@@ -175,7 +175,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
 
         if (strcmp(p, "log_file") == 0) {
             uint16_t log_name_max_size = sizeof(options->log_file);
-            if( strlen(q) >= log_name_max_size ){
+            if( strnlen(q, log_name_max_size) == log_name_max_size ){
                 LOG_BUILD("Invalid name for log file. Must be shorter than %d characters.", log_name_max_size)
                 LOG_STDOUT(LOG_FATAL, log_buffer, 0, 2, NULL)
                 return false;
@@ -235,10 +235,11 @@ bool parse_options(ipc_options *options, int argc, char **argv){
 
 
         if (strcmp(p, "socket_permissions") == 0) {
-            if( strlen(q) == sizeof(options->socket_permissions) - 1 ){
+            uint8_t socket_permissions_length = sizeof(options->socket_permissions);
+            if( strnlen(q, socket_permissions_length) == socket_permissions_length){
                 int index;
                 bool valid = true;
-                for (index = 0 ; index < (int) sizeof(options->socket_permissions) - 1; index++){
+                for (index = 0 ; index < socket_permissions_length; index++){
                     if( !isdigit(q[index]) ){
                         valid = false;
                     }
@@ -260,7 +261,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
 
 
         if (strcmp(p, "authorised_peer_username") == 0) {
-            if( strlen(q) < 31 ){
+            if( strnlen(q, sizeof(options->authorised_peer_username)) < sizeof(options->authorised_peer_username) ){
                 memset(options->authorised_peer_username, '\0', sizeof(options->authorised_peer_username));
                 strlcpy(options->authorised_peer_username, q, sizeof(options->authorised_peer_username));
                 continue;
@@ -271,13 +272,19 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         }
 
         if (strcmp(p, "authorised_peer_uid") == 0) {
-            int index;
+            uint32_t index;
             bool valid = true;
-            for (index = 0 ; index < (int) strlen(q); index++){
-                if( !isdigit(q[index]) ){
-                    valid = false;
+            size_t q_len = strnlen(q, MAXINT);
+            if ( q_len == MAXINT ){
+                valid = false;
+            } else {
+                for (index = 0 ; index < q_len; index++){
+                    if( !isdigit(q[index]) ){
+                        valid = false;
+                    }
                 }
             }
+
             if(valid){
                 options->authorised_peer_uid = (unsigned int) strtol(q, NULL, 10);
                 continue;
@@ -289,13 +296,19 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         }
 
         if (strcmp(p, "authorised_peer_gid") == 0) {
-            int index;
+            uint32_t index;
             bool valid = true;
-            for (index = 0 ; index < (int) strlen(q); index++){
-                if( !isdigit(q[index]) ){
-                    valid = false;
+            size_t q_len = strnlen(q, MAXINT);
+            if ( q_len == MAXINT ){
+                valid = false;
+            } else {
+                for (index = 0 ; index < q_len; index++){
+                    if( !isdigit(q[index]) ){
+                        valid = false;
+                    }
                 }
             }
+
             if(valid){
                 options->authorised_peer_gid = (unsigned int) strtol(q, NULL, 10);
                 continue;
@@ -319,7 +332,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         }
 
         if (strcmp(p, "authorised_peer_process_name") == 0) {
-            if( strlen(q) < sizeof(options->authorised_peer_process_name) ){
+            if( strnlen(q, sizeof(options->authorised_peer_process_name)) < sizeof(options->authorised_peer_process_name) ){
                 strlcpy(options->authorised_peer_process_name, q, sizeof(options->authorised_peer_process_name));
                 continue;
             }
@@ -329,7 +342,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         }
 
         if (strcmp(p, "authorised_peer_cli_args") == 0) {
-            if( strlen(q) < sizeof(options->authorised_peer_cli_args) ){
+            if( strnlen(q, sizeof(options->authorised_peer_cli_args)) < sizeof(options->authorised_peer_cli_args) ){
                 memset(options->authorised_peer_cli_args, '\0', sizeof(options->authorised_peer_cli_args));
                 strlcpy(options->authorised_peer_cli_args, q, sizeof(options->authorised_peer_cli_args));
                 continue;
