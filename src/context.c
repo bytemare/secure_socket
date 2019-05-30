@@ -146,6 +146,8 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         }
         *q++ = '\0';
 
+        printf("parsing with\np = '%s'\nq = '%s'\n\n", p, q);
+
         if (strcmp(p, "mq_name") == 0) {
             uint16_t mq_name_max_size = sizeof(options->mq_name);
             if( q[0] != '/' && strnlen(q, mq_name_max_size) == mq_name_max_size ){
@@ -237,23 +239,12 @@ bool parse_options(ipc_options *options, int argc, char **argv){
 
         if (strcmp(p, "socket_permissions") == 0) {
             uint8_t socket_permissions_length = sizeof(options->socket_permissions);
-            if( strnlen(q, socket_permissions_length) == socket_permissions_length){
-                int index;
-                bool valid = true;
-                for (index = 0 ; index < socket_permissions_length; index++){
-                    if( !isdigit(q[index]) ){
-                        valid = false;
-                    }
-                    else{
 
-                        // TODO
-                    }
-                }
-                if(valid){
-                    memset(options->socket_permissions, '\0', sizeof(options->socket_permissions));
-                    strlcpy(options->socket_permissions, q, sizeof(options->socket_permissions));
-                    continue;
-                }
+            if ( is_valid_integer(q, socket_permissions_length) ){
+                //TODO make proper check on value if it corresponds to valid permissions
+                memset(options->socket_permissions, '\0', sizeof(options->socket_permissions));
+                strlcpy(options->socket_permissions, q, sizeof(options->socket_permissions));
+                continue;
             }
 
             LOG_STDOUT(LOG_FATAL, "Invalid value for socket_permissions. Use '0660'.", errno, 18, NULL)
