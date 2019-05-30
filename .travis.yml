@@ -20,21 +20,37 @@ matrix:
     #    - ./checksec.sh-master/checksec -f Debug/secure_socket && ./checksec.sh-master/checksec -ff Debug/secure_socket
     #    - hardening-check -c -v Debug/secure_socket
 
-    - name: Sonar Checking
+    #- name: Sonar Checking
+    #  addons:
+    #    apt:
+    #      packages: &default_packages
+    #        - libbsd-dev
+    #    sonarcloud:
+    #      organization: "bytemare-github"
+    #      token:
+    #        secure: ${SONAR_TOKEN}
+    #  script:
+    #    - shellcheck -x build.sh
+    #    - build-wrapper-linux-x86-64 --out-dir bw-output ./build.sh Coverage && ls -al bw-output/
+    #    - sonar-scanner
+    #  after_success:
+    #    - bash <(curl -s https://codecov.io/bash)
+    - name: Coverity
+      env:
+        global:
+          - secure: "${COVERITY_SCAN_TOKEN}"
+      before_install:
+        - echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
       addons:
-        apt:
-          packages: &default_packages
-            - libbsd-dev
-        sonarcloud:
-          organization: "bytemare-github"
-          token:
-            secure: ${SONAR_TOKEN}
-      script:
-        - shellcheck -x build.sh
-        - build-wrapper-linux-x86-64 --out-dir bw-output ./build.sh Coverage && ls -al bw-output/
-        - sonar-scanner
-      after_success:
-        - bash <(curl -s https://codecov.io/bash)
+        coverity_scan:
+          project:
+            name: "bytemare/secure_socket"
+          build_command: ./build.sh
+          branch_pattern: coverity_scan
+            #description: "<Your project description here>"
+          #notification_email: ...
+          #build_command_prepend: "<Your build preprocessing command here>"
+
 
 notifications:
   email: false
