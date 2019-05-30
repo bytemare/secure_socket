@@ -32,7 +32,10 @@ int main(int argc, char** argv) {
 
     LOG_INIT
 
+#if DEBUG
+    printf("##### DEBUG MODE #####\n");
     printf("Executing on %s %s.\n", ARCH, WELCOME_STRING);
+#endif
 
     /* Parse command line options and parameters */
     if( !( params = initialise_options()) ){
@@ -51,6 +54,8 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    printf("Launched Logging thread\n");
+
     /* Build the main threads server context */
     if ( (ctx = make_server_context(params, &log) ) == NULL ){
         LOG_STDOUT(LOG_FATAL, "Could not create server context. Startup aborted.", errno, 1, &log)
@@ -58,7 +63,11 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    printf("Started server context.\n");
+
     LOG_FILE(LOG_INFO, "Starting Server. Context initialised.", errno, 0, ctx->log)
+
+    printf("Logged to file\n");
 
     /* Server initialization */
     if( !ipc_bind_set_and_listen(INADDR_ANY, ctx) ){
@@ -67,6 +76,8 @@ int main(int argc, char** argv) {
         log_close(&log);
         return 1;
     }
+
+    printf("Listening\n");
 
     /* Wait for clients */
     threaded_server(ctx, params->max_connections);

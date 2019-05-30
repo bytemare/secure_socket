@@ -146,8 +146,6 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         }
         *q++ = '\0';
 
-        printf("parsing with\np = '%s'\nq = '%s'\n\n", p, q);
-
         if (strcmp(p, "mq_name") == 0) {
             uint16_t mq_name_max_size = sizeof(options->mq_name);
             if( q[0] != '/' && strnlen(q, mq_name_max_size) == mq_name_max_size ){
