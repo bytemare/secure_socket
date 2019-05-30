@@ -187,6 +187,7 @@ typedef struct _logging_buffs{
     char log_debug_suffix_buffer[LOG_DEBUG_SUFFIX_MAX_LENGTH];\
     time_t log_t;\
     struct tm log_timer;
+    char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH];
 } logging_buffs;
 
 /**
@@ -196,6 +197,8 @@ typedef struct _logging_buffs{
 uint8_t log_initialise_logging_s(logging *log, int8_t verbosity, char *mq_name, char *filename);
 
 void set_thread_attributes(pthread_attr_t *attr, logging *log);
+
+void log_init_log_params(logging *log, int8_t verbosity);
 
 bool log_start_thread(logging *log, int8_t verbosity, char *mq_name, char *log_file);
 
@@ -272,31 +275,8 @@ __always_inline void log_reset(logging_buffs *log_buffs){
  * @param log_timer
  */
 __always_inline void log_get_date_time(logging_buffs *log_buffs){
-    /*
-    int bytes = 0;
-    size_t size_dec = 0;
-    size_t max_buf_size = sizeof(log_buffs->log_date_buffer);
-    char *buffer = NULL;
-
-    bytes = asprintf(&buffer, DATE_FORMAT, log_buffs->log_timer.tm_year + 1900, log_buffs->log_timer.tm_mon + 1, log_buffs->log_timer.tm_mday, log_buffs->log_timer.tm_hour, log_buffs->log_timer.tm_min, log_buffs->log_timer.tm_sec);
-    if ( bytes == -1 || buffer == NULL){
-        // TODO handle error
-        return;
-    }
-    if ( strnlen(buffer, max_buf_size) == max_buf_size || (size_t) bytes > max_buf_size - 1 ){
-        // TODO handle this
-        return;
-    }
-    strlcat(log_buffs->log_date_buffer, buffer, max_buf_size - size_dec);
-    free(buffer);
-     */
-
-    if ( log_s_vasprintf(log_buffs->log_date_buffer, sizeof(log_buffs->log_date_buffer), 0, DATE_FORMAT,
-            log_buffs->log_timer.tm_year + 1900, log_buffs->log_timer.tm_mon + 1, log_buffs->log_timer.tm_mday, log_buffs->log_timer.tm_hour, log_buffs->log_timer.tm_min, log_buffs->log_timer.tm_sec ) ){
-        return;
-    }
-
-    //(log_buffs->log_date_buffer, sizeof(log_buffs->log_date_buffer), DATE_FORMAT, log_buffs->log_timer.tm_year + 1900, log_buffs->log_timer.tm_mon + 1, log_buffs->log_timer.tm_mday, log_buffs->log_timer.tm_hour, log_buffs->log_timer.tm_min, log_buffs->log_timer.tm_sec);
+    log_s_vasprintf(log_buffs->log_date_buffer, sizeof(log_buffs->log_date_buffer), 0, DATE_FORMAT,
+            log_buffs->log_timer.tm_year + 1900, log_buffs->log_timer.tm_mon + 1, log_buffs->log_timer.tm_mday, log_buffs->log_timer.tm_hour, log_buffs->log_timer.tm_min, log_buffs->log_timer.tm_sec );
 }
 
 
@@ -306,12 +286,11 @@ __always_inline void log_get_date_time(logging_buffs *log_buffs){
  * @param message_level
  * @param verbosity
  */
-__always_inline void log_debug_get_process_thread_id(char *log_debug_prefix_buffer, const int message_level,
+__always_inline void log_debug_get_process_thread_id(char *log_debug_prefix_buffer, int8_t message_level,
                                                      const int verbosity){
     memset(log_debug_prefix_buffer, '\0', LOG_DEBUG_PREFIX_MAX_LENGTH);
     if(message_level >= verbosity){
-        log_s_vasprintf(log_debug_prefix_buffer, sizeof(log_debug_prefix_buffer), 0, LOG_DEBUG_PREFIX_FORMAT, (int) getpid(), (unsigned long int)pthread_self());
-        //snprintf(log_debug_prefix_buffer, LOG_DEBUG_PREFIX_MAX_LENGTH, LOG_DEBUG_PREFIX_FORMAT, (int) getpid(), (unsigned long int)pthread_self());
+        log_s_vasprintf(log_debug_prefix_buffer, LOG_DEBUG_PREFIX_MAX_LENGTH, 0, LOG_DEBUG_PREFIX_FORMAT, (int) getpid(), (unsigned long int)pthread_self());
     }
 }
 
@@ -325,12 +304,11 @@ __always_inline void log_debug_get_process_thread_id(char *log_debug_prefix_buff
  * @param verbosity
  */
 __always_inline void log_debug_get_bug_location(char *log_debug_suffix_buffer, const char *file, const char *function,
-                                                const int line, const int message_level, const int verbosity){
+                                                const int line, int8_t message_level, const int verbosity){
     memset(log_debug_suffix_buffer, '\0', LOG_DEBUG_SUFFIX_MAX_LENGTH);
     if(message_level >= verbosity){
     //if( message_level >= LOG_ALERT && message_level <= verbosity){
         log_s_vasprintf(log_debug_suffix_buffer, LOG_DEBUG_SUFFIX_MAX_LENGTH, 0, LOG_DEBUG_SUFFIX_FORMAT, file, function, line);
-        //snprintf(log_debug_suffix_buffer, LOG_DEBUG_SUFFIX_MAX_LENGTH, LOG_DEBUG_SUFFIX_FORMAT, file, function, line);
     }
 }
 
@@ -342,7 +320,7 @@ __always_inline void log_debug_get_bug_location(char *log_debug_suffix_buffer, c
  * @param log_t
  * @param log_timer
  */
-__always_inline void log_get_err_message(logging_buffs *log_buffs, const int error_number, const int message_level){
+__always_inline void log_get_err_message(logging_buffs *log_buffs, const int error_number, int8_t message_level){
     if(error_number && message_level > LOG_OFF){
         strlcpy(log_buffs->log_err, ": ", 2);
 #pragma GCC diagnostic push
@@ -357,7 +335,7 @@ __always_inline void log_get_err_message(logging_buffs *log_buffs, const int err
  * @param message_level
  * @return
  */
-__always_inline const char* interpret_log_level(const int message_level){
+__always_inline const char* interpret_log_level(int8_t message_level){
     switch (message_level){
         case LOG_FATAL:
             return LOG_FATAL_CHAR;
@@ -396,8 +374,19 @@ __always_inline const char* interpret_log_level(const int message_level){
  * @param message
  * @param verbosity
  */
-__always_inline void log_assemble(logging_buffs *log_buffs, const int message_level, const char *message, int verbosity){
+__always_inline void log_assemble(logging_buffs *log_buffs, int8_t message_level, const char *message, int verbosity){
     const char *message_level_ch = interpret_log_level(message_level);
+
+    /*
+    printf("\nLog assemble :\n"
+           "'%s'\n"
+           "'%s'\n"
+           "'%s'\n"
+           "'%s'\n"
+           "'%s'\n"
+           "'%s'\n---------\n",
+           log_buffs->log_entry_buffer, log_buffs->log_date_buffer, message_level_ch, log_buffs->log_debug_prefix_buffer, message, log_buffs->log_err);
+    */
 
     if(verbosity >= LOG_FATAL && verbosity < LOG_DEBUG) {
         log_s_vasprintf(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer), 0, LOG_LINE_FORMAT,
@@ -407,13 +396,6 @@ __always_inline void log_assemble(logging_buffs *log_buffs, const int message_le
                         message,
                         log_buffs->log_err,
                         "");
-        /*snprintf(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer), LOG_LINE_FORMAT,
-                 log_buffs->log_date_buffer,
-                 message_level_ch,
-                 log_buffs->log_debug_prefix_buffer,
-                 message,
-                 log_buffs->log_err,
-                 "");*/
     } else {
         log_s_vasprintf(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer), 0, LOG_LINE_FORMAT,
                         log_buffs->log_date_buffer,
@@ -422,13 +404,6 @@ __always_inline void log_assemble(logging_buffs *log_buffs, const int message_le
                         message,
                         log_buffs->log_err,
                         log_buffs->log_debug_suffix_buffer);
-        /*snprintf(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer), LOG_LINE_FORMAT,
-                 log_buffs->log_date_buffer,
-                 message_level_ch,
-                 log_buffs->log_debug_prefix_buffer,
-                 message,
-                 log_buffs->log_err,
-                 log_buffs->log_debug_suffix_buffer);*/
     }
 }
 
@@ -443,7 +418,7 @@ __always_inline void log_assemble(logging_buffs *log_buffs, const int message_le
  * @param line
  * @param verbosity
  */
-__always_inline void log_build(logging_buffs *log_buffs, const int message_level, const char *message,
+__always_inline void log_build(logging_buffs *log_buffs, int8_t message_level, const char *message,
                                const int error_number, const char *file, const char *function, const int line, const int8_t verbosity){
     log_reset(log_buffs);
     log_get_date_time(log_buffs);
@@ -466,7 +441,7 @@ __always_inline void log_build(logging_buffs *log_buffs, const int message_level
  * @param line
  * @param log
  */
-__always_inline void log_to_mq(logging_buffs *log_buffs, const int message_level, const char *message,
+__always_inline void log_to_mq(logging_buffs *log_buffs, int8_t message_level, const char *message,
         const int error_number, const char *file, const char *function, const int line, logging *log){
     if(log->verbosity > LOG_OFF){
         log_build(log_buffs, message_level, message, error_number, file, function, line, log->verbosity);
@@ -478,7 +453,7 @@ __always_inline void log_to_mq(logging_buffs *log_buffs, const int message_level
  * Simple wrapper printing final log line to standard output
  * @param log
  */
-__always_inline void log_to_stdout(logging_buffs *log_buffs, const int message_level, const char *message,
+__always_inline void log_to_stdout(logging_buffs *log_buffs, int8_t message_level, const char *message,
         const int error_number, const char *file, const char *function, const int line, logging *log){
     int8_t verbosity = -1;
 
@@ -487,7 +462,7 @@ __always_inline void log_to_stdout(logging_buffs *log_buffs, const int message_l
             verbosity = log->verbosity;
         }
     } else{
-        verbosity = LOG_INFO;
+        verbosity = message_level;
     }
 
     if ( verbosity != -1 ){
@@ -525,8 +500,10 @@ __always_inline void log_write_to_file(logging *log, char *message, size_t messa
  * @param line
  * @param log
  */
-__always_inline void log_to_file(logging_buffs *log_buffs, const int message_level, const char *message,
+__always_inline void log_to_file(logging_buffs *log_buffs, int8_t message_level, const char *message,
                               const int error_number, const char *file, const char *function, const int line, logging *log){
+
+    printf("Verbosity %d to file %d.\n", log->verbosity, log->fd);
     if(log->verbosity > LOG_OFF){
         log_build(log_buffs, message_level, message, error_number, file, function, line, log->verbosity);
         log_write_to_file(log, log_buffs->log_entry_buffer, strnlen(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer)));
