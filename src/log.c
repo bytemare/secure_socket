@@ -21,6 +21,8 @@
  */
 bool log_start_thread(logging *log, int8_t verbosity, char *mq_name, char *log_file){
 
+    log_init_log_params(log, verbosity);
+
     if( log->verbosity == LOG_OFF ){
         return true;
     }
@@ -72,14 +74,21 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
 
     va_list va;
     va_start(va, format);
-    bytes = vasprintf(&buffer, DATE_FORMAT, va);
+    bytes = vasprintf(&buffer, format, va);
     va_end(va);
     if ( bytes == -1 || buffer == NULL){
         // TODO handle error
+        printf("error : bytes == -1 || buffer == NULL\n");
         return false;
     }
     if ( strnlen(buffer, max_buf_size) == max_buf_size || (size_t) bytes > max_buf_size - 1 ){
-        // TODO handle this
+        // TODO handle this error
+        printf("error on strnlen\n"
+               "buffer : '%s'\n"
+               "strlen : %lu\n"
+               "max: %lu\n"
+               "bytes: %d\n",
+               buffer, strlen(buffer), max_buf_size, bytes);
         free(buffer);
         return false;
     }
@@ -128,11 +137,13 @@ uint8_t log_util_open_mq(logging *log, const char *mq_name){
     /* Unlink potential previous message queue if it had the same name */
     mq_unlink(mq_name);
 
-    /* Check bounds to avoid overlow */
+    /* Check bounds to avoid truncation */
     if (strnlen(mq_name, sizeof(log->mq_name)) == sizeof(log->mq_name)){
         LOG_STDOUT(LOG_FATAL, "Error in opening the logging messaging queue. Size is >= to maximum buffer size.", errno, 1, log)
         return 1;
     }
+
+    // TODO : redundant
 
     if ( strlcpy(log->mq_name, mq_name, sizeof(log->mq_name)) >= sizeof(log->mq_name) ){
         LOG_STDOUT(LOG_WARNING, "Message queue name is too long and got truncated to maximum authorised size.", errno, 1, log)
@@ -170,7 +181,21 @@ uint8_t log_util_open_aio(logging *log){
     return 0;
 }
 
+/**
+ * Initialise logging structure's components
+ * @param log
+ * @param verbosity
+ */
+__always_inline void log_init_log_params(logging *log, int8_t verbosity){
+    log->verbosity = verbosity;
+    log->mq = -1;
+    memset(log->mq_name, 0, sizeof(log->mq_name));
+    log->fd = -1;
+    log->aio = NULL;
+    log->quit_logging = false;
 
+    log->thread = 0;
+}
 
 
 /**
