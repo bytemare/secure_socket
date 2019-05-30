@@ -55,7 +55,7 @@ fi
 
 
 # Clean up previous work
-s="rm --force -rf $CREAT $CMAKE_DIRS"
+s="rm --force -rf $CREAT #$CMAKE_DIRS"
 if [ "$#" -ne 0 ] && [ "$2" = "clean" ]; then
     $s
 fi
@@ -70,23 +70,30 @@ chmod 700 "$CLEANER"
 # arg2 : arguments to give to cmake
 build(){
     build_directory="$1"
-    options="$2"
+    cmake_options="$2"
+    make_options="$3"
     curr_dir=$(pwd)
 
     mkdir -p "$build_directory"
     # Use a subshell in case cd doesn't work, and don't mess with the directories
     (
         cd "$build_directory" || ( printf "[ERROR] Could not move into %s\n" "$build_directory" && exit 1 )
-        cmake "$options" "$curr_dir"
-        make
+        cmake "$cmake_options" "$curr_dir"
+        make "$make_options"
         s="./$build_directory/$LINK "
         cd "$curr_dir"
     )
 }
 
+# Get number of available
+cores=$(grep -c ^processor /proc/cpuinfo)
+
+
 # Build
 # -D CMAKE_C_COMPILER=/usr/bin/gcc
-build "$BUILD_TYPE" "-DCMAKE_BUILD_TYPE=$BUILD_TYPE"
+cmake_options="-DCMAKE_BUILD_TYPE=$BUILD_TYPE"
+make_options="-j$(($cores + 1))"
+build "$BUILD_TYPE" "$cmake_options" "$make_options"
 
 
 #ln -s ./$BUILD/$EXEC $LINK
