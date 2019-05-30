@@ -16,7 +16,7 @@ project(secure_socket)
 set(WARNING_FLAGS "-W -Wall -Wextra -Werror -ansi -pedantic -Wwrite-strings -Wconversion -Wuninitialized -Wcast-align -Wmissing-braces -Wunused-result -Wpointer-arith -Wchkp -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -Wstack-protector -Wformat -Wformat-security -Wstrict-aliasing -Wunused-parameter")
 
 # Debug Flags
-set(DEBUG_FLAGS "-g")
+set(DEBUG_FLAGS "-g -D DEBUG -frecord-gcc-switches")
 
 # Coverage Flags
 set(COVERAGE_FLAGS "-fprofile-arcs -ftest-coverage")
