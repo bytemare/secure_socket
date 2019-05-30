@@ -33,7 +33,7 @@ printf " done.\n"
 
 
 # Targets to be created and deleted
-BUILDS="$RELEASE $DEBUG $COVERAGE"
+BUILDS="$RELEASE $DEBUG $COVERAGE $COVERITY"
 CREAT="$BUILDS $LINK $RUNNER $SOCKET_PATH $CLEANER"
 CMAKE_DIRS="cmake-build-debug cmake-build-wsl_profile"
 
@@ -70,15 +70,22 @@ chmod 700 "$CLEANER"
 # arg2 : arguments to give to cmake
 build(){
     build_directory="$1"
-    options="$2"
+    cmake_options="$2"
+    make_options="$3"
+    make_command="make"
     curr_dir=$(pwd)
+
+    if [ "$build_directory" = "Coverity" ]; then
+        make_command="../.test/cov-analysis-linux64-2017.07/bin/cov-build --dir cov-int make"
+        make_options="-j 4"
+    fi
 
     mkdir -p "$build_directory"
     # Use a subshell in case cd doesn't work, and don't mess with the directories
     (
         cd "$build_directory" || ( printf "[ERROR] Could not move into %s\n" "$build_directory" && exit 1 )
-        cmake "$options" "$curr_dir"
-        make
+        cmake "$cmake_options" "$curr_dir"
+        $("$make_command $make_options")
         s="./$build_directory/$LINK "
         cd "$curr_dir"
     )
