@@ -50,6 +50,8 @@ matrix:
             #description: "<Your project description here>"
           #notification_email: ...
           #build_command_prepend: "<Your build preprocessing command here>"
+      script:
+        - ./build.sh
 
 
 notifications:
