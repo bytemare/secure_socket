@@ -74,7 +74,7 @@ You may not have certain used libraries, like libbsd, and should install libbsd-
 $(pkg-config --libs libbsd)
 ```
 
-To compile the program, place yourself into the project directory and run :
+The build script will build the project and create a `run.sh` launching script with value found in `parameters.conf`. 
 
  ```bash
 ./build.sh
@@ -90,12 +90,6 @@ script or launch the binary manually, with :
 
 ```bash
 ./build/secure_socket
-```
-
-for default parameters (found in `build.sh` script) or with whatever parameters you desire, e.g. :
-
-```bash
-./build/secure_socket socket_path=/tmp/sock_secure_socket mq_name=/secure_socket_MQ log_file=/home/secure_socket/log/secure_socket_logs domain=AF_UNIX protocol=SOCK_STREAM max_connections=200 socket_permissions=0770 authorised_peer_username=www-data
 ```
 
 To automate running with your default values, insert them in the `parameters.conf` script with the others.
