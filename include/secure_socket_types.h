@@ -52,7 +52,7 @@ typedef struct _secure_socket{
         struct sockaddr_in in;
         struct sockaddr_in6 in6;
     } address;
-    struct sockaddr *bind_address; /* pre-casted pointer to choosen address type */
+    struct sockaddr *bind_address; /* pre-casted pointer to choosen address type from above */
     socklen_t addrlen; /* size of choosen address type */
 
     /* For logging */
