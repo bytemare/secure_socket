@@ -85,9 +85,8 @@ build(){
     )
 }
 
-# Get number of available
+# Get number of available cores
 cores=$(grep -c ^processor /proc/cpuinfo)
-
 
 # Build
 # -D CMAKE_C_COMPILER=/usr/bin/gcc
