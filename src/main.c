@@ -39,19 +39,19 @@ int main(int argc, char** argv) {
 
     /* Parse command line options and parameters */
     if( !( params = initialise_options()) ){
-        return 1;
+        return EXIT_FAILURE;
     }
 
     if( !parse_options(params, argc, argv) ){
         free(params);
-        return 1;
+        return EXIT_FAILURE;
     }
 
     /* Launch Logging Thread */
     if( !log_start(&log, params->verbosity, params->mq_name, params->log_file) ){
         LOG_STDOUT(LOG_FATAL, "Couldn't not start logging. Shutting down.", errno, 1, &log)
         free(params);
-        return 1;
+        return EXIT_FAILURE;
     }
 
     printf("Launched Logging thread\n");
@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
     if ( (ctx = make_server_context(params, &log) ) == NULL ){
         LOG_STDOUT(LOG_FATAL, "Could not create server context. Startup aborted.", errno, 1, &log)
         log_close(&log);
-        return 1;
+        return EXIT_FAILURE;
     }
 
     printf("Started server context.\n");
@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
         LOG_STDOUT(LOG_FATAL, "The server encountered an error. Shutting down.", errno, 1, &log)
         free_server_context(ctx);
         log_close(&log);
-        return 1;
+        return EXIT_FAILURE;
     }
 
     printf("Listening\n");
@@ -91,5 +91,5 @@ int main(int argc, char** argv) {
     /* Stop Logging */
     log_close(&log);
 
-    return 0;
+    return EXIT_SUCCESS;
 }
