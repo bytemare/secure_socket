@@ -30,6 +30,7 @@ struct sockaddr *socket_bind_unix(struct sockaddr_un *un, const char* socket_pat
     }
 
     /* Destroy ancient socket if it was abruptly interrupted */
+    /* TODO : verify if there's any way to abuse the socket if I can't be unlinked here */
     unlink(socket_path);
 
     un->sun_family = AF_UNIX;

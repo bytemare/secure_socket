@@ -48,8 +48,6 @@ secure_socket *secure_socket_allocate(server_context *ctx) {
     sock->socket_fd = -1;
     sock->optval = 1;
 
-    /*  TODO what's this ? : sock->addrlen = sizeof (sock->in_address) */
-
     return sock;
 }
 
@@ -106,7 +104,7 @@ bool secure_socket_create_socket(server_context *ctx){
  * @param port
  * @param socket_address
  * @param ctx
- * @return -1 if failed, 0 on success
+ * @return 1 on failure, 0 on success
  */
 uint8_t set_bind_address(server_context *ctx, in_addr_t address){
 
@@ -127,6 +125,8 @@ uint8_t set_bind_address(server_context *ctx, in_addr_t address){
             return 1;
         }
 
+        /* If the socket did not already exist, the unlink() in socket_bind_unix will fail and set errno, but we do not care about that */
+        errno = 0;
         return 0;
     }
 
@@ -163,7 +163,6 @@ bool ipc_server_bind(in_addr_t address, server_context *ctx){
                 "This server does not support other socket types than Unix Sockets, yet. Please use AF_UNIX.",
                 0, 1, ctx->log)
         return false;
-
     }
 
     if ( set_bind_address(ctx, address) ){
@@ -188,7 +187,7 @@ bool ipc_server_bind(in_addr_t address, server_context *ctx){
         return false;
     }
 
-    LOG(LOG_INFO, "Socket bound.", errno, 0, ctx->log)
+    LOG(LOG_INFO, "Socket bound.", 0, 0, ctx->log)
 
     return true;
 }
