@@ -132,7 +132,7 @@ typedef struct _logging{
  *
  */
 #define LOG_LINE_FORMAT "%s - [%s] %s%s%s%s.\n" /* datetime + log level + debug prefix + message + errno + debug suffix*/
-
+#define LOG_ERRNO_FORMAT " > %s (%d)" /* Interpreted errno + number */
 #define LOG_DEBUG_PREFIX_FORMAT "pid %d - pthread %lu ::: " /* 21 chars */
 #define LOG_DEBUG_SUFFIX_FORMAT " - in file %s, function %s at line %d." /* Length of 33 characters without inserted strings */
 
@@ -323,8 +323,11 @@ __always_inline void log_debug_get_bug_location(char *log_debug_suffix_buffer, c
  */
 __always_inline void log_get_err_message(logging_buffs *log_buffs, const int error_number, int8_t message_level){
     if(error_number && message_level > LOG_OFF){
-        strlcpy(log_buffs->log_err, " > ", 4);
-        strlcat(log_buffs->log_err, strerror_r(error_number, log_buffs->log_err, sizeof(log_buffs->log_err) - 4), sizeof(log_buffs->log_err) - 4);
+        //strlcpy(log_buffs->log_err, " > ", 4);
+        //strlcat(log_buffs->log_err, strerror_r(error_number, log_buffs->log_err, sizeof(log_buffs->log_err) - 4), sizeof(log_buffs->log_err) - 4);
+
+        log_s_vasprintf(log_buffs->log_err, LOG_MAX_ERRNO_LENGTH, 0, LOG_ERRNO_FORMAT, strerror_r(error_number, log_buffs->log_err, sizeof(log_buffs->log_err) - 4), errno);
+
         errno = 0;
     }
 }
