@@ -238,7 +238,7 @@ __always_inline uint8_t log_initialise_logging_s(logging *log, int8_t verbosity,
         return 1;
     }
 
-    LOG_FILE(LOG_INFO, "Initialised logging structure.", -1, 0, log)
+    LOG_FILE(LOG_INFO, "Initialised logging structure.", 0, 0, log)
 
     return 0;
 }
