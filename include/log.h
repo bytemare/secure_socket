@@ -220,6 +220,7 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
 /*#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"*/
 #define LOG_INIT\
+    errno = 0;\
     logging_buffs log_buffs;\
 /*#pragma GCC diagnostic pop*/
 
@@ -322,11 +323,9 @@ __always_inline void log_debug_get_bug_location(char *log_debug_suffix_buffer, c
  */
 __always_inline void log_get_err_message(logging_buffs *log_buffs, const int error_number, int8_t message_level){
     if(error_number && message_level > LOG_OFF){
-        strlcpy(log_buffs->log_err, ": ", 2);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-result"
-        strerror_r(error_number, log_buffs->log_err, LOG_MAX_ERRNO_LENGTH - 1);
-#pragma GCC diagnostic pop
+        strlcpy(log_buffs->log_err, " > ", 4);
+        strlcat(log_buffs->log_err, strerror_r(error_number, log_buffs->log_err, sizeof(log_buffs->log_err) - 4), sizeof(log_buffs->log_err) - 4);
+        errno = 0;
     }
 }
 
@@ -377,17 +376,19 @@ __always_inline const char* interpret_log_level(int8_t message_level){
 __always_inline void log_assemble(logging_buffs *log_buffs, int8_t message_level, const char *message, int verbosity){
     const char *message_level_ch = interpret_log_level(message_level);
 
-    /*
-    printf("\nLog assemble :\n"
-           "'%s'\n"
-           "'%s'\n"
-           "'%s'\n"
-           "'%s'\n"
-           "'%s'\n"
-           "'%s'\n---------\n",
-           log_buffs->log_entry_buffer, log_buffs->log_date_buffer, message_level_ch, log_buffs->log_debug_prefix_buffer, message, log_buffs->log_err);
-    */
 
+    /*printf("\nLog assemble :\n"
+           "'%s'\n"
+           "'%s'\n"
+           "'%s'\n"
+           "'%s'\n"
+           "'%s'\n"
+           "'%s'\n"
+           "'%s'\n"
+           "=====\n",
+           log_buffs->log_entry_buffer, log_buffs->log_date_buffer, message_level_ch, log_buffs->log_debug_prefix_buffer, message, log_buffs->log_err, log_buffs->log_debug_suffix_buffer);
+    */
+    // TODO : this logic here is broken, need rethink
     if(verbosity >= LOG_FATAL && verbosity < LOG_DEBUG) {
         log_s_vasprintf(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer), 0, LOG_LINE_FORMAT,
                         log_buffs->log_date_buffer,
@@ -395,7 +396,7 @@ __always_inline void log_assemble(logging_buffs *log_buffs, int8_t message_level
                         log_buffs->log_debug_prefix_buffer,
                         message,
                         log_buffs->log_err,
-                        "");
+                        log_buffs->log_debug_suffix_buffer);
     } else {
         log_s_vasprintf(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer), 0, LOG_LINE_FORMAT,
                         log_buffs->log_date_buffer,
@@ -420,12 +421,19 @@ __always_inline void log_assemble(logging_buffs *log_buffs, int8_t message_level
  */
 __always_inline void log_build(logging_buffs *log_buffs, int8_t message_level, const char *message,
                                const int error_number, const char *file, const char *function, const int line, const int8_t verbosity){
+
+    //printf("\n\nLOGGING MESSAGE : '%s'\n", message);
+    //printf("Verbosity : %d\nMessage Level : %d\nLocation : file %s in line %d\n", verbosity, message_level, file, line);
+
     log_reset(log_buffs);
     log_get_date_time(log_buffs);
     log_debug_get_process_thread_id(log_buffs->log_debug_prefix_buffer, message_level, verbosity);
+    //printf("### Prefix buffer : '%s'\n", log_buffs->log_debug_prefix_buffer);
     log_get_err_message(log_buffs, error_number, message_level);
+    //printf("### Error message : '%s'\n", log_buffs->log_err);
     log_debug_get_bug_location(log_buffs->log_debug_suffix_buffer, file, function, line, message_level,
                                verbosity);
+    //printf("### Bug Location : '%s'\n", log_buffs->log_debug_suffix_buffer);
     log_assemble(log_buffs, message_level, message, verbosity);
 }
 
@@ -502,8 +510,6 @@ __always_inline void log_write_to_file(logging *log, char *message, size_t messa
  */
 __always_inline void log_to_file(logging_buffs *log_buffs, int8_t message_level, const char *message,
                               const int error_number, const char *file, const char *function, const int line, logging *log){
-
-    printf("Verbosity %d to file %d.\n", log->verbosity, log->fd);
     if(log->verbosity > LOG_OFF){
         log_build(log_buffs, message_level, message, error_number, file, function, line, log->verbosity);
         log_write_to_file(log, log_buffs->log_entry_buffer, strnlen(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer)));
