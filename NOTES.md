@@ -49,11 +49,20 @@ Security Mechanisms
 - check whether SO_PASSCRED credentials are verified by the kernel
 - check SO_PEERSEC mechanism
 - document about use of SCM_CREDENTIALS and SCM_SECURITY
-- ucreds insertion in php socket : bypass php api macros and directly address underlying C socket
+- Generate add-hoc apparmor profile
+
 
 Socket configuratation
 
 - See other* socket options
+
+Testing
+
+- Peer programs :
+  - Python
+  - PHP
+    - ucreds insertion in php socket : bypass php api macros and directly address underlying C socket
+  - C
 
 General
 
@@ -70,6 +79,7 @@ General
 
 #### Logging
 
+1) FIX inverted verbosity scale
 1) Replace necessity to use LOG_BUILD for runtime var log integration. Try to bundle it in LOG().
 1) Add LOG debugging mode to print to stdout whats happening during logging
 1) add '-q / --quiet' argument to be completely silent on prompt : parse whole arguments first to look for that one
