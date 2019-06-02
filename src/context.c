@@ -131,7 +131,7 @@ ipc_options* initialise_options(){
 bool parse_options(ipc_options *options, int argc, char **argv){
 
     int i;
-    char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
+
 
     LOG_INIT
 
@@ -151,7 +151,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
             if( q[0] != '/' && strnlen(q, mq_name_max_size) == mq_name_max_size ){
                 //TODO : check all conditions of mq_name, cf 'man mq_overview'
                 LOG_BUILD("Invalid name for message queue. First character must be '/' and must be shorter than %d characters.", mq_name_max_size)
-                LOG_STDOUT(LOG_FATAL, log_buffer, 0, 2, NULL)
+                LOG_STDOUT(LOG_FATAL, log_buffs.log_buffer, 0, 2, NULL)
                 return false;
             }
 
@@ -164,7 +164,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
             uint8_t socket_name_max_size = sizeof(options->socket_path);
             if( strnlen(q, socket_name_max_size) == socket_name_max_size ){
                 LOG_BUILD("Invalid name for socket path. Must be shorter than %d characters.", socket_name_max_size)
-                LOG_STDOUT(LOG_FATAL, log_buffer, 0, 2, NULL)
+                LOG_STDOUT(LOG_FATAL, log_buffs.log_buffer, 0, 2, NULL)
                 return false;
             }
 
@@ -178,7 +178,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
             uint16_t log_name_max_size = sizeof(options->log_file);
             if( strnlen(q, log_name_max_size) == log_name_max_size ){
                 LOG_BUILD("Invalid name for log file. Must be shorter than %d characters.", log_name_max_size)
-                LOG_STDOUT(LOG_FATAL, log_buffer, 0, 2, NULL)
+                LOG_STDOUT(LOG_FATAL, log_buffs.log_buffer, 0, 2, NULL)
                 return false;
             }
 
@@ -356,7 +356,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
         }
 
         LOG_BUILD("Invalid argument : %s", p)
-        LOG_STDOUT(LOG_FATAL, log_buffer, 0, 1, NULL)
+        LOG_STDOUT(LOG_FATAL, log_buffs.log_buffer, 0, 1, NULL)
         return false;
     }
 

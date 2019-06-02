@@ -61,12 +61,12 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
     ssize_t length;
     struct stat file_info;
 
-    char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
+
 
     LOG_INIT
 
     LOG_BUILD("Attempting to read data from file '%s' ", filename)
-    LOG(LOG_TRACE, log_buffer, 0, -2, log)
+    LOG(LOG_TRACE, log_buffs.log_buffer, 0, -2, log)
 
     /*
      * Use of a BSD function here with a lock to prevent a race condition, since the function is used to open a PID file, among others
@@ -74,7 +74,7 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
     file = flopen(filename, O_RDONLY);
     if(file == -1){
         LOG_BUILD("Unable to open file '%s', open() failed. ", filename)
-        LOG(LOG_ALERT, log_buffer, errno, 3, log)
+        LOG(LOG_ALERT, log_buffs.log_buffer, errno, 3, log)
         return NULL;
     }
 
@@ -84,7 +84,7 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
 
     if (!S_ISREG(file_info.st_mode)) {
         LOG_BUILD("Error : '%s' is not a regular file !", filename)
-        LOG(LOG_ALERT, log_buffer, errno, 4, log)
+        LOG(LOG_ALERT, log_buffs.log_buffer, errno, 4, log)
         close(file);
         return NULL;
     }
@@ -92,7 +92,7 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
     length = file_info.st_size;
 
     LOG_BUILD("File '%s' is '%d' bytes long.", filename, (int)length)
-    LOG(LOG_TRACE, log_buffer, errno, 0, log)
+    LOG(LOG_TRACE, log_buffs.log_buffer, errno, 0, log)
 
 
     destination = calloc((unsigned long) (length + 1), sizeof(char));
@@ -113,7 +113,7 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
     destination[sizeof(destination) - 1] = '\0';
 
     LOG_BUILD("Read '%d' bytes from '%s'", (int)length, filename)
-    LOG(LOG_TRACE, log_buffer, 0, 3, log)
+    LOG(LOG_TRACE, log_buffs.log_buffer, 0, 3, log)
     close(file);
 
     *size = (int)length;

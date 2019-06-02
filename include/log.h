@@ -98,7 +98,8 @@ typedef struct _logging{
     struct aiocb *aio;
     bool quit_logging; /* Syncing with logging thread */
 
-    mqd_t mq;
+    mqd_t mq_send;
+    mqd_t mq_recv;
     struct mq_attr mq_attr;
 
     pthread_t thread;
@@ -205,7 +206,7 @@ typedef struct _logging_buffs{
  * Function declaration
  */
 
-uint8_t log_initialise_logging_s(logging *log, int8_t verbosity, char *mq_name, char *filename);
+uint8_t log_initialise_logging_s(logging *log, char *mq_name, char *filename);
 
 void set_thread_attributes(pthread_attr_t *attr, logging *log);
 
@@ -246,7 +247,7 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
  * Build a log entry with runtime values
  */
 #define LOG_BUILD(error_message_format, ...)\
-    log_s_vasprintf(log_buffer, sizeof(log_buffer), 0, error_message_format, ##__VA_ARGS__);\
+    log_s_vasprintf(log_buffs.log_buffer, sizeof(log_buffs.log_buffer), 0, error_message_format, ##__VA_ARGS__);\
 
 
 /**
@@ -262,6 +263,7 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
     log_to_stdout(&log_buffs, message_level, message, error_number, __FILE__, __func__, __LINE__ + 1 - (error_delta), log);\
 
 
+//__always_inline void log_build_with_runtime(logging_buffs *log_buffs, )
 
 /**
  * Zero-out memory buffers and reset timer
@@ -463,7 +465,7 @@ __always_inline void log_to_mq(logging_buffs *log_buffs, int8_t message_level, c
         const int error_number, const char *file, const char *function, const int line, logging *log){
     if(log->verbosity > LOG_OFF){
         log_build(log_buffs, message_level, message, error_number, file, function, line, log->verbosity);
-        mq_send(log->mq, log_buffs->log_entry_buffer, strnlen(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer)), 1);
+        mq_send(log->mq_send, log_buffs->log_entry_buffer, strnlen(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer)), 1);
     }
 }
 
