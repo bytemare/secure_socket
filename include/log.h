@@ -121,8 +121,7 @@ typedef struct _logging{
  * Date format
  *
  */
-#define DATE_FORMAT "%04d-%d-%d - %02d:%02d:%02d"
-
+#define LOG_DATE_FORMAT "%04d-%d-%d - %02d:%02d:%02d"
 
 /*
  * Log format
@@ -131,11 +130,10 @@ typedef struct _logging{
  * Prefix with pid and pthreadid, and suffix with filename, function and line of log call should only be used in debug mode
  *
  */
-#define LOG_LINE_FORMAT "%s - [%s] %s%s%s%s.\n" /* datetime + log level + debug prefix + message + errno + debug suffix*/
-#define LOG_ERRNO_FORMAT " > %s (%d)" /* Interpreted errno + number */
-#define LOG_DEBUG_PREFIX_FORMAT "pid %d - pthread %lu ::: " /* 21 chars */
-#define LOG_DEBUG_SUFFIX_FORMAT " - in file %s, function %s at line %d." /* Length of 33 characters without inserted strings */
-
+#define LOG_FORMAT_LINE "%s - [%s] %s%s%s%s.\n" /* datetime + log level + debug prefix + message + errno + debug suffix*/
+#define LOG_FORMAT_ERRNO " > %s (%d)" /* Interpreted errno + number */
+#define LOG_FORMAT_DEBUG_PREFIX "pid %d - pthread %lu ::: " /* 21 chars */
+#define LOG_FORMAT_DEBUG_SUFFIX " - in file %s, function %s at line %d." /* Length of 33 characters without inserted strings */
 
 /* Message queue system constants */
 #if HARD_MSGMAX
@@ -149,7 +147,6 @@ typedef struct _logging{
 #else
 #define LOG_MQ_MAX_MESSAGE_SIZE (16777216 - 1)
 #endif
-
 
 #define LOG_MQ_SOURCE_MAX_MESSAGE_SIZE_FILE "/proc/sys/fs/mqueue/msgsize_max"
 
@@ -290,7 +287,7 @@ __always_inline void log_reset(logging_buffs *log_buffs){
  * @param log_timer
  */
 __always_inline void log_get_date_time(logging_buffs *log_buffs){
-    log_s_vasprintf(log_buffs->log_date_buffer, sizeof(log_buffs->log_date_buffer), 0, DATE_FORMAT,
+    log_s_vasprintf(log_buffs->log_date_buffer, sizeof(log_buffs->log_date_buffer), 0, LOG_DATE_FORMAT,
             log_buffs->log_timer.tm_year + 1900, log_buffs->log_timer.tm_mon + 1, log_buffs->log_timer.tm_mday, log_buffs->log_timer.tm_hour, log_buffs->log_timer.tm_min, log_buffs->log_timer.tm_sec );
 }
 
@@ -305,7 +302,7 @@ __always_inline void log_debug_get_process_thread_id(char *log_debug_prefix_buff
                                                      const int verbosity){
     memset(log_debug_prefix_buffer, '\0', LOG_DEBUG_PREFIX_MAX_LENGTH);
     if(message_level >= verbosity){
-        log_s_vasprintf(log_debug_prefix_buffer, LOG_DEBUG_PREFIX_MAX_LENGTH, 0, LOG_DEBUG_PREFIX_FORMAT, (int) getpid(), (unsigned long int)pthread_self());
+        log_s_vasprintf(log_debug_prefix_buffer, LOG_DEBUG_PREFIX_MAX_LENGTH, 0, LOG_FORMAT_DEBUG_PREFIX, (int) getpid(), (unsigned long int)pthread_self());
     }
 }
 
@@ -323,7 +320,7 @@ __always_inline void log_debug_get_bug_location(char *log_debug_suffix_buffer, c
     memset(log_debug_suffix_buffer, '\0', LOG_DEBUG_SUFFIX_MAX_LENGTH);
     if(message_level >= verbosity){
     //if( message_level >= LOG_ALERT && message_level <= verbosity){
-        log_s_vasprintf(log_debug_suffix_buffer, LOG_DEBUG_SUFFIX_MAX_LENGTH, 0, LOG_DEBUG_SUFFIX_FORMAT, file, function, line);
+        log_s_vasprintf(log_debug_suffix_buffer, LOG_DEBUG_SUFFIX_MAX_LENGTH, 0, LOG_FORMAT_DEBUG_SUFFIX, file, function, line);
     }
 }
 
@@ -337,7 +334,7 @@ __always_inline void log_debug_get_bug_location(char *log_debug_suffix_buffer, c
  */
 __always_inline void log_get_err_message(logging_buffs *log_buffs, const int error_number, int8_t message_level){
     if(error_number && message_level > LOG_OFF){
-        log_s_vasprintf(log_buffs->log_err, LOG_MAX_ERRNO_LENGTH, 0, LOG_ERRNO_FORMAT, strerror_r(error_number, log_buffs->log_err, sizeof(log_buffs->log_err) - 4), error_number);
+        log_s_vasprintf(log_buffs->log_err, LOG_MAX_ERRNO_LENGTH, 0, LOG_FORMAT_ERRNO, strerror_r(error_number, log_buffs->log_err, sizeof(log_buffs->log_err) - 4), error_number);
         errno = 0;
     }
 }
@@ -403,7 +400,7 @@ __always_inline void log_assemble(logging_buffs *log_buffs, int8_t message_level
     */
     // TODO : this logic here is broken, need rethink
     if(verbosity >= LOG_FATAL && verbosity < LOG_DEBUG) {
-        log_s_vasprintf(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer), 0, LOG_LINE_FORMAT,
+        log_s_vasprintf(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer), 0, LOG_FORMAT_LINE,
                         log_buffs->log_date_buffer,
                         message_level_ch,
                         log_buffs->log_debug_prefix_buffer,
@@ -411,7 +408,7 @@ __always_inline void log_assemble(logging_buffs *log_buffs, int8_t message_level
                         log_buffs->log_err,
                         log_buffs->log_debug_suffix_buffer);
     } else {
-        log_s_vasprintf(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer), 0, LOG_LINE_FORMAT,
+        log_s_vasprintf(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer), 0, LOG_FORMAT_LINE,
                         log_buffs->log_date_buffer,
                         message_level_ch,
                         log_buffs->log_debug_prefix_buffer,
