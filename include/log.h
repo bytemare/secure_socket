@@ -93,12 +93,12 @@
  */
 typedef struct _logging{
     int8_t  verbosity;
-    mqd_t mq;
     char mq_name[NAME_MAX];
     int fd;
     struct aiocb *aio;
     bool quit_logging; /* Syncing with logging thread */
 
+    mqd_t mq;
     struct mq_attr mq_attr;
 
     pthread_t thread;
@@ -136,7 +136,21 @@ typedef struct _logging{
 #define LOG_DEBUG_PREFIX_FORMAT "pid %d - pthread %lu ::: " /* 21 chars */
 #define LOG_DEBUG_SUFFIX_FORMAT " - in file %s, function %s at line %d." /* Length of 33 characters without inserted strings */
 
-#define LOG_MQ_MAX_MESSAGE_SIZE         8192
+
+/* Message queue system constants */
+#if HARD_MSGMAX
+#define LOG_MQ_MAX_NB_MESSAGES HARD_MSGMAX
+#else
+#define LOG_MQ_MAX_NB_MESSAGES (65536 - 1)
+#endif
+
+#ifdef HARD_MSGSIZEMAX
+#define LOG_MQ_MAX_MESSAGE_SIZE HARD_MSGSIZEMAX
+#else
+#define LOG_MQ_MAX_MESSAGE_SIZE (16777216 - 1)
+#endif
+
+
 #define LOG_MQ_SOURCE_MAX_MESSAGE_SIZE_FILE "/proc/sys/fs/mqueue/msgsize_max"
 
 
