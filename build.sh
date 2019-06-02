@@ -91,7 +91,7 @@ cores=$(grep -c ^processor /proc/cpuinfo)
 # Build
 # -D CMAKE_C_COMPILER=/usr/bin/gcc
 cmake_options="-DCMAKE_BUILD_TYPE=$BUILD_TYPE"
-make_options="-j$(($cores + 1))"
+make_options="-j$((cores + 1))"
 build "$BUILD_TYPE" "$cmake_options" "$make_options"
 
 
