@@ -221,7 +221,7 @@ bool ipc_server_listen(server_context *ctx, const unsigned int nb_cnx){
  */
 bool ipc_bind_set_and_listen(in_addr_t address, server_context *ctx) {
 
-    /* TODO: what's that ?
+    /* TODO
      * Create directory in which to place the socket file */
 
     /* Bind the server to a socket */
@@ -230,7 +230,10 @@ bool ipc_bind_set_and_listen(in_addr_t address, server_context *ctx) {
     }
 
     /* Force permissions on socket file to peer's user group */
-    set_socket_owner_and_permissions(ctx, ctx->options->authorised_peer_username, ctx->options->authorised_peer_uid, (mode_t) strtoul(ctx->options->socket_permissions, 0, 8));
+    // TODO : add check to return false iff socket security is required
+    if ( !set_socket_owner_and_permissions(ctx, ctx->options->authorised_peer_username, ctx->options->authorised_peer_uid, (mode_t) strtoul(ctx->options->socket_permissions, 0, 8)) ){
+        return false;
+    }
 
     /* Listen for connections */
     if ( !ipc_server_listen(ctx, ctx->options->max_connections) ){
