@@ -35,8 +35,11 @@ static void* handle_client(void *args){
 
     LOG(LOG_TRACE, "Thread launched. Calling handler.", 0, 0, ctx->log)
 
-    /*handle_client_connection(client);*/
-    //handler(ctx);
+    /**
+     * Launch your client handler here, e.g. :
+     * - handle_client_connection(client)
+     * - handler(ctx)
+     */
 
     LOG(LOG_TRACE, "Connexion closed. Thread now exiting.", 0, 0, ctx->log)
 
@@ -129,7 +132,11 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
     /* List of threads system id's */
     unsigned int count; /* Total accumulated amount of accepted connections */
     unsigned int offset; /* Index between 0 and nb_cnx */
-    /*unsigned int nb_threads = 0;*/ /* Used later to determine number of effectively created threads */
+    /*
+     * TODO
+     * Track number of effectively created threads
+     * unsigned int nb_threads = 0;
+     */
     unsigned int nb_authorised_errors; /* Number of errors before exiting daemon mode */
 
     thread_context **client_ctx; /* Contexts with logging queue and ipc_sockets to deal with clients */
