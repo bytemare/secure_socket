@@ -20,7 +20,9 @@ matrix:
     #    - ./checksec.sh-master/checksec -f Debug/secure_socket && ./checksec.sh-master/checksec -ff Debug/secure_socket
     #    - hardening-check -c -v Debug/secure_socket
 
-    - name: Sonar Checking
+    - name: Quality Checks
+      git:
+        depth: false # Sonar doesn't like shallow clones
       addons:
         apt:
           packages: &default_packages
