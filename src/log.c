@@ -292,16 +292,6 @@ int get_mq_max_message_size(logging *log){
     return max_size;
 }
 
-/*
-void log_to_file(server_context *ctx, char *message){
-    if (write(ctx->log.fd, message, strlen(message)) == -1){
-        LOG_STDOUT(LOG_ALERT, "Call to write() to log to file failed.", errno, 1);
-        printf("\tOriginal log message :\n");
-        printf("\t%s", message);
-    }
-    memset(message, 0, strlen(message));
-}
-*/
 
 /**
  * Set to be created pthreads attributes
