@@ -143,10 +143,9 @@ uint8_t log_util_open_mq(logging *log, const char *mq_name){
         return 1;
     }
 
-    // TODO : redundant
-
     if ( strlcpy(log->mq_name, mq_name, sizeof(log->mq_name)) >= sizeof(log->mq_name) ){
-        LOG_STDOUT(LOG_WARNING, "Message queue name is too long and got truncated to maximum authorised size.", errno, 1, log)
+        LOG_STDOUT(LOG_WARNING, "Message queue name is too long and will not be truncated. This should not happen.", errno, 1, log)
+        return 1;
     }
 
     /* Opening Message Queue */
