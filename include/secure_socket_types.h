@@ -55,9 +55,6 @@ typedef struct _secure_socket{
     struct sockaddr *bind_address; /* pre-casted pointer to choosen address type from above */
     socklen_t addrlen; /* size of choosen address type */
 
-    /* For logging */
-    //mqd_t mq;
-    //logging log;
 } secure_socket;
 
 typedef struct _thread_context{
