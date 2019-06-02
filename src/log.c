@@ -158,6 +158,7 @@ uint8_t log_util_open_mq(logging *log, const char *mq_name){
     return 0;
 }
 
+
 /**
  * Allocates and initialises the asynchronous I/O structure.
  * @param log
@@ -176,68 +177,6 @@ uint8_t log_util_open_aio(logging *log){
     log->aio->aio_fildes = log->fd;
     log->aio->aio_buf = NULL;
     log->aio->aio_nbytes = 0;
-
-    return 0;
-}
-
-/**
- * Initialise logging structure's components
- * @param log
- * @param verbosity
- */
-__always_inline void log_init_log_params(logging *log, int8_t verbosity){
-    log->verbosity = verbosity;
-    log->mq = -1;
-    memset(log->mq_name, 0, sizeof(log->mq_name));
-    log->fd = -1;
-    log->aio = NULL;
-    log->quit_logging = false;
-
-    log->thread = 0;
-}
-
-
-/**
- * Given a previously declared logging structure, initialises it by setting the verbosity, and opening the message and
- * log file descriptor.
- * Returns 0 on success, 1 on error
- * @param log
- * @param verbosity
- * @param mq_name
- * @param filename
- * @return 0 on success, 1 on error
- */
-__always_inline uint8_t log_initialise_logging_s(logging *log, int8_t verbosity, char *mq_name, char *filename) {
-
-    LOG_INIT
-
-    log->verbosity = verbosity;
-    log->aio = NULL;
-    log->quit_logging = false;
-    set_thread_attributes(&log->attr, log);
-
-    /* Open log file */
-    if ( log_util_open_file_lock(log, filename) ){
-        return 1;
-    }
-
-    /* Open message queue */
-    if ( log_util_open_mq(log, mq_name) ){
-        close(log->fd);
-        return 1;
-    }
-
-    /* Initialise asynchronous I/O structure */
-    if ( log_util_open_aio(log) ) {
-        close(log->fd);
-        if (log->mq != -1){
-            mq_close(log->mq);
-            mq_unlink(log->mq_name);
-        }
-        return 1;
-    }
-
-    LOG_FILE(LOG_INFO, "Initialised logging structure.", 0, 0, log)
 
     return 0;
 }
@@ -289,6 +228,74 @@ int get_mq_max_message_size(logging *log){
     LOG_FILE(LOG_TRACE, "Size for message in mq is set.", errno, 0, log)
 
     return max_size;
+}
+
+
+/**
+ * Initialise logging structure's components
+ * @param log
+ * @param verbosity
+ */
+__always_inline void log_init_log_params(logging *log, int8_t verbosity){
+    log->verbosity = verbosity;
+    log->fd = -1;
+    log->aio = NULL;
+    log->quit_logging = false;
+
+    log->thread = 0;
+
+    log->mq = -1;
+    log->mq_attr.mq_flags = 0;
+    log->mq_attr.mq_maxmsg = LOG_MQ_MAX_NB_MESSAGES;
+    log->mq_attr.mq_curmsgs = 0;
+    memset(log->mq_name, 0, sizeof(log->mq_name));
+    log->mq_attr.mq_msgsize = get_mq_max_message_size(log);
+}
+
+
+/**
+ * Given a previously declared logging structure, initialises it by setting the verbosity, and opening the message and
+ * log file descriptor.
+ * Returns 0 on success, 1 on error
+ * @param log
+ * @param verbosity
+ * @param mq_name
+ * @param filename
+ * @return 0 on success, 1 on error
+ */
+__always_inline uint8_t log_initialise_logging_s(logging *log, int8_t verbosity, char *mq_name, char *filename) {
+
+    LOG_INIT
+
+    log->verbosity = verbosity;
+    log->aio = NULL;
+    log->quit_logging = false;
+    set_thread_attributes(&log->attr, log);
+
+    /* Open log file */
+    if ( log_util_open_file_lock(log, filename) ){
+        return 1;
+    }
+
+    /* Open message queue */
+    if ( log_util_open_mq(log, mq_name) ){
+        close(log->fd);
+        return 1;
+    }
+
+    /* Initialise asynchronous I/O structure */
+    if ( log_util_open_aio(log) ) {
+        close(log->fd);
+        if (log->mq != -1){
+            mq_close(log->mq);
+            mq_unlink(log->mq_name);
+        }
+        return 1;
+    }
+
+    LOG_FILE(LOG_INFO, "Initialised logging structure.", 0, 0, log)
+
+    return 0;
 }
 
 
@@ -371,7 +378,7 @@ void log_close(logging *log) {
 void* logging_thread(void *args){
 
     logging *log;
-    int mq_max_size;
+    long mq_max_size;
     unsigned int prio;
     char *buffer;
 
@@ -381,7 +388,7 @@ void* logging_thread(void *args){
 
     LOG_FILE(LOG_TRACE, "Logging thread started.", errno, 0, log)
 
-    mq_max_size = get_mq_max_message_size(log);
+    mq_max_size = log->mq_attr.mq_msgsize;
     prio = 0;
     buffer = calloc((size_t )mq_max_size+1, sizeof(char));
 
