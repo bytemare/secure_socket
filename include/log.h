@@ -263,8 +263,6 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
     log_to_stdout(&log_buffs, message_level, message, error_number, __FILE__, __func__, __LINE__ + 1 - (error_delta), log);\
 
 
-//__always_inline void log_build_with_runtime(logging_buffs *log_buffs, )
-
 /**
  * Zero-out memory buffers and reset timer
  * This is needed when there's more than one log call per function.
