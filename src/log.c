@@ -21,20 +21,21 @@
  */
 bool log_start_thread(logging *log, int8_t verbosity, char *mq_name, char *log_file){
 
+    LOG_INIT
+    int ret;
+
+    /* Initialise logging structure with default parameters and current verbosity */
     log_init_log_params(log, verbosity);
 
     if( log->verbosity == LOG_OFF ){
         return true;
     }
 
-    int ret;
-    LOG_INIT
-
-    if ( log_initialise_logging_s(log, verbosity, mq_name, log_file) ){
+    if ( log_initialise_logging_s(log, mq_name, log_file) ){
         return false;
     }
 
-    if ( (ret = pthread_create(&log->thread, NULL, &logging_thread, log) ) ){
+    if ( (ret = pthread_create(&log->thread, &log->attr, &logging_thread, log) ) ){
         LOG_STDOUT(LOG_FATAL, "Error creating logging thread : ", ret, 1, log)
         return false;
     }
@@ -92,6 +93,7 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
         free(buffer);
         return false;
     }
+    memset(target, 0, max_buf_size);
     strlcpy(target, buffer, max_buf_size - size_dec);
     free(buffer);
     return true;
@@ -125,6 +127,76 @@ uint8_t log_util_open_file_lock(logging *log, const char *filename){
 
 
 /**
+ * Closes the message queue and unlinks the associated name
+ * @param mq_des
+ * @param mq_name
+ */
+__always_inline void log_close_single_mq(mqd_t mq_des, const char *mq_name){
+    if ( mq_des != -1 ){
+        mq_close(mq_des);
+        mq_unlink(mq_name);
+    }
+}
+
+/**
+ * Closes all message queues
+ * @param log
+ */
+__always_inline void log_close_mqs(logging *log){
+    log_close_single_mq(log->mq_send, log->mq_name);
+    log_close_single_mq(log->mq_recv, log->mq_name);
+}
+
+
+/**
+ * Opens a message queue in reading mode to retrieve logs writing requests to the logging thread
+ * @param log
+ * @return
+ */
+uint8_t log_util_open_server_mq(logging *log){
+    LOG_INIT
+
+    // TODO : check arguments here
+    if( (log->mq_recv = mq_open(log->mq_name, O_RDONLY | O_CREAT | O_EXCL | O_CLOEXEC , S_IRUSR,  &log->mq_attr)) == (mqd_t)-1) {
+        LOG_STDOUT(LOG_FATAL, "Error in opening the receiver logging messaging queue.", errno, 1, log)
+        return 1;
+    }
+
+    return 0;
+}
+
+/**
+ * Opens a message queue in writing mode to send logs writing requests to the logging thread
+ * @param log
+ * @return
+ */
+uint8_t log_util_open_client_mq(logging *log){
+    LOG_INIT
+
+    /* Double check if message queue already exist */
+    if ( log->mq_recv == -1 ) {
+        LOG_STDOUT(LOG_FATAL, "Trying to open the sender message queue, but receiver message queue was not opened. This code should not be reached.", 0, 1, log)
+        return 1;
+    }
+
+    /* If creating a mq succeeds with O_EXCL flag, it means that message queue was not set up before, and we don't want that */
+    if ( (log->mq_send = mq_open(log->mq_name, O_CREAT | O_EXCL, S_IWUSR, log->mq_attr)) != (mqd_t)-1 ) {
+        LOG_STDOUT(LOG_FATAL, "Trying to open the sender message queue, but receiver message queue was not opened. This code should not be reached.", 0, 1, log)
+        log_close_single_mq(log->mq_send, log->mq_name);
+        return 1;
+    }
+
+    /* Open the queue in read only mode */
+    if( (log->mq_send = mq_open(log->mq_name, O_WRONLY | O_CLOEXEC )) == (mqd_t)-1) {
+        LOG_STDOUT(LOG_FATAL, "Error in opening the sender logging messaging queue.", errno, 1, log)
+        return 1;
+    }
+
+    return 0;
+}
+
+
+/**
  * Opens a message queue in log with given name. Checks for overflow on mq_name.
  * @param log
  * @param mq_name
@@ -148,10 +220,13 @@ uint8_t log_util_open_mq(logging *log, const char *mq_name){
         return 1;
     }
 
-    /* Opening Message Queue */
-    // TODO : check arguments here
-    if( (log->mq = mq_open(log->mq_name, O_RDWR | O_CREAT | O_EXCL, 0600, NULL)) == (mqd_t)-1) {
-        LOG_STDOUT(LOG_FATAL, "Error in opening the logging messaging queue.", errno, 1, log)
+    /* Opening Message Queues */
+    if ( !log_util_open_server_mq(log) ){
+        return 1;
+    }
+
+    if ( !log_util_open_client_mq(log) ){
+        log_close_single_mq(log->mq_recv, log->mq_name);
         return 1;
     }
 
@@ -170,7 +245,7 @@ uint8_t log_util_open_aio(logging *log){
 
     log->aio = malloc(sizeof(struct aiocb));
     if(!log->aio){
-        LOG_FILE(LOG_ALERT, "malloc failed allocation space for the logging aiocb structure.", errno, 2, log)
+        LOG_FILE(LOG_ALERT, "malloc failed allocating space for the logging aiocb structure.", errno, 2, log)
         return 1;
     }
 
@@ -183,15 +258,16 @@ uint8_t log_util_open_aio(logging *log){
 
 
 /**
+ * TODO : For some reason this function triggers AddressSanitizer for stack-overflow
  * POSIX message queues have a standard size defined in /proc/sys/fs/mqueue/msgsize_max
  * mq_receive call has to specify a buffer at least as big as this size
  * @return
  */
-int get_mq_max_message_size(logging *log){
+long int get_mq_max_message_size(logging *log){
 
     FILE *fp;
     int max_size = 0;
-    char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH] = {0};
+
     const char *mq_max_message_size_source = LOG_MQ_SOURCE_MAX_MESSAGE_SIZE_FILE;
 
     LOG_INIT
@@ -202,7 +278,7 @@ int get_mq_max_message_size(logging *log){
     fp = fopen(mq_max_message_size_source, "r");
     if (fp == NULL) {
         LOG_BUILD("Logging Thread : Could not open '%s'. Taking default max value %d.", mq_max_message_size_source, LOG_MQ_MAX_MESSAGE_SIZE)
-        LOG_FILE(LOG_TRACE, log_buffer, errno, 3, log)
+        LOG_FILE(LOG_TRACE, log_buffs.log_buffer, errno, 3, log)
     }
     else {
         int ret;
@@ -213,7 +289,7 @@ int get_mq_max_message_size(logging *log){
         if (ret == 1){
             fclose(fp);
             LOG_BUILD("Maximum size message for messaging queue is %d.", max_size)
-            LOG_FILE(LOG_INFO, log_buffer, errno, 5, log)
+            LOG_FILE(LOG_INFO, log_buffs.log_buffer, errno, 5, log)
         }
         else if ( errno != 0){
             LOG_FILE(LOG_WARNING, "Error in fscanf(). Message size set to default.", errno, 8, log)
@@ -243,13 +319,15 @@ __always_inline void log_init_log_params(logging *log, int8_t verbosity){
     log->quit_logging = false;
 
     log->thread = 0;
+    set_thread_attributes(&log->attr, log);
 
-    log->mq = -1;
+    log->mq_send = -1;
+    log->mq_recv = -1;
     log->mq_attr.mq_flags = 0;
     log->mq_attr.mq_maxmsg = LOG_MQ_MAX_NB_MESSAGES;
     log->mq_attr.mq_curmsgs = 0;
     memset(log->mq_name, 0, sizeof(log->mq_name));
-    log->mq_attr.mq_msgsize = get_mq_max_message_size(log);
+    log->mq_attr.mq_msgsize = LOG_MQ_MAX_MESSAGE_SIZE;
 }
 
 
@@ -263,14 +341,9 @@ __always_inline void log_init_log_params(logging *log, int8_t verbosity){
  * @param filename
  * @return 0 on success, 1 on error
  */
-__always_inline uint8_t log_initialise_logging_s(logging *log, int8_t verbosity, char *mq_name, char *filename) {
+__always_inline uint8_t log_initialise_logging_s(logging *log, char *mq_name, char *filename) {
 
     LOG_INIT
-
-    log->verbosity = verbosity;
-    log->aio = NULL;
-    log->quit_logging = false;
-    set_thread_attributes(&log->attr, log);
 
     /* Open log file */
     if ( log_util_open_file_lock(log, filename) ){
@@ -286,10 +359,7 @@ __always_inline uint8_t log_initialise_logging_s(logging *log, int8_t verbosity,
     /* Initialise asynchronous I/O structure */
     if ( log_util_open_aio(log) ) {
         close(log->fd);
-        if (log->mq != -1){
-            mq_close(log->mq);
-            mq_unlink(log->mq_name);
-        }
+        log_close_mqs(log);
         return 1;
     }
 
@@ -310,20 +380,20 @@ void set_thread_attributes(pthread_attr_t *attr, logging *log){
 
     /* Initialise structure */
     if( pthread_attr_init(attr) != 0 ) {
-        LOG(LOG_ERROR, "Error in thread attribute initialisation : ", errno, 1, log)
+        LOG_STDOUT(LOG_ERROR, "Error in thread attribute initialisation", errno, 1, log)
     }
 
-    /* Makes the threads KERNEL THREADS, thus allowing multi-processor execution */
+    /* Ensures the threads are KERNEL THREADS, thus allowing multi-processor execution */
     if( pthread_attr_setscope(attr, PTHREAD_SCOPE_SYSTEM) != 0) {
-        LOG(LOG_ERROR, "Error in thread setscope : ", errno, 1, log)
+        LOG_STDOUT(LOG_ERROR, "Error in thread setscope", errno, 1, log)
     }
 
     /* Launches threads as detached, since there's no need to sync whith them after they ended */
     if( pthread_attr_setdetachstate(attr, PTHREAD_CREATE_DETACHED) != 0 ){
-        LOG(LOG_ERROR, "Error in thread setdetachstate : ", errno, 1, log)
+        LOG_STDOUT(LOG_ERROR, "Error in thread setdetachstate", errno, 1, log)
     }
 
-    LOG(LOG_TRACE, "Thread attributes set.", 0, 0, log)
+    LOG_STDOUT(LOG_TRACE, "Thread attributes set.", 0, 0, log)
 }
 
 void terminate_logging_thread_blocking(logging *log){
@@ -343,26 +413,29 @@ void terminate_logging_thread_blocking(logging *log){
     pthread_join(log->thread, NULL);
 }
 
+
 /**
  * Free the allocated spaces for the logging structure components, closes and unlinks the message queue
  * @param log
  */
 __always_inline void log_free_logging(logging *log){
 
-    if (log->mq != -1){
-        mq_close(log->mq);
-        mq_unlink(log->mq_name);
-    }
+    log_close_mqs(log);
 
     close(log->fd);
 
-    //pthread_attr_destroy(&log->attr);
+    pthread_attr_destroy(&log->attr);
 
     free(log->aio);
     log->aio = NULL;
 }
 
+/**
+ * Called when logging is to be terminated, closes and frees the ressources associated to logging.
+ * @param log
+ */
 void log_close(logging *log) {
+    /* TODO : verify if this is always good */
     if(log->verbosity > LOG_OFF) {
         terminate_logging_thread_blocking(log);
         log_free_logging(log);
@@ -401,7 +474,7 @@ void* logging_thread(void *args){
 
         pthread_mutex_lock(&log->mutex);
 
-        if ( mq_getattr(log->mq, &log->mq_attr) == -1 ){
+        if ( mq_getattr(log->mq_recv, &log->mq_attr) == -1 ){
             //TODO : handle this error
         }
         while (!log->quit_logging || log->mq_attr.mq_curmsgs) {
@@ -410,7 +483,7 @@ void* logging_thread(void *args){
             pthread_mutex_unlock(&log->mutex);
 
             memset(buffer, '\0', (size_t )mq_max_size+1);
-            nb_bytes = (int) mq_receive(log->mq, buffer, (size_t )mq_max_size, &prio);
+            nb_bytes = (int) mq_receive(log->mq_recv, buffer, (size_t )mq_max_size, &prio);
 
             if (nb_bytes == -1) {
                 LOG_FILE(LOG_ALERT, "Logging : Error in mq_receive", errno, 3, log)
@@ -421,7 +494,7 @@ void* logging_thread(void *args){
 
             pthread_mutex_lock(&log->mutex);
 
-            if ( mq_getattr(log->mq, &log->mq_attr) == -1 ){
+            if ( mq_getattr(log->mq_recv, &log->mq_attr) == -1 ){
                 //TODO : handle this error
             }
         }
