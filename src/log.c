@@ -157,7 +157,7 @@ uint8_t log_util_open_server_mq(logging *log){
     LOG_INIT
 
     // TODO : check arguments here
-    if( (log->mq_recv = mq_open(log->mq_name, O_RDONLY | O_CREAT | O_EXCL | O_CLOEXEC , S_IRUSR,  &log->mq_attr)) == (mqd_t)-1) {
+    if( (log->mq_recv = mq_open(log->mq_name, O_RDONLY | O_CREAT | O_EXCL | O_CLOEXEC , S_IRUSR | S_IWUSR,  &log->mq_attr)) == (mqd_t)-1) {
         LOG_STDOUT(LOG_FATAL, "Error in opening the receiver logging messaging queue.", errno, 1, log)
         return 1;
     }
@@ -180,7 +180,7 @@ uint8_t log_util_open_client_mq(logging *log){
     }
 
     /* If creating a mq succeeds with O_EXCL flag, it means that message queue was not set up before, and we don't want that */
-    if ( (log->mq_send = mq_open(log->mq_name, O_CREAT | O_EXCL, S_IWUSR, log->mq_attr)) != (mqd_t)-1 ) {
+    if ( (log->mq_send = mq_open(log->mq_name, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, log->mq_attr)) != (mqd_t)-1 ) {
         LOG_STDOUT(LOG_FATAL, "Trying to open the sender message queue, but receiver message queue was not opened. This code should not be reached.", 0, 1, log)
         log_close_single_mq(log->mq_send, log->mq_name);
         return 1;
@@ -258,7 +258,6 @@ uint8_t log_util_open_aio(logging *log){
 
 
 /**
- * TODO : For some reason this function triggers AddressSanitizer for stack-overflow
  * POSIX message queues have a standard size defined in /proc/sys/fs/mqueue/msgsize_max
  * mq_receive call has to specify a buffer at least as big as this size
  * @return
