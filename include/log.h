@@ -432,7 +432,7 @@ __always_inline void log_build(logging_buffs *log_buffs, int8_t message_level, c
                                const int error_number, const char *file, const char *function, const int line, const int8_t verbosity){
 
     //printf("\n\nLOGGING MESSAGE : '%s'\n", message);
-    //printf("Verbosity : %d\nMessage Level : %d\nLocation : file %s in line %d\n", verbosity, message_level, file, line);
+    //printf("errno : %d - Verbosity : %d - Message Level : %d - Location : file %s @fun %s at line %d\n", error_number, verbosity, message_level, file, function, line);
 
     log_reset(log_buffs);
     log_get_date_time(log_buffs);
