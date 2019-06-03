@@ -241,7 +241,7 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
  * by sending it to the message queue
  */
 #define LOG(message_level, message, error_number, error_delta, log)\
-    log_to_mq(&log_buffs, message_level, message, error_number, __FILE__, __func__, __LINE__ + 1 - (error_delta), log);\
+    log_to_mq(&log_buffs, message_level, message, error_number, __FILE__, __func__, __LINE__ - (error_delta), log);\
 
 /**
  * Build a log entry with runtime values
@@ -249,18 +249,17 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
 #define LOG_BUILD(error_message_format, ...)\
     log_s_vasprintf(log_buffs.log_buffer, sizeof(log_buffs.log_buffer), 0, error_message_format, ##__VA_ARGS__);\
 
-
 /**
  * Same as LOG, but writes directly to log file
  */
 #define LOG_FILE(message_level, message, error_number, error_delta, log)\
-    log_to_file(&log_buffs, message_level, message, error_number, __FILE__, __func__, __LINE__ + 1 - (error_delta), log);\
+    log_to_file(&log_buffs, message_level, message, error_number, __FILE__, __func__, __LINE__ - (error_delta), log);\
 
 /**
  * Same as LOG, but prints out to standard ouput
  */
 #define LOG_STDOUT(message_level, message, error_number, error_delta, log)\
-    log_to_stdout(&log_buffs, message_level, message, error_number, __FILE__, __func__, __LINE__ + 1 - (error_delta), log);\
+    log_to_stdout(&log_buffs, message_level, message, error_number, __FILE__, __func__, __LINE__ - (error_delta), log);\
 
 
 /**
