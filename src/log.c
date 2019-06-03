@@ -221,11 +221,11 @@ uint8_t log_util_open_mq(logging *log, const char *mq_name){
     }
 
     /* Opening Message Queues */
-    if ( !log_util_open_server_mq(log) ){
+    if ( log_util_open_server_mq(log) ){
         return 1;
     }
 
-    if ( !log_util_open_client_mq(log) ){
+    if ( log_util_open_client_mq(log) ){
         log_close_single_mq(log->mq_recv, log->mq_name);
         return 1;
     }
