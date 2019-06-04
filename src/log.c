@@ -487,7 +487,7 @@ void* logging_thread(void *args){
         if ( mq_getattr(log->mq_recv, &log->mq_attr) == -1 ){
             //TODO : handle this error
         }
-        while (!log->quit_logging || log->mq_attr.mq_curmsgs) {
+        while (log->mq_attr.mq_curmsgs || !log->quit_logging ) {
 
             LOG_STDOUT(LOG_INFO, "Logging thread entered whiled loop.", 0, 0, log)
 
