@@ -63,7 +63,7 @@ fi
 # Build cleaner script
 echo "$SHELL_H" > "$CLEANER"
 echo "$s" >> "$CLEANER"
-chmod 700 "$CLEANER"
+chmod 100 "$CLEANER"
 
 # Build project by calling cmake
 # arg1 : name of the directory to build the project in
