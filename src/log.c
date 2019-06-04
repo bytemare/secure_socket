@@ -399,9 +399,9 @@ void set_thread_attributes(pthread_attr_t *attr, logging *log){
     }
 
     /* Launches threads as detached, since there's no need to sync whith them after they ended */
-    if( pthread_attr_setdetachstate(attr, PTHREAD_CREATE_DETACHED) != 0 ){
+    /*if( pthread_attr_setdetachstate(attr, PTHREAD_CREATE_DETACHED) != 0 ){
         LOG_STDOUT(LOG_ERROR, "Error in thread setdetachstate", errno, 1, log)
-    }
+    }*/
 
     LOG_STDOUT(LOG_TRACE, "Thread attributes set.", 0, 0, log)
 }
@@ -489,11 +489,16 @@ void* logging_thread(void *args){
         }
         while (!log->quit_logging || log->mq_attr.mq_curmsgs) {
 
+            LOG_STDOUT(LOG_INFO, "Logging thread entered whiled loop.", 0, 0, log)
+
             int nb_bytes;
             pthread_mutex_unlock(&log->mutex);
 
             memset(buffer, 0, (size_t )mq_max_size+1);
             nb_bytes = (int) mq_receive(log->mq_recv, buffer, (size_t )mq_max_size, &prio);
+
+            LOG_STDOUT(LOG_INFO, "Logging thread received a message", 0, 0, log)
+            printf("### LOG : Logging thread received \n\t%s\n", buffer);
 
             if (nb_bytes == -1) {
                 LOG_FILE(LOG_ALERT, "Logging : Error in mq_receive", errno, 3, log)
@@ -502,12 +507,18 @@ void* logging_thread(void *args){
                 log_write_to_file(log, buffer, (size_t) nb_bytes);
             }
 
+            printf("### LOG : %lu current messages.\n", log->mq_attr.mq_curmsgs);
+
             pthread_mutex_lock(&log->mutex);
 
             if ( mq_getattr(log->mq_recv, &log->mq_attr) == -1 ){
                 //TODO : handle this error
             }
         }
+
+        printf("### LOG : log thread left while loop.\n");
+
+        printf("### LOG : Leaving logging with %lu left messages.\n", log->mq_attr.mq_curmsgs);
 
         free(buffer);
     }
