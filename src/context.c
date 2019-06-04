@@ -82,19 +82,19 @@ ipc_options* initialise_options(){
     }
 
     /* Set message queue name */
-    memset(options->mq_name, '\0', sizeof(options->mq_name));
+    memset(options->mq_name, 0, sizeof(options->mq_name));
     strlcpy(options->mq_name, IPC_MQ_NAME, sizeof(options->mq_name) - sizeof(rand_buffer));
     secure_random_string(rand_buffer, sizeof(rand_buffer));
     strlcat(options->mq_name, rand_buffer, sizeof(options->mq_name) - sizeof(IPC_MQ_NAME));
 
     /* Set log file */
-    memset(options->log_file, '\0', sizeof(options->log_file));
+    memset(options->log_file, 0, sizeof(options->log_file));
     strlcpy(options->log_file, IPC_LOG_FILE, sizeof(options->log_file) - sizeof(rand_buffer));
     secure_random_string(rand_buffer, sizeof(rand_buffer));
     strlcat(options->log_file, rand_buffer, sizeof(options->log_file) - sizeof(IPC_LOG_FILE));
 
     /* Set socket data */
-    memset(options->socket_path, '\0', sizeof(options->socket_path));
+    memset(options->socket_path, 0, sizeof(options->socket_path));
     strlcpy(options->socket_path, IPC_SOCKET_PATH_BASE, sizeof(options->socket_path) - sizeof(rand_buffer));
     secure_random_string(rand_buffer, sizeof(rand_buffer));
     strlcat(options->socket_path, rand_buffer, sizeof(options->socket_path) - sizeof(IPC_SOCKET_PATH_BASE));
@@ -111,8 +111,8 @@ ipc_options* initialise_options(){
     options->authorised_peer_pid = IPC_AUTHORIZED_PEER_PID;
     options->authorised_peer_gid = IPC_AUTHORIZED_PEER_GID;
 
-    memset(options->authorised_peer_process_name, '\0', sizeof(options->authorised_peer_process_name));
-    memset(options->authorised_peer_cli_args, '\0', sizeof(options->authorised_peer_cli_args));
+    memset(options->authorised_peer_process_name, 0, sizeof(options->authorised_peer_process_name));
+    memset(options->authorised_peer_cli_args, 0, sizeof(options->authorised_peer_cli_args));
 
     //strlcpy(options->authorised_peer_process_name, "", sizeof(options->authorised_peer_process_name));
     //strlcpy(options->authorised_peer_cli_args, "", sizeof(options->authorised_peer_cli_args));
@@ -155,7 +155,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 return false;
             }
 
-            memset(options->mq_name, '\0', mq_name_max_size);
+            memset(options->mq_name, 0, mq_name_max_size);
             strlcpy(options->mq_name, q, sizeof(options->mq_name));
             continue;
         }
@@ -168,7 +168,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 return false;
             }
 
-            memset(options->socket_path, '\0', socket_name_max_size);
+            memset(options->socket_path, 0, socket_name_max_size);
             strlcpy(options->socket_path, q, sizeof(options->socket_path));
 
             continue;
@@ -182,7 +182,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
                 return false;
             }
 
-            memset(options->log_file, '\0', log_name_max_size);
+            memset(options->log_file, 0, log_name_max_size);
             strlcpy(options->log_file, q, sizeof(options->log_file));
 
             continue;
@@ -240,7 +240,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
 
             if ( is_valid_integer(q, socket_permissions_length) ){
                 //TODO make proper check on value if it corresponds to valid permissions
-                memset(options->socket_permissions, '\0', sizeof(options->socket_permissions));
+                memset(options->socket_permissions, 0, sizeof(options->socket_permissions));
                 strlcpy(options->socket_permissions, q, sizeof(options->socket_permissions));
                 continue;
             }
@@ -252,7 +252,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
 
         if (strcmp(p, "authorised_peer_username") == 0) {
             if( strnlen(q, sizeof(options->authorised_peer_username)) < sizeof(options->authorised_peer_username) ){
-                memset(options->authorised_peer_username, '\0', sizeof(options->authorised_peer_username));
+                memset(options->authorised_peer_username, 0, sizeof(options->authorised_peer_username));
                 strlcpy(options->authorised_peer_username, q, sizeof(options->authorised_peer_username));
                 continue;
             }
@@ -333,7 +333,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
 
         if (strcmp(p, "authorised_peer_cli_args") == 0) {
             if( strnlen(q, sizeof(options->authorised_peer_cli_args)) < sizeof(options->authorised_peer_cli_args) ){
-                memset(options->authorised_peer_cli_args, '\0', sizeof(options->authorised_peer_cli_args));
+                memset(options->authorised_peer_cli_args, 0, sizeof(options->authorised_peer_cli_args));
                 strlcpy(options->authorised_peer_cli_args, q, sizeof(options->authorised_peer_cli_args));
                 continue;
             }

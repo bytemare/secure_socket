@@ -56,9 +56,9 @@ static void* handle_client(void *args){
  */
 char* read_data_from_source(const char *filename, int *size, logging *log){
 
-    char *destination;
     int file;
     ssize_t length;
+    char *destination;
     struct stat file_info;
 
 

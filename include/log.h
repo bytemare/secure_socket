@@ -485,7 +485,7 @@ __always_inline void log_to_stdout(logging_buffs *log_buffs, int8_t message_leve
         verbosity = message_level;
     }
 
-    printf("verbosity %d - %d - %s - %d - %s - %s - %d\n", verbosity, message_level, message, error_number, file, function, line);
+    //printf("verbosity %d - %d - %s - %d - %s - %s - %d\n", verbosity, message_level, message, error_number, file, function, line);
 
     if ( verbosity != -1 ){
         log_build(log_buffs, message_level, message, error_number, file, function, line, verbosity);

@@ -492,7 +492,7 @@ void* logging_thread(void *args){
             int nb_bytes;
             pthread_mutex_unlock(&log->mutex);
 
-            memset(buffer, '\0', (size_t )mq_max_size+1);
+            memset(buffer, 0, (size_t )mq_max_size+1);
             nb_bytes = (int) mq_receive(log->mq_recv, buffer, (size_t )mq_max_size, &prio);
 
             if (nb_bytes == -1) {
