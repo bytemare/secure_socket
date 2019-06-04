@@ -48,13 +48,18 @@ Security Mechanisms
 
 - check whether SO_PASSCRED credentials are verified by the kernel
 - check SO_PEERSEC mechanism
-- document about use of SCM_CREDENTIALS and SCM_SECURITY
+- document use of SCM_CREDENTIALS and SCM_SECURITY
 - Generate add-hoc apparmor profile
+- Create socket under a dedicated, secured directory
+- Check/analyse for eventual memory leaks (valgrind)
+- Add ability to restrain that the peer's binary hash matches and authorised hash or signature
+- Discuss use of SGX
 
 
 Socket configuratation
 
 - See other* socket options
+- change ctx->socket to non-pointer ?
 
 Testing
 
@@ -68,34 +73,45 @@ General
 
 - Add a set of mandatory minimal arguments
 - When creds authentication is requested, set a flag at argument parsing and checked every time things related to it are done, to avoid going through functions for nothing
+- Fallback mechanism if libbsd is not available
+- refactor code for socket to be used as component/library
+- add examples and copy/pastable code
 
-1) change ctx->socket to non-pointer ?
-2) Create socket under a dedicated, secured directory
-3) Handle SIGPIPE signal : [https://blog.erratasec.com/2018/10/tcpip-sockets-and-sigpipe.html#.XMCGx-gzaUk]
-4) Fallback mechanism if libbsd is not available
-5) refactor code for socket to be used as component/library
-6) add examples and copy/pastable code
-7) Discuss use of SGX
+Signal Handling
+- Graceful stop via signal handling from outside : take care of threads etc.
+- Handle SIGPIPE signal : [https://blog.erratasec.com/2018/10/tcpip-sockets-and-sigpipe.html#.XMCGx-gzaUk]
+- Signal handling. Protect against all signal and keep unavoidable for shutdown.
 
 #### Logging
 
+Fixes :
+
 1) FIX inverted verbosity scale
-1) Replace necessity to use LOG_BUILD for runtime var log integration. Try to bundle it in LOG().
-1) Add LOG debugging mode to print to stdout whats happening during logging
-1) add '-q / --quiet' argument to be completely silent on prompt : parse whole arguments first to look for that one
 1) When not cleanly shut down, the logging thread/process continues and holds the lock on the log file, further attempts to open are blocked. lslocks CL helps identifying.
-1) Ensure logs are syslog compliant, and add other logging formats.
-1) add mode to log everything to stdout
-1) separate logging macros from code for thread with mq, to enable genericity
-1) Add a parameter for log file size, to keep log files at a maximum size, and then log into different file with timestamp
-1) Compress old log files
-1) ability to send logs to a socket or network address
+
+Features :
+
+  - code
+    1) Replace necessity to use LOG_BUILD for runtime var log integration. Try to bundle it in LOG().
+    1) separate logging macros from code for thread with mq, to enable genericity
+    1) add a fallback mecanism to message queues when they are to available
+    Asynchronous Ops
+    - Check why aio writes do not work
+    - get disk writing non-blocking
+
+  - output
+    1) add '-q / --quiet' argument to be completely silent on prompt : parse whole arguments first to look for that one
+    1) add mode to log everything to stdout
+    1) When printed to stdout, print with colors
+    1) ability to send logs to a socket or network address
+    1) Add LOG debugging mode to print to stdout whats happening during logging
+    1) Ensure logs are syslog compliant, and add other logging formats.
+  
+  - log rolling
+    1) Compress old log files
+    1) Add a parameter for log file size, to keep log files at a maximum size, and then log into different file with timestamp
 
 ### Todo
-
-- Graceful stop via signal handling from outside : take care of threads etc.
-- check logging for snprintf return value
-- Add ability to restrain that the peer's binary hash matches and authorised hash or signature
 
 Compilation
 
@@ -105,13 +121,6 @@ Compilation
 - gcc options not recognised, why ? -fsanitize=cfi, fsanitize-address-use-after-scope, fstack-clash-protection,   -fcf-protection=full
 - check if these are useful : -fsanitize-coverage=trace-pc-guard
 - Lookup what -D_POSIX_C_SOURCE=200112L is
-
-### Later
-
-- get log writing non-blocking
-- Check why aio writes do not work
-- Signal handling. Protect against all signal and keep unavoidable for shutdown.
-- Check/analyse for eventual memory leaks (valgrind)
 
 ### Notes
 
