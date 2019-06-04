@@ -409,6 +409,8 @@ void set_thread_attributes(pthread_attr_t *attr, logging *log){
 void terminate_logging_thread_blocking(logging *log){
 
     LOG_INIT
+    int join_ret;
+    void *join_res;
 
     LOG(LOG_INFO, "Terminating logging thread. Awaiting for mutex.", errno, 0, log)
 
@@ -420,7 +422,12 @@ void terminate_logging_thread_blocking(logging *log){
     /* Put a message to unblock logging thread on message queue */
     LOG(LOG_INFO, "Server awaiting logging thread to terminate ...", errno, 0, log)
 
-    pthread_join(log->thread, NULL);
+    if ( (join_ret = pthread_join(log->thread, &join_res)) == -1 ){
+        LOG_STDOUT(LOG_ERROR, "Could not join logging thread.", join_ret, 1, log)
+    } else {
+        LOG_BUILD("Joined logging thread, which returned %s.", (char *)join_res)
+        LOG_FILE(LOG_INFO, log_buffs.log_buffer, 0, 4, log)
+    }
 }
 
 
