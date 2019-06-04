@@ -451,25 +451,6 @@ __always_inline void log_build(logging_buffs *log_buffs, int8_t message_level, c
 
 
 /**
- * Wrapper, building a whole log line and sending it to message queue
- * @param log_buffs
- * @param message_level
- * @param message
- * @param error_number
- * @param file
- * @param function
- * @param line
- * @param log
- */
-__always_inline void log_to_mq(logging_buffs *log_buffs, int8_t message_level, const char *message,
-        const int error_number, const char *file, const char *function, const int line, logging *log){
-    if(log->verbosity > LOG_OFF){
-        log_build(log_buffs, message_level, message, error_number, file, function, line, log->verbosity);
-        mq_send(log->mq_send, log_buffs->log_entry_buffer, strnlen(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer)), 1);
-    }
-}
-
-/**
  * Simple wrapper printing final log line to standard output
  * @param log
  */
@@ -492,6 +473,35 @@ __always_inline void log_to_stdout(logging_buffs *log_buffs, int8_t message_leve
         printf("%s", log_buffs->log_entry_buffer);
     }
 }
+
+
+/**
+ * Wrapper, building a whole log line and sending it to message queue
+ * @param log_buffs
+ * @param message_level
+ * @param message
+ * @param error_number
+ * @param file
+ * @param function
+ * @param line
+ * @param log
+ */
+__always_inline void log_to_mq(logging_buffs *log_buffers, int8_t message_level, const char *message,
+                               const int error_number, const char *file, const char *function, const int line, logging *log){
+    if(log->verbosity > LOG_OFF){
+        log_build(log_buffers, message_level, message, error_number, file, function, line, log->verbosity);
+        //printf("log entry is : '%s'\n", log_buffs->log_entry_buffer);
+        if ( mq_send(log->mq_send, log_buffers->log_entry_buffer, strnlen(log_buffers->log_entry_buffer, sizeof(log_buffers->log_entry_buffer)), 1) == -1 ){
+            LOG_INIT
+            LOG_STDOUT(LOG_ALERT, "Call to mq_send(). Cannot log.", errno, 2, log)
+            if(log->verbosity >= LOG_NOTICE){
+                printf("\tOriginal log message :\n");
+                printf("\t%s", message);
+            }
+        }
+    }
+}
+
 
 /**
  * Wrapper, writing an already built log line directly to log file. If writing fails, and verbosity asks for it,
@@ -530,6 +540,5 @@ __always_inline void log_to_file(logging_buffs *log_buffs, int8_t message_level,
     }
 
 }
-
 
 #endif /* LOG_H */
