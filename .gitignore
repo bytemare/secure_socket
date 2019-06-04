@@ -17,3 +17,4 @@ Coverage
 .idea
 .test
 .vscode
+vm_sync.sh
