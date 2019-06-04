@@ -190,6 +190,8 @@ typedef struct _logging{
 
 /**
  * Structure to hold all buffers regarding logging in calling function
+ * IMPORTANT : every line but the last one has to end with a backslash,
+ * or ASAN will throw a stack overflow detection.
  */
 typedef struct _logging_buffs{
     char log_err[LOG_MAX_ERRNO_LENGTH];\
@@ -197,9 +199,9 @@ typedef struct _logging_buffs{
     char log_date_buffer[LOG_MAX_TIMESTAMP_LENGTH];\
     char log_debug_prefix_buffer[LOG_DEBUG_PREFIX_MAX_LENGTH];\
     char log_debug_suffix_buffer[LOG_DEBUG_SUFFIX_MAX_LENGTH];\
+    char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH];\
     time_t log_t;\
     struct tm log_timer;
-    char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH];
 } logging_buffs;
 
 /**
@@ -265,7 +267,7 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
 /**
  * Zero-out memory buffers and reset timer
  * This is needed when there's more than one log call per function.
- * The prefix and suffix buffers are memsetted only if needed, at their
+ * The prefix and suffix buffers are memset only if needed, at their
  * respective use for filling, to spare the cycles used for the expensive memset.
  * @param log_err
  * @param log_entry_buffer
@@ -273,9 +275,10 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
  * @param log_timer
  */
 __always_inline void log_reset(logging_buffs *log_buffs){
-    memset(log_buffs->log_err, '\0', LOG_MAX_ERRNO_LENGTH);
-    memset(log_buffs->log_entry_buffer, '\0', LOG_MAX_DEBUG_LINE_LENGTH );
-    memset(log_buffs->log_date_buffer, '\0', LOG_MAX_TIMESTAMP_LENGTH);
+    memset(log_buffs->log_err, 0, LOG_MAX_ERRNO_LENGTH);
+    memset(log_buffs->log_entry_buffer, 0, LOG_MAX_DEBUG_LINE_LENGTH );
+    memset(log_buffs->log_date_buffer, 0, LOG_MAX_TIMESTAMP_LENGTH);
+    memset(log_buffs->log_buffer, 0, LOG_MAX_ERROR_MESSAGE_LENGTH);
     log_buffs->log_t = time(NULL);
     log_buffs->log_timer = *localtime(&log_buffs->log_t);
 }
@@ -299,7 +302,7 @@ __always_inline void log_get_date_time(logging_buffs *log_buffs){
  */
 __always_inline void log_debug_get_process_thread_id(char *log_debug_prefix_buffer, int8_t message_level,
                                                      const int verbosity){
-    memset(log_debug_prefix_buffer, '\0', LOG_DEBUG_PREFIX_MAX_LENGTH);
+    memset(log_debug_prefix_buffer, 0, LOG_DEBUG_PREFIX_MAX_LENGTH);
     if(message_level >= verbosity){
         log_s_vasprintf(log_debug_prefix_buffer, LOG_DEBUG_PREFIX_MAX_LENGTH, 0, LOG_FORMAT_DEBUG_PREFIX, (int) getpid(), (unsigned long int)pthread_self());
     }
@@ -316,7 +319,7 @@ __always_inline void log_debug_get_process_thread_id(char *log_debug_prefix_buff
  */
 __always_inline void log_debug_get_bug_location(char *log_debug_suffix_buffer, const char *file, const char *function,
                                                 const int line, int8_t message_level, const int verbosity){
-    memset(log_debug_suffix_buffer, '\0', LOG_DEBUG_SUFFIX_MAX_LENGTH);
+    memset(log_debug_suffix_buffer, 0, LOG_DEBUG_SUFFIX_MAX_LENGTH);
     if(message_level >= verbosity){
     //if( message_level >= LOG_ALERT && message_level <= verbosity){
         log_s_vasprintf(log_debug_suffix_buffer, LOG_DEBUG_SUFFIX_MAX_LENGTH, 0, LOG_FORMAT_DEBUG_SUFFIX, file, function, line);
@@ -385,7 +388,6 @@ __always_inline const char* interpret_log_level(int8_t message_level){
 __always_inline void log_assemble(logging_buffs *log_buffs, int8_t message_level, const char *message, int verbosity){
     const char *message_level_ch = interpret_log_level(message_level);
 
-
     /*printf("\nLog assemble :\n"
            "'%s'\n"
            "'%s'\n"
@@ -444,6 +446,7 @@ __always_inline void log_build(logging_buffs *log_buffs, int8_t message_level, c
                                verbosity);
     //printf("### Bug Location : '%s'\n", log_buffs->log_debug_suffix_buffer);
     log_assemble(log_buffs, message_level, message, verbosity);
+    //printf("=== OUT OF LOG BUILD ===\n");
 }
 
 
@@ -481,6 +484,8 @@ __always_inline void log_to_stdout(logging_buffs *log_buffs, int8_t message_leve
     } else{
         verbosity = message_level;
     }
+
+    printf("verbosity %d - %d - %s - %d - %s - %s - %d\n", verbosity, message_level, message, error_number, file, function, line);
 
     if ( verbosity != -1 ){
         log_build(log_buffs, message_level, message, error_number, file, function, line, verbosity);
