@@ -207,7 +207,18 @@ uint8_t log_util_open_mq(logging *log, const char *mq_name){
     LOG_INIT
 
     /* Unlink potential previous message queue if it had the same name */
-    mq_unlink(mq_name);
+    if ( mq_unlink(mq_name) == -1 ){
+        if ( errno == EACCES ){
+            //TODO
+            printf("can't unlink message queue %s\n", mq_name);
+            return 1;
+        }
+        if ( errno == ENAMETOOLONG){
+            //TODO
+            printf("mq name is too long. This should not happen ! %s\n", mq_name);
+            return 1;
+        }
+    }
 
     /* Check bounds to avoid truncation */
     if (strnlen(mq_name, sizeof(log->mq_name)) == sizeof(log->mq_name)){
