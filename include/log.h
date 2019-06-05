@@ -122,7 +122,7 @@ typedef struct _logging{
  * Date format
  *
  */
-#define LOG_DATE_FORMAT "%04d-%d-%d - %02d:%02d:%02d"
+#define LOG_FORMAT_DATE "%04d-%d-%d - %02d:%02d:%02d"
 
 /*
  * Log format
@@ -135,6 +135,21 @@ typedef struct _logging{
 #define LOG_FORMAT_ERRNO " > %s (%d)" /* Interpreted errno + number */
 #define LOG_FORMAT_DEBUG_PREFIX "pid %d - pthread %lu ::: " /* 21 chars */
 #define LOG_FORMAT_DEBUG_SUFFIX " - in file %s, function %s at line %d." /* Length of 33 characters without inserted strings */
+#define LOG_FORMAT_DEFAULT "ERROR - INVALID LOG FORMAT" /* When log format is not valid, default to this */
+
+/*
+ * To avoid potential vulnerabilities in usage of ellipsis notation by giving a malformed format string to vasprintf,
+ * each LOG_FORMAT_* is to be identified, so that log_s_vasprintf will select a valid, pre-defined format string.
+ * TODO : find a better system to maintain and that has less overhead
+ * TODO : Actually, this idea doesn't work since we want that freedom that the developer can use a custom string format
+ */
+#define LOG_FORMAT_DATE_ID 1
+#define LOG_FORMAT_LINE_ID 2
+#define LOG_FORMAT_ERRNO_ID 3
+#define LOG_FORMAT_DEBUG_PREFIX_ID 4
+#define LOG_FORMAT_DEBUG_SUFFIX_ID 5
+
+
 
 /* Message queue system constants */
 #if HARD_MSGMAX
@@ -300,7 +315,7 @@ __always_inline void log_reset(logging_buffs *log_buffs){
  * @param log_timer
  */
 __always_inline void log_get_date_time(logging_buffs *log_buffs){
-    log_s_vasprintf(log_buffs->log_date_buffer, sizeof(log_buffs->log_date_buffer), 0, LOG_DATE_FORMAT,
+    log_s_vasprintf(log_buffs->log_date_buffer, sizeof(log_buffs->log_date_buffer), 0, LOG_FORMAT_DATE,
             log_buffs->log_timer.tm_year + 1900, log_buffs->log_timer.tm_mon + 1, log_buffs->log_timer.tm_mday, log_buffs->log_timer.tm_hour, log_buffs->log_timer.tm_min, log_buffs->log_timer.tm_sec );
 }
 
