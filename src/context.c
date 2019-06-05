@@ -114,9 +114,6 @@ ipc_options* initialise_options(){
     memset(options->authorised_peer_process_name, 0, sizeof(options->authorised_peer_process_name));
     memset(options->authorised_peer_cli_args, 0, sizeof(options->authorised_peer_cli_args));
 
-    //strlcpy(options->authorised_peer_process_name, "", sizeof(options->authorised_peer_process_name));
-    //strlcpy(options->authorised_peer_cli_args, "", sizeof(options->authorised_peer_cli_args));
-
     return options;
 }
 
