@@ -5,7 +5,6 @@
 - General
 
   - [x] General clean-up.
-  - [x] Detached Threads : no synchronisation needed once a thread is launched, so no joining is needed.
   - [x] ability to manage command line arguments : parsing, validating and adapt code to handle it : ipc_options.
   - [x] corrected a buffer overflow vulnerability : macro for maximal length of script name was wrong
 
@@ -95,6 +94,7 @@ Features :
     1) Replace necessity to use LOG_BUILD for runtime var log integration. Try to bundle it in LOG().
     1) separate logging macros from code for thread with mq, to enable genericity
     1) add a fallback mecanism to message queues when they are to available
+    1) Detached Threads necessary ? logging thread is killed after main thread exits, so we still need to sync/join.
     Asynchronous Ops
     - Check why aio writes do not work
     - get disk writing non-blocking
