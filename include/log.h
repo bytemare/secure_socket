@@ -126,7 +126,7 @@ typedef struct _logging{
 
 /*
  * Log format
- * Date format - [Log level] pid - pthread id ::: Custom message : System error message - filename function line number.\n
+ * Date format - [Log level] pid - pthread id ::: Custom message > Errno message - filename, function line number.\n
  *
  * Prefix with pid and pthreadid, and suffix with filename, function and line of log call should only be used in debug mode
  *
@@ -179,8 +179,8 @@ typedef struct _logging{
 #error "Maximum debug log line length is too long. Must be strictly inferior to LOG_MQ_MAX_MESSAGE_SIZE."
 #endif
 
-
-
+#define LOG_EMPTY_LOG_MESSAGE_FAILSAFE "ERROR : Log build was requested with empty message, but usage does not allow it."
+#define LOG_BUILD_LOG_MESSAGE_WHITOUT_FLAG "ERROR : Log build was requested by pointing to log buffer, this will zero it out."
 
 /**
  * Initialisation, date/time generation and errno catching macros
@@ -194,12 +194,13 @@ typedef struct _logging{
  * or ASAN will throw a stack overflow detection.
  */
 typedef struct _logging_buffs{
-    char log_err[LOG_MAX_ERRNO_LENGTH];\
-    char log_entry_buffer[LOG_MAX_DEBUG_LINE_LENGTH];\
     char log_date_buffer[LOG_MAX_TIMESTAMP_LENGTH];\
     char log_debug_prefix_buffer[LOG_DEBUG_PREFIX_MAX_LENGTH];\
+    char log_message_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH];\
+    char log_errno_message[LOG_MAX_ERRNO_LENGTH];\
     char log_debug_suffix_buffer[LOG_DEBUG_SUFFIX_MAX_LENGTH];\
-    char log_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH];\
+    char log_full_line_buffer[LOG_MAX_DEBUG_LINE_LENGTH];\
+    bool log_build;\
     time_t log_t;\
     struct tm log_timer;
 } logging_buffs;
@@ -249,7 +250,8 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
  * Build a log entry with runtime values
  */
 #define LOG_BUILD(error_message_format, ...)\
-    log_s_vasprintf(log_buffs.log_buffer, sizeof(log_buffs.log_buffer), 0, error_message_format, ##__VA_ARGS__);\
+    log_s_vasprintf(log_buffs.log_message_buffer, sizeof(log_buffs.log_message_buffer), 0, error_message_format, ##__VA_ARGS__);\
+    log_buffs.log_build = true;\
 
 /**
  * Same as LOG, but writes directly to log file
@@ -263,7 +265,6 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
 #define LOG_STDOUT(message_level, message, error_number, error_delta, log)\
     log_to_stdout(&log_buffs, message_level, message, error_number, __FILE__, __func__, __LINE__ - (error_delta), log);\
 
-
 /**
  * Zero-out memory buffers and reset timer
  * This is needed when there's more than one log call per function.
@@ -275,13 +276,23 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
  * @param log_timer
  */
 __always_inline void log_reset(logging_buffs *log_buffs){
-    memset(log_buffs->log_err, 0, LOG_MAX_ERRNO_LENGTH);
-    memset(log_buffs->log_entry_buffer, 0, LOG_MAX_DEBUG_LINE_LENGTH );
+
+    /*printf("\n\t ### In function 'log_reset' : Resetting buffers ###\n");
+    printf("err : pointer %p, sizeof %lu, init %d\n", log_buffs->log_errno_message, sizeof(log_buffs->log_errno_message), LOG_MAX_ERRNO_LENGTH);
+    printf("log_full_line_buffer : pointer %p, sizeof %lu, init %d\n", log_buffs->log_full_line_buffer, sizeof(log_buffs->log_full_line_buffer), LOG_MAX_DEBUG_LINE_LENGTH);
+    printf("log_date_buffer : pointer %p, sizeof %lu, init %d\n", log_buffs->log_date_buffer, sizeof(log_buffs->log_date_buffer), LOG_MAX_TIMESTAMP_LENGTH);
+    printf("log_message_buffer : pointer %p, sizeof %lu, init %d\n", log_buffs->log_message_buffer, sizeof(log_buffs->log_message_buffer), LOG_MAX_ERROR_MESSAGE_LENGTH);
+*/
+    memset(log_buffs->log_errno_message, 0, LOG_MAX_ERRNO_LENGTH);
     memset(log_buffs->log_date_buffer, 0, LOG_MAX_TIMESTAMP_LENGTH);
-    memset(log_buffs->log_buffer, 0, LOG_MAX_ERROR_MESSAGE_LENGTH);
+    if ( !log_buffs->log_build ){
+        memset(log_buffs->log_message_buffer, 0, LOG_MAX_ERROR_MESSAGE_LENGTH);
+    }
+    memset(log_buffs->log_full_line_buffer, 0, LOG_MAX_DEBUG_LINE_LENGTH );
     log_buffs->log_t = time(NULL);
     log_buffs->log_timer = *localtime(&log_buffs->log_t);
 }
+
 
 /**
  * Store current date and time at start of buffer
@@ -308,6 +319,7 @@ __always_inline void log_debug_get_process_thread_id(char *log_debug_prefix_buff
     }
 }
 
+
 /**
  * Builds the debug suffix containing filename, function, and line of indicated error, and stores it in given buffer
  * @param log_debug_suffix_buffer
@@ -326,6 +338,7 @@ __always_inline void log_debug_get_bug_location(char *log_debug_suffix_buffer, c
     }
 }
 
+
 /**
  * Interpret last encountered errno to be logged
  * @param error_number
@@ -336,10 +349,11 @@ __always_inline void log_debug_get_bug_location(char *log_debug_suffix_buffer, c
  */
 __always_inline void log_get_err_message(logging_buffs *log_buffs, const int error_number, int8_t message_level){
     if(error_number && message_level > LOG_OFF){
-        log_s_vasprintf(log_buffs->log_err, LOG_MAX_ERRNO_LENGTH, 0, LOG_FORMAT_ERRNO, strerror_r(error_number, log_buffs->log_err, sizeof(log_buffs->log_err) - 4), error_number);
+        log_s_vasprintf(log_buffs->log_errno_message, LOG_MAX_ERRNO_LENGTH, 0, LOG_FORMAT_ERRNO, strerror_r(error_number, log_buffs->log_errno_message, sizeof(log_buffs->log_errno_message) - 4), error_number);
         errno = 0;
     }
 }
+
 
 /**
  * Accordingly returns the string representation of the given message level
@@ -378,6 +392,7 @@ __always_inline const char* interpret_log_level(int8_t message_level){
     }
 }
 
+
 /**
  * Assembles all sub log buffers into one string
  * @param log_buffs
@@ -397,27 +412,28 @@ __always_inline void log_assemble(logging_buffs *log_buffs, int8_t message_level
            "'%s'\n"
            "'%s'\n"
            "=====\n",
-           log_buffs->log_entry_buffer, log_buffs->log_date_buffer, message_level_ch, log_buffs->log_debug_prefix_buffer, message, log_buffs->log_err, log_buffs->log_debug_suffix_buffer);
-    */
+           log_buffs->log_full_line_buffer, log_buffs->log_date_buffer, message_level_ch, log_buffs->log_debug_prefix_buffer, message, log_buffs->log_errno_message, log_buffs->log_debug_suffix_buffer);
+*/
     // TODO : this logic here is broken, need rethink
     if(verbosity >= LOG_FATAL && verbosity < LOG_DEBUG) {
-        log_s_vasprintf(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer), 0, LOG_FORMAT_LINE,
+        log_s_vasprintf(log_buffs->log_full_line_buffer, sizeof(log_buffs->log_full_line_buffer), 0, LOG_FORMAT_LINE,
                         log_buffs->log_date_buffer,
                         message_level_ch,
                         log_buffs->log_debug_prefix_buffer,
                         message,
-                        log_buffs->log_err,
+                        log_buffs->log_errno_message,
                         log_buffs->log_debug_suffix_buffer);
     } else {
-        log_s_vasprintf(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer), 0, LOG_FORMAT_LINE,
+        log_s_vasprintf(log_buffs->log_full_line_buffer, sizeof(log_buffs->log_full_line_buffer), 0, LOG_FORMAT_LINE,
                         log_buffs->log_date_buffer,
                         message_level_ch,
                         log_buffs->log_debug_prefix_buffer,
                         message,
-                        log_buffs->log_err,
+                        log_buffs->log_errno_message,
                         log_buffs->log_debug_suffix_buffer);
     }
 }
+
 
 /**
  * Performs the whole logging string build-up, recording time, log level, debug info and log message.
@@ -433,7 +449,30 @@ __always_inline void log_assemble(logging_buffs *log_buffs, int8_t message_level
 __always_inline void log_build(logging_buffs *log_buffs, int8_t message_level, const char *message,
                                const int error_number, const char *file, const char *function, const int line, const int8_t verbosity){
 
-    //printf("\n\nLOGGING MESSAGE : '%s'\n", message);
+    if ( message == NULL ){
+
+        /* If the function was called with NULL message, we are supposed to find the message in log_message_buffer
+         * and the log_build flag set to true. If flag was not set, LOG_BUILD was not called, and therefore there will
+         * be no message, so we have to fail here. */
+        if ( log_buffs->log_build ){
+            message = log_buffs->log_message_buffer;
+        } else {
+            message_level = LOG_ERROR;
+            message = LOG_EMPTY_LOG_MESSAGE_FAILSAFE;
+        }
+    } else {
+        /* Here, the call has been made by pointing the message pointer to the buffer, therefore memset-ting it to 0,
+         * and loosing the message further on */
+        if ( message == log_buffs->log_message_buffer ){
+            printf("ERROR ! You are not supposed to do this !\n");
+            printf("errno : %d - Verbosity : %d - Message Level : %d - Location : file %s @fun %s at line %d\n", error_number, verbosity, message_level, file, function, line);
+            //TODO : handle this
+            message_level = LOG_ERROR;
+            message = LOG_BUILD_LOG_MESSAGE_WHITOUT_FLAG;
+        }
+    }
+
+    //printf("LOGGING MESSAGE : '%s'\n", message);
     //printf("errno : %d - Verbosity : %d - Message Level : %d - Location : file %s @fun %s at line %d\n", error_number, verbosity, message_level, file, function, line);
 
     log_reset(log_buffs);
@@ -441,10 +480,11 @@ __always_inline void log_build(logging_buffs *log_buffs, int8_t message_level, c
     log_debug_get_process_thread_id(log_buffs->log_debug_prefix_buffer, message_level, verbosity);
     //printf("### Prefix buffer : '%s'\n", log_buffs->log_debug_prefix_buffer);
     log_get_err_message(log_buffs, error_number, message_level);
-    //printf("### Error message : '%s'\n", log_buffs->log_err);
+    //printf("### Error message : '%s'\n", log_buffs->log_errno_message);
     log_debug_get_bug_location(log_buffs->log_debug_suffix_buffer, file, function, line, message_level,
                                verbosity);
     //printf("### Bug Location : '%s'\n", log_buffs->log_debug_suffix_buffer);
+    //printf("assembling message for '%s'\n", message);
     log_assemble(log_buffs, message_level, message, verbosity);
     //printf("=== OUT OF LOG BUILD ===\n");
 }
@@ -470,7 +510,7 @@ __always_inline void log_to_stdout(logging_buffs *log_buffs, int8_t message_leve
 
     if ( verbosity != -1 ){
         log_build(log_buffs, message_level, message, error_number, file, function, line, verbosity);
-        printf("%s", log_buffs->log_entry_buffer);
+        printf("%s", log_buffs->log_full_line_buffer);
     }
 }
 
@@ -490,10 +530,9 @@ __always_inline void log_to_mq(logging_buffs *log_buffers, int8_t message_level,
                                const int error_number, const char *file, const char *function, const int line, logging *log){
     if(log->verbosity > LOG_OFF){
         log_build(log_buffers, message_level, message, error_number, file, function, line, log->verbosity);
-        //printf("log entry is : '%s'\n", log_buffs->log_entry_buffer);
-        if ( mq_send(log->mq_send, log_buffers->log_entry_buffer, strnlen(log_buffers->log_entry_buffer, sizeof(log_buffers->log_entry_buffer)), 1) == -1 ){
+        if ( mq_send(log->mq_send, log_buffers->log_full_line_buffer, strnlen(log_buffers->log_full_line_buffer, sizeof(log_buffers->log_full_line_buffer)), 1) == -1 ){
             LOG_INIT
-            LOG_STDOUT(LOG_ALERT, "Call to mq_send(). Cannot log.", errno, 2, log)
+            LOG_STDOUT(LOG_ALERT, "Call to mq_send() failed. Cannot log.", errno, 2, log)
             if(log->verbosity >= LOG_NOTICE){
                 printf("\tOriginal log message :\n");
                 printf("\t%s", message);
@@ -509,7 +548,7 @@ __always_inline void log_to_mq(logging_buffs *log_buffers, int8_t message_level,
  * @param log
  * @param message
  */
-__always_inline void log_write_to_file(logging *log, char *message, size_t message_len){
+__always_inline void log_write_to_file(logging *log, const char *message, size_t message_len){
     if (write(log->fd, message, message_len) == -1){
         LOG_INIT
         LOG_STDOUT(LOG_ALERT, "Call to write() to log to file failed. Cannot log.", errno, 1, log)
@@ -518,8 +557,10 @@ __always_inline void log_write_to_file(logging *log, char *message, size_t messa
             printf("\t%s", message);
         }
     }
-    memset(message, 0, message_len);
+    // Todo : is this line still needed ?
+    // memset(message, 0, message_len);
 }
+
 
 /**
  * Builds a log line and writes it directly to buffer by calling log_write_to_file
@@ -536,7 +577,7 @@ __always_inline void log_to_file(logging_buffs *log_buffs, int8_t message_level,
                               const int error_number, const char *file, const char *function, const int line, logging *log){
     if(log->verbosity > LOG_OFF){
         log_build(log_buffs, message_level, message, error_number, file, function, line, log->verbosity);
-        log_write_to_file(log, log_buffs->log_entry_buffer, strnlen(log_buffs->log_entry_buffer, sizeof(log_buffs->log_entry_buffer)));
+        log_write_to_file(log, log_buffs->log_full_line_buffer, strnlen(log_buffs->log_full_line_buffer, sizeof(log_buffs->log_full_line_buffer)));
     }
 
 }
