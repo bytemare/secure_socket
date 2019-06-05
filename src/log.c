@@ -288,7 +288,7 @@ long int get_mq_max_message_size(logging *log){
     fp = fopen(mq_max_message_size_source, "r");
     if (fp == NULL) {
         LOG_BUILD("Logging Thread : Could not open '%s'. Taking default max value %d.", mq_max_message_size_source, LOG_MQ_MAX_MESSAGE_SIZE)
-        LOG_FILE(LOG_TRACE, log_buffs.log_buffer, errno, 3, log)
+        LOG_FILE(LOG_TRACE, NULL, errno, 3, log)
     }
     else {
         int ret;
@@ -299,7 +299,7 @@ long int get_mq_max_message_size(logging *log){
         if (ret == 1){
             fclose(fp);
             LOG_BUILD("Maximum size message for messaging queue is %d.", max_size)
-            LOG_FILE(LOG_INFO, log_buffs.log_buffer, errno, 5, log)
+            LOG_FILE(LOG_INFO, NULL, errno, 5, log)
         }
         else if ( errno != 0){
             LOG_FILE(LOG_WARNING, "Error in fscanf(). Message size set to default.", errno, 8, log)
@@ -426,7 +426,7 @@ void terminate_logging_thread_blocking(logging *log){
         LOG_STDOUT(LOG_ERROR, "Could not join logging thread.", join_ret, 1, log)
     } else {
         LOG_BUILD("Joined logging thread, which returned %s.", (char *)join_res)
-        LOG_FILE(LOG_INFO, log_buffs.log_buffer, 0, 4, log)
+        LOG_FILE(LOG_INFO, NULL, 0, 4, log)
     }
 }
 
@@ -496,7 +496,7 @@ void* logging_thread(void *args){
         }
         while (log->mq_attr.mq_curmsgs || !log->quit_logging ) {
 
-            LOG_STDOUT(LOG_INFO, "Logging thread entered whiled loop.", 0, 0, log)
+            //LOG_STDOUT(LOG_INFO, "Logging thread entered whiled loop.", 0, 0, log)
 
             int nb_bytes;
             pthread_mutex_unlock(&log->mutex);
@@ -504,8 +504,8 @@ void* logging_thread(void *args){
             memset(buffer, 0, (size_t )mq_max_size+1);
             nb_bytes = (int) mq_receive(log->mq_recv, buffer, (size_t )mq_max_size, &prio);
 
-            LOG_STDOUT(LOG_INFO, "Logging thread received a message", 0, 0, log)
-            printf("### LOG : Logging thread received \n\t%s\n", buffer);
+            //LOG_STDOUT(LOG_INFO, "Logging thread received a message", 0, 0, log)
+            //printf("### LOG : Logging thread received \n\t%s\n", buffer);
 
             if (nb_bytes == -1) {
                 LOG_FILE(LOG_ALERT, "Logging : Error in mq_receive", errno, 3, log)
@@ -514,7 +514,7 @@ void* logging_thread(void *args){
                 log_write_to_file(log, buffer, (size_t) nb_bytes);
             }
 
-            printf("### LOG : %lu current messages.\n", log->mq_attr.mq_curmsgs);
+            //printf("### LOG : %lu current messages.\n", log->mq_attr.mq_curmsgs);
 
             pthread_mutex_lock(&log->mutex);
 
@@ -523,9 +523,9 @@ void* logging_thread(void *args){
             }
         }
 
-        printf("### LOG : log thread left while loop.\n");
+        //printf("### LOG : log thread left while loop.\n");
 
-        printf("### LOG : Leaving logging with %lu left messages.\n", log->mq_attr.mq_curmsgs);
+        //printf("### LOG : Leaving logging with %lu left messages.\n", log->mq_attr.mq_curmsgs);
 
         free(buffer);
     }
