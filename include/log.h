@@ -291,13 +291,6 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
  * @param log_timer
  */
 __always_inline void log_reset(logging_buffs *log_buffs){
-
-    /*printf("\n\t ### In function 'log_reset' : Resetting buffers ###\n");
-    printf("err : pointer %p, sizeof %lu, init %d\n", log_buffs->log_errno_message, sizeof(log_buffs->log_errno_message), LOG_MAX_ERRNO_LENGTH);
-    printf("log_full_line_buffer : pointer %p, sizeof %lu, init %d\n", log_buffs->log_full_line_buffer, sizeof(log_buffs->log_full_line_buffer), LOG_MAX_DEBUG_LINE_LENGTH);
-    printf("log_date_buffer : pointer %p, sizeof %lu, init %d\n", log_buffs->log_date_buffer, sizeof(log_buffs->log_date_buffer), LOG_MAX_TIMESTAMP_LENGTH);
-    printf("log_message_buffer : pointer %p, sizeof %lu, init %d\n", log_buffs->log_message_buffer, sizeof(log_buffs->log_message_buffer), LOG_MAX_ERROR_MESSAGE_LENGTH);
-*/
     memset(log_buffs->log_errno_message, 0, LOG_MAX_ERRNO_LENGTH);
     memset(log_buffs->log_date_buffer, 0, LOG_MAX_TIMESTAMP_LENGTH);
     if ( !log_buffs->log_build ){
@@ -348,7 +341,6 @@ __always_inline void log_debug_get_bug_location(char *log_debug_suffix_buffer, c
                                                 const int line, int8_t message_level, const int verbosity){
     memset(log_debug_suffix_buffer, 0, LOG_DEBUG_SUFFIX_MAX_LENGTH);
     if(message_level >= verbosity){
-    //if( message_level >= LOG_ALERT && message_level <= verbosity){
         log_s_vasprintf(log_debug_suffix_buffer, LOG_DEBUG_SUFFIX_MAX_LENGTH, 0, LOG_FORMAT_DEBUG_SUFFIX, file, function, line);
     }
 }
@@ -493,15 +485,10 @@ __always_inline void log_build(logging_buffs *log_buffs, int8_t message_level, c
     log_reset(log_buffs);
     log_get_date_time(log_buffs);
     log_debug_get_process_thread_id(log_buffs->log_debug_prefix_buffer, message_level, verbosity);
-    //printf("### Prefix buffer : '%s'\n", log_buffs->log_debug_prefix_buffer);
     log_get_err_message(log_buffs, error_number, message_level);
-    //printf("### Error message : '%s'\n", log_buffs->log_errno_message);
     log_debug_get_bug_location(log_buffs->log_debug_suffix_buffer, file, function, line, message_level,
                                verbosity);
-    //printf("### Bug Location : '%s'\n", log_buffs->log_debug_suffix_buffer);
-    //printf("assembling message for '%s'\n", message);
     log_assemble(log_buffs, message_level, message, verbosity);
-    //printf("=== OUT OF LOG BUILD ===\n");
 }
 
 
@@ -572,8 +559,8 @@ __always_inline void log_write_to_file(logging *log, const char *message, size_t
             printf("\t%s", message);
         }
     }
-    // Todo : is this line still needed ?
-    // memset(message, 0, message_len);
+    /*Todo : is this line still needed ?
+    * memset(message, 0, message_len);*/
 }
 
 

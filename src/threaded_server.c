@@ -134,8 +134,7 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
     unsigned int offset; /* Index between 0 and nb_cnx */
     /*
      * TODO
-     * Track number of effectively created threads
-     * unsigned int nb_threads = 0;
+     * Track number of effectively created threads with unsigned int nb_threads = 0
      */
     unsigned int nb_authorised_errors; /* Number of errors before exiting daemon mode */
 
