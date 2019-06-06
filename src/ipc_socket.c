@@ -595,7 +595,10 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
     LOG_INIT
 
     /* Build the filepath that holds the name of the binary linked to a pid */
-    strlcpy(proc_file, IPC_PEER_BINARY_NAME_FILE_ROOT, sizeof(proc_file));
+    if ( strlcpy(proc_file, IPC_PEER_BINARY_NAME_FILE_ROOT, sizeof(proc_file)) < strnlen(IPC_PEER_BINARY_NAME_FILE_ROOT, NAME_MAX) ){
+        // TODO handle error : strlcpy truncated, copied less than full name
+        return  false;
+    }
     asprintf_printed = asprintf(&peer_pid_string, "%d", peer_pid);
     if ( asprintf_printed == -1 || peer_pid_string == NULL){
         // TODO handle error
