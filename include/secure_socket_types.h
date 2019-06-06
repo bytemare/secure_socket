@@ -67,8 +67,6 @@ typedef struct _server_context{
 
     /* Pthread relative structures */
     pthread_attr_t attr;
-    /*pthread_mutexattr_t mattr;
-    pthread_condattr_t cattr;*/
 
     /* Socket related data */
     secure_socket *socket;

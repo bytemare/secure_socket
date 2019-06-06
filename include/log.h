@@ -573,8 +573,6 @@ __always_inline void log_write_to_file(logging *log, const char *message, size_t
             printf("\t%s", message);
         }
     }
-    /*Todo : is this line still needed ?
-    * memset(message, 0, message_len);*/
 }
 
 
