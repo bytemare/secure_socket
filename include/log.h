@@ -423,7 +423,8 @@ __always_inline const char* interpret_log_level(int8_t message_level){
 __always_inline bool log_assemble(logging_buffs *log_buffs, int8_t message_level, const char *message, int verbosity){
     const char *message_level_ch = interpret_log_level(message_level);
 
-    /*printf("\nLog assemble :\n"
+    /*TODO : print this only in log debugging mode
+     * printf("\nLog assemble :\n"
            "'%s'\n"
            "'%s'\n"
            "'%s'\n"
@@ -484,16 +485,17 @@ __always_inline void log_build(logging_buffs *log_buffs, int8_t message_level, c
         /* Here, the call has been made by pointing the message pointer to the buffer, therefore memset-ting it to 0,
          * and loosing the message further on */
         if ( message == log_buffs->log_message_buffer ){
+            //TODO : handle this
             printf("ERROR ! You are not supposed to do this !\n");
             printf("errno : %d - Verbosity : %d - Message Level : %d - Location : file %s @fun %s at line %d\n", error_number, verbosity, message_level, file, function, line);
-            //TODO : handle this
             message_level = LOG_ERROR;
             message = LOG_BUILD_LOG_MESSAGE_WHITOUT_FLAG;
         }
     }
 
-    //printf("LOGGING MESSAGE : '%s'\n", message);
-    //printf("errno : %d - Verbosity : %d - Message Level : %d - Location : file %s @fun %s at line %d\n", error_number, verbosity, message_level, file, function, line);
+    /*TODO : print this only in log debugging mode
+     * printf("LOGGING MESSAGE : '%s'\n", message);
+     * printf("errno : %d - Verbosity : %d - Message Level : %d - Location : file %s @fun %s at line %d\n", error_number, verbosity, message_level, file, function, line); */
 
     // TODO : handle return values relayed from vasprintf wrapper
     log_reset(log_buffs);
@@ -522,11 +524,30 @@ __always_inline void log_to_stdout(logging_buffs *log_buffs, int8_t message_leve
         verbosity = message_level;
     }
 
-    //printf("verbosity %d - %d - %s - %d - %s - %s - %d\n", verbosity, message_level, message, error_number, file, function, line);
+    /*TODO : print this only in log debugging mode
+     * printf("verbosity %d - %d - %s - %d - %s - %s - %d\n", verbosity, message_level, message, error_number, file, function, line);*/
 
     if ( verbosity != -1 ){
         log_build(log_buffs, message_level, message, error_number, file, function, line, verbosity);
         printf("%s", log_buffs->log_full_line_buffer);
+    }
+}
+
+
+/**
+ * In case a logging request somehow fails (mq_send, write, etc.) use this fallback to print to stdout
+ * @param log
+ * @param original_log_message
+ * @param failure_message
+ * @param error_number
+ * @param relative_position
+ */
+__always_inline void log_logging_failure_fallback(logging *log, const char *original_log_message, const char *failure_message, int error_number, int relative_position){
+    LOG_INIT
+    LOG_STDOUT(LOG_ALERT, failure_message, error_number, relative_position, log)
+    if(log->verbosity >= LOG_NOTICE){
+        printf("\tOriginal log message :\n");
+        printf("\t%s", original_log_message);
     }
 }
 
@@ -547,12 +568,7 @@ __always_inline void log_to_mq(logging_buffs *log_buffers, int8_t message_level,
     if(log->verbosity > LOG_OFF){
         log_build(log_buffers, message_level, message, error_number, file, function, line, log->verbosity);
         if ( mq_send(log->mq_send, log_buffers->log_full_line_buffer, strnlen(log_buffers->log_full_line_buffer, sizeof(log_buffers->log_full_line_buffer)), 1) == -1 ){
-            LOG_INIT
-            LOG_STDOUT(LOG_ALERT, "Call to mq_send() failed. Cannot log.", errno, 2, log)
-            if(log->verbosity >= LOG_NOTICE){
-                printf("\tOriginal log message :\n");
-                printf("\t%s", message);
-            }
+            log_logging_failure_fallback(log, message, "Call to mq_send() failed. Cannot log.", errno, __LINE__ - 1);
         }
     }
 }
@@ -566,12 +582,7 @@ __always_inline void log_to_mq(logging_buffs *log_buffers, int8_t message_level,
  */
 __always_inline void log_write_to_file(logging *log, const char *message, size_t message_len){
     if (write(log->fd, message, message_len) == -1){
-        LOG_INIT
-        LOG_STDOUT(LOG_ALERT, "Call to write() to log to file failed. Cannot log.", errno, 1, log)
-        if(log->verbosity >= LOG_NOTICE){
-            printf("\tOriginal log message :\n");
-            printf("\t%s", message);
-        }
+        log_logging_failure_fallback(log, message, "Call to write() to log to file failed. Cannot log.", errno, __LINE__ - 1);
     }
 }
 
