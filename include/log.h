@@ -135,7 +135,7 @@ typedef struct _logging{
 #define LOG_FORMAT_ERRNO " > %s (%d)" /* Interpreted errno + number */
 #define LOG_FORMAT_DEBUG_PREFIX "pid %d - pthread %lu ::: " /* 21 chars */
 #define LOG_FORMAT_DEBUG_SUFFIX " - in file %s, function %s at line %d." /* Length of 33 characters without inserted strings */
-#define LOG_FORMAT_DEFAULT "ERROR - INVALID LOG FORMAT" /* When log format is not valid, default to this */
+/*#define LOG_FORMAT_DEFAULT "ERROR - INVALID LOG FORMAT" *//* When log format is not valid, default to this */
 
 /*
  * To avoid potential vulnerabilities in usage of ellipsis notation by giving a malformed format string to vasprintf,
@@ -143,11 +143,11 @@ typedef struct _logging{
  * TODO : find a better system to maintain and that has less overhead
  * TODO : Actually, this idea doesn't work since we want that freedom that the developer can use a custom string format
  */
-#define LOG_FORMAT_DATE_ID 1
+/*#define LOG_FORMAT_DATE_ID 1
 #define LOG_FORMAT_LINE_ID 2
 #define LOG_FORMAT_ERRNO_ID 3
 #define LOG_FORMAT_DEBUG_PREFIX_ID 4
-#define LOG_FORMAT_DEBUG_SUFFIX_ID 5
+#define LOG_FORMAT_DEBUG_SUFFIX_ID 5*/
 
 
 
@@ -298,7 +298,7 @@ __always_inline void log_reset(logging_buffs *log_buffs){
     }
     memset(log_buffs->log_full_line_buffer, 0, LOG_MAX_DEBUG_LINE_LENGTH );
     log_buffs->log_t = time(NULL);
-    log_buffs->log_timer = *localtime(&log_buffs->log_t);
+    log_buffs->log_timer = *localtime_r(&log_buffs->log_t, &log_buffs->log_timer);
 }
 
 
@@ -309,7 +309,12 @@ __always_inline void log_reset(logging_buffs *log_buffs){
  */
 __always_inline void log_get_date_time(logging_buffs *log_buffs){
     log_s_vasprintf(log_buffs->log_date_buffer, sizeof(log_buffs->log_date_buffer), 0, LOG_FORMAT_DATE,
-            log_buffs->log_timer.tm_year + 1900, log_buffs->log_timer.tm_mon + 1, log_buffs->log_timer.tm_mday, log_buffs->log_timer.tm_hour, log_buffs->log_timer.tm_min, log_buffs->log_timer.tm_sec );
+            log_buffs->log_timer.tm_year + 1900,
+            log_buffs->log_timer.tm_mon + 1,
+            log_buffs->log_timer.tm_mday,
+            log_buffs->log_timer.tm_hour,
+            log_buffs->log_timer.tm_min,
+            log_buffs->log_timer.tm_sec);
 }
 
 
