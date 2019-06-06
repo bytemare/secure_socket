@@ -149,7 +149,6 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
     LOG_INIT
 
     count = 0;
-    offset = 0;
     nb_authorised_errors = 50; /* TODO : study how this situtation can be handled in a more appropriate way */
 
     client_ctx = malloc(nb_cnx * sizeof(thread_context*));
