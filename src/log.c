@@ -88,9 +88,9 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
         printf("error on strnlen\n"
                "buffer : '%s'\n"
                "strlen : %lu\n"
-               "max: %lu\n"
+               "max: %d\n"
                "bytes: %d\n",
-               buffer, strlen(buffer), max_buf_size, bytes);
+               buffer, strnlen(buffer, max_buf_size), (int)max_buf_size, bytes);
         free(buffer);
         return false;
     }
@@ -156,6 +156,7 @@ uint8_t log_util_open_file_lock(logging *log, const char *filename){
  */
 __always_inline void log_close_single_mq(mqd_t mq_des, const char *mq_name){
     if ( mq_des != -1 ){
+        // TODO : handle return values !
         mq_close(mq_des);
         mq_unlink(mq_name);
     }
