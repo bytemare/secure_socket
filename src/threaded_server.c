@@ -61,8 +61,6 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
     char *destination;
     struct stat file_info;
 
-
-
     LOG_INIT
 
     LOG_BUILD("Attempting to read data from file '%s' ", filename)
@@ -105,9 +103,13 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
     length = read(file, destination, sizeof(destination) - 1);
     if (length == -1) {
         // TODO handle error
+        close(file);
+        return NULL;
     } else {
         if (length != (sizeof(destination) - 1)) {
             // TODO handle this case
+            close(file);
+            return NULL;
         }
     }
     destination[length] = '\0';
