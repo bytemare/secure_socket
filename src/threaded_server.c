@@ -104,13 +104,13 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
 
     length = read(file, destination, sizeof(destination) - 1);
     if (length == -1) {
-        // @TODO handle error
+        // TODO handle error
     } else {
         if (length != (sizeof(destination) - 1)) {
-            // @TODO handle this case
+            // TODO handle this case
         }
     }
-    destination[sizeof(destination) - 1] = '\0';
+    destination[length] = '\0';
 
     LOG_BUILD("Read '%d' bytes from '%s'", (int)length, filename)
     LOG(LOG_TRACE, NULL, 0, 3, log)
@@ -147,7 +147,8 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
     LOG_INIT
 
     count = 0;
-    nb_authorised_errors = 50;
+    offset = 0;
+    nb_authorised_errors = 50; /* TODO : study how this situtation can be handled in a more appropriate way */
 
     client_ctx = malloc(nb_cnx * sizeof(thread_context*));
     if( client_ctx == NULL){

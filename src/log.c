@@ -112,6 +112,7 @@ uint8_t log_util_open_file_lock(logging *log, const char *filename){
     struct stat lstat_info;
     struct stat fstat_info;
 
+    /* Check if file is not a symbolic link */
     if ( lstat(filename, &lstat_info) == -1 ){
         /* Todo : handle error */
     }
