@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include <log.h>
+#include <sys/stat.h>
 
 
 /**
@@ -108,6 +109,12 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
 uint8_t log_util_open_file_lock(logging *log, const char *filename){
 
     LOG_INIT
+    struct stat lstat_info;
+    struct stat fstat_info;
+
+    if ( lstat(filename, &lstat_info) == -1 ){
+        /* Todo : handle error */
+    }
 
     /* Open log file with BSD function to obtain exclusive lock on file */
     /* This may not be the best idea. TODO: study what, between BSD and POSIX locks, is better suited. We may want to detect a lock and kill another process to get it."*/
@@ -122,7 +129,22 @@ uint8_t log_util_open_file_lock(logging *log, const char *filename){
         return 1;
     }
 
-    return 0;
+    if ( fstat(log->fd, &fstat_info) == -1 ){
+        /* todo : handle error */
+    }
+
+    if (lstat_info.st_mode == fstat_info.st_mode &&
+        lstat_info.st_ino == fstat_info.st_ino  &&
+        lstat_info.st_dev == fstat_info.st_dev) {
+
+        /* File descriptor is cleared for secure eusage */
+        return 0;
+    } else {
+        /* Todo :  handle error
+         * Here, a TOCTOU race condition was detected*/
+        close(log->fd);
+        return 1;
+    }
 }
 
 
@@ -282,9 +304,9 @@ long int get_mq_max_message_size(logging *log){
 
     LOG_INIT
 
-
     LOG_FILE(LOG_TRACE, "Logging Thread : getting maximum message size from system", errno, 0, log)
 
+    /* TODO : use a more secure alternative */
     fp = fopen(mq_max_message_size_source, "r");
     if (fp == NULL) {
         LOG_BUILD("Logging Thread : Could not open '%s'. Taking default max value %d.", mq_max_message_size_source, LOG_MQ_MAX_MESSAGE_SIZE)
@@ -525,6 +547,4 @@ void* logging_thread(void *args){
     pthread_mutex_unlock(&log->mutex);
 
     pthread_exit((void*)0);
-
 }
-
