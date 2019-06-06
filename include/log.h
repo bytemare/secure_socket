@@ -270,8 +270,7 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
  * Build a log entry with runtime values
  */
 #define LOG_BUILD(error_message_format, ...)\
-    log_s_vasprintf(log_buffs.log_message_buffer, sizeof(log_buffs.log_message_buffer), 0, error_message_format, ##__VA_ARGS__);\
-    log_buffs.log_build = true;\
+    if ( log_s_vasprintf(log_buffs.log_message_buffer, sizeof(log_buffs.log_message_buffer), 0, error_message_format, ##__VA_ARGS__) ){ log_buffs.log_build = true; };\
 
 /**
  * Same as LOG, but writes directly to log file
@@ -312,8 +311,8 @@ __always_inline void log_reset(logging_buffs *log_buffs){
  * @param log_entry_buffer
  * @param log_timer
  */
-__always_inline void log_get_date_time(logging_buffs *log_buffs){
-    log_s_vasprintf(log_buffs->log_date_buffer, sizeof(log_buffs->log_date_buffer), 0, LOG_FORMAT_DATE,
+__always_inline bool log_get_date_time(logging_buffs *log_buffs){
+    return log_s_vasprintf(log_buffs->log_date_buffer, sizeof(log_buffs->log_date_buffer), 0, LOG_FORMAT_DATE,
             log_buffs->log_timer.tm_year + 1900,
             log_buffs->log_timer.tm_mon + 1,
             log_buffs->log_timer.tm_mday,
@@ -329,12 +328,13 @@ __always_inline void log_get_date_time(logging_buffs *log_buffs){
  * @param message_level
  * @param verbosity
  */
-__always_inline void log_debug_get_process_thread_id(char *log_debug_prefix_buffer, int8_t message_level,
+__always_inline bool log_debug_get_process_thread_id(char *log_debug_prefix_buffer, int8_t message_level,
                                                      const int verbosity){
     memset(log_debug_prefix_buffer, 0, LOG_DEBUG_PREFIX_MAX_LENGTH);
     if(message_level >= verbosity){
-        log_s_vasprintf(log_debug_prefix_buffer, LOG_DEBUG_PREFIX_MAX_LENGTH, 0, LOG_FORMAT_DEBUG_PREFIX, (int) getpid(), (unsigned long int)pthread_self());
+        return log_s_vasprintf(log_debug_prefix_buffer, LOG_DEBUG_PREFIX_MAX_LENGTH, 0, LOG_FORMAT_DEBUG_PREFIX, (int) getpid(), (unsigned long int)pthread_self());
     }
+    return true;
 }
 
 
@@ -347,12 +347,13 @@ __always_inline void log_debug_get_process_thread_id(char *log_debug_prefix_buff
  * @param message_level
  * @param verbosity
  */
-__always_inline void log_debug_get_bug_location(char *log_debug_suffix_buffer, const char *file, const char *function,
+__always_inline bool log_debug_get_bug_location(char *log_debug_suffix_buffer, const char *file, const char *function,
                                                 const int line, int8_t message_level, const int verbosity){
     memset(log_debug_suffix_buffer, 0, LOG_DEBUG_SUFFIX_MAX_LENGTH);
     if(message_level >= verbosity){
-        log_s_vasprintf(log_debug_suffix_buffer, LOG_DEBUG_SUFFIX_MAX_LENGTH, 0, LOG_FORMAT_DEBUG_SUFFIX, file, function, line);
+        return log_s_vasprintf(log_debug_suffix_buffer, LOG_DEBUG_SUFFIX_MAX_LENGTH, 0, LOG_FORMAT_DEBUG_SUFFIX, file, function, line);
     }
+    return true;
 }
 
 
@@ -364,11 +365,13 @@ __always_inline void log_debug_get_bug_location(char *log_debug_suffix_buffer, c
  * @param log_t
  * @param log_timer
  */
-__always_inline void log_get_err_message(logging_buffs *log_buffs, const int error_number, int8_t message_level){
+__always_inline bool log_get_err_message(logging_buffs *log_buffs, const int error_number, int8_t message_level){
     if(error_number && message_level > LOG_OFF){
-        log_s_vasprintf(log_buffs->log_errno_message, LOG_MAX_ERRNO_LENGTH, 0, LOG_FORMAT_ERRNO, strerror_r(error_number, log_buffs->log_errno_message, sizeof(log_buffs->log_errno_message) - 4), error_number);
+        bool ret = log_s_vasprintf(log_buffs->log_errno_message, LOG_MAX_ERRNO_LENGTH, 0, LOG_FORMAT_ERRNO, strerror_r(error_number, log_buffs->log_errno_message, sizeof(log_buffs->log_errno_message) - 4), error_number);
         errno = 0;
+        return ret;
     }
+    return true;
 }
 
 
@@ -417,7 +420,7 @@ __always_inline const char* interpret_log_level(int8_t message_level){
  * @param message
  * @param verbosity
  */
-__always_inline void log_assemble(logging_buffs *log_buffs, int8_t message_level, const char *message, int verbosity){
+__always_inline bool log_assemble(logging_buffs *log_buffs, int8_t message_level, const char *message, int verbosity){
     const char *message_level_ch = interpret_log_level(message_level);
 
     /*printf("\nLog assemble :\n"
@@ -433,7 +436,7 @@ __always_inline void log_assemble(logging_buffs *log_buffs, int8_t message_level
 */
     // TODO : this logic here is broken, need rethink
     if(verbosity >= LOG_FATAL && verbosity < LOG_DEBUG) {
-        log_s_vasprintf(log_buffs->log_full_line_buffer, sizeof(log_buffs->log_full_line_buffer), 0, LOG_FORMAT_LINE,
+        return log_s_vasprintf(log_buffs->log_full_line_buffer, sizeof(log_buffs->log_full_line_buffer), 0, LOG_FORMAT_LINE,
                         log_buffs->log_date_buffer,
                         message_level_ch,
                         log_buffs->log_debug_prefix_buffer,
@@ -441,7 +444,7 @@ __always_inline void log_assemble(logging_buffs *log_buffs, int8_t message_level
                         log_buffs->log_errno_message,
                         log_buffs->log_debug_suffix_buffer);
     } else {
-        log_s_vasprintf(log_buffs->log_full_line_buffer, sizeof(log_buffs->log_full_line_buffer), 0, LOG_FORMAT_LINE,
+        return log_s_vasprintf(log_buffs->log_full_line_buffer, sizeof(log_buffs->log_full_line_buffer), 0, LOG_FORMAT_LINE,
                         log_buffs->log_date_buffer,
                         message_level_ch,
                         log_buffs->log_debug_prefix_buffer,
@@ -492,6 +495,7 @@ __always_inline void log_build(logging_buffs *log_buffs, int8_t message_level, c
     //printf("LOGGING MESSAGE : '%s'\n", message);
     //printf("errno : %d - Verbosity : %d - Message Level : %d - Location : file %s @fun %s at line %d\n", error_number, verbosity, message_level, file, function, line);
 
+    // TODO : handle return values relayed from vasprintf wrapper
     log_reset(log_buffs);
     log_get_date_time(log_buffs);
     log_debug_get_process_thread_id(log_buffs->log_debug_prefix_buffer, message_level, verbosity);
