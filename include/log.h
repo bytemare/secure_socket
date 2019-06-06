@@ -48,12 +48,17 @@
 
 /**
  * Logging verbosity levels
+ * Fatal + Alert    : <= 1
+ * Critic + Error   : <= 3
+ * Warning + Notice : <= 5
+ * Info + Debug     : <= 7
+ * Trace            : <= 8
  */
-/*#define LOG_VERBOSITY_1 1 // Fatal + Alert    : <= 1
-#define LOG_VERBOSITY_2 3 // + Critic + Error   : <= 3
-#define LOG_VERBOSITY_3 5 // + Warning + Notice : <= 5
-#define LOG_VERBOSITY_4 7 // + Info + Debug     : <= 7
-#define LOG_VERBOSITY_5 8 // + Trace            : <= 8*/
+/*#define LOG_VERBOSITY_1 1
+#define LOG_VERBOSITY_2 3
+#define LOG_VERBOSITY_3 5
+#define LOG_VERBOSITY_4 7
+#define LOG_VERBOSITY_5 8*/
 
 
 /**
@@ -224,15 +229,15 @@ typedef struct _logging_buffs{
  * Function declaration
  */
 
-uint8_t log_initialise_logging_s(logging *log, char *mq_name, char *filename);
+uint8_t log_initialise_logging_s(logging *log, char *mq_name, char *filename) __attribute__ ((warn_unused_result));
 
 void set_thread_attributes(pthread_attr_t *attr, logging *log);
 
 void log_init_log_params(logging *log, int8_t verbosity);
 
-bool log_start_thread(logging *log, int8_t verbosity, char *mq_name, char *log_file);
+bool log_start_thread(logging *log, int8_t verbosity, char *mq_name, char *log_file) __attribute__ ((warn_unused_result));
 
-bool log_start(logging *log, int8_t verbosity, char *mq_name, char *log_file);
+bool log_start(logging *log, int8_t verbosity, char *mq_name, char *log_file) __attribute__ ((warn_unused_result));
 
 void terminate_logging_thread_blocking(logging *log);
 
@@ -242,7 +247,7 @@ void log_close(logging *log);
 
 void* logging_thread(void *args);
 
-bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const char *format, ...);
+bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const char *format, ...) __attribute__ ((warn_unused_result));
 
 /**
  * Initialises variables and buffers for building the log line in the scope of calling function
