@@ -27,7 +27,7 @@
 int main(int argc, char** argv) {
 
     server_context *ctx;
-    ipc_options *params;
+    ipc_parameters *params;
     logging log;
 
     LOG_INIT
@@ -37,8 +37,8 @@ int main(int argc, char** argv) {
     printf("Executing on %s %s.\n", ARCH, WELCOME_STRING);
 #endif
 
-    /* Parse command line options and parameters */
-    if( !( params = initialise_options()) ){
+    /* Parse command line parameters and parameters */
+    if( !( params = initialise_parameters()) ){
         return EXIT_FAILURE;
     }
 

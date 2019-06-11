@@ -84,7 +84,7 @@ bool secure_socket_create_socket(server_context *ctx){
 
     LOG_INIT
 
-    ctx->socket->socket_fd = socket(ctx->options->domain, ctx->options->protocol, 0);
+    ctx->socket->socket_fd = socket(ctx->parameters->domain, ctx->parameters->protocol, 0);
     if( ctx->socket->socket_fd < -1 ){
         LOG(LOG_FATAL, "socket() failed : ", errno, 2, ctx->log)
         secure_socket_free_from_context(ctx);
@@ -116,8 +116,8 @@ uint8_t set_bind_address(server_context *ctx, in_addr_t address){
 
     LOG(LOG_TRACE, "Setting up address to bind on ...", errno, 0, ctx->log)
 
-    if ( ctx->options->domain == AF_UNIX ){
-        server->bind_address = socket_bind_unix(&server->address.un, ctx->options->socket_path, &ctx->socket->addrlen);
+    if ( ctx->parameters->domain == AF_UNIX ){
+        server->bind_address = socket_bind_unix(&server->address.un, ctx->parameters->socket_path, &ctx->socket->addrlen);
 
         if ( server->bind_address == NULL ){
             LOG(LOG_CRITICAL, "Socket path non-existent or too long : overflow avoided !", errno, 1, ctx->log)
@@ -130,12 +130,12 @@ uint8_t set_bind_address(server_context *ctx, in_addr_t address){
         return 0;
     }
 
-    if ( ctx->options->domain == AF_INET ){
-        server->bind_address = socket_bind_inet(&server->address.in, ctx->options->domain, ctx->options->port, address, &ctx->socket->addrlen);
+    if ( ctx->parameters->domain == AF_INET ){
+        server->bind_address = socket_bind_inet(&server->address.in, ctx->parameters->domain, ctx->parameters->port, address, &ctx->socket->addrlen);
         return 0;
     }
 
-    if ( ctx->options->domain == AF_INET6){
+    if ( ctx->parameters->domain == AF_INET6){
         LOG(LOG_CRITICAL, "IPv6 domain type is not supported.", errno, 0, ctx->log)
     } else {
         LOG(LOG_CRITICAL, "domain type is invalid or not recognised !", errno, 0, ctx->log)
@@ -158,7 +158,7 @@ bool ipc_server_bind(in_addr_t address, server_context *ctx){
 
     LOG_INIT
 
-    if (ctx->options->domain != AF_UNIX && (ctx->options->domain != AF_LOCAL && ctx->options->domain != AF_INET) ) {
+    if (ctx->parameters->domain != AF_UNIX && (ctx->parameters->domain != AF_LOCAL && ctx->parameters->domain != AF_INET) ) {
         LOG(LOG_FATAL,
                 "This server does not support other socket types than Unix Sockets, yet. Please use AF_UNIX.",
                 0, 1, ctx->log)
@@ -171,7 +171,7 @@ bool ipc_server_bind(in_addr_t address, server_context *ctx){
         return false;
     }
 
-    /* Set socket options */
+    /* Set socket parameters */
     if( setsockopt(ctx->socket->socket_fd, SOL_SOCKET, SO_REUSEADDR, &ctx->socket->optval, sizeof(ctx->socket->optval)) == -1){
         LOG(LOG_ALERT, "SO_REUSEADDR socket option messed up for some reason : ", errno, 1, ctx->log)
     }
@@ -231,12 +231,12 @@ bool ipc_bind_set_and_listen(in_addr_t address, server_context *ctx) {
 
     /* Force permissions on socket file to peer's user group */
     // TODO : add check to return false iff socket security is required
-    if ( !set_socket_owner_and_permissions(ctx, ctx->options->authorised_peer_username, ctx->options->authorised_peer_uid, (mode_t) strtoul(ctx->options->socket_permissions, 0, 8)) ){
+    if ( !set_socket_owner_and_permissions(ctx, ctx->parameters->authorised_peer_username, ctx->parameters->authorised_peer_uid, (mode_t) strtoul(ctx->parameters->socket_permissions, 0, 8)) ){
         return false;
     }
 
     /* Listen for connections */
-    if ( !ipc_server_listen(ctx, ctx->options->max_connections) ){
+    if ( !ipc_server_listen(ctx, ctx->parameters->max_connections) ){
         return false;
     }
 
@@ -265,7 +265,7 @@ secure_socket* ipc_accept_connection(server_context *ctx){
 
     LOG(LOG_INFO, "Allocated memory for communication secure_socket : ", errno, 0, ctx->log)
 
-    if (ctx->options->domain) {
+    if (ctx->parameters->domain) {
         client_socket->address.un.sun_family = AF_UNIX;
         client_socket->bind_address = (struct sockaddr*)&client_socket->address.un;
     } else {
@@ -557,7 +557,7 @@ bool set_socket_owner_and_permissions(server_context *ctx, char *group_name, gid
      * Thus, if an attacker moves the file, we avoid a malicious race condition.
      */
     if (fchown(ctx->socket->socket_fd, uid, real_gid) == -1) {
-        LOG_BUILD("Could not chown for owner '%u' and group '%s' on socket '%s'. Access to group will not be applied.", uid, group_name, ctx->options->socket_path)
+        LOG_BUILD("Could not chown for owner '%u' and group '%s' on socket '%s'. Access to group will not be applied.", uid, group_name, ctx->parameters->socket_path)
         LOG(LOG_ALERT, NULL, errno, 2, ctx->log)
         return false;
     }
@@ -566,7 +566,7 @@ bool set_socket_owner_and_permissions(server_context *ctx, char *group_name, gid
      * Change file permissions
      */
     if( fchmod(ctx->socket->socket_fd, perms) < 0){
-        LOG_BUILD("Could not chmod '%u' on socket '%s'. Permissions will not be applied.", perms, ctx->options->socket_path)
+        LOG_BUILD("Could not chmod '%u' on socket '%s'. Permissions will not be applied.", perms, ctx->parameters->socket_path)
         LOG(LOG_ALERT, NULL, errno, 2, ctx->log)
         return false;
     }
@@ -624,7 +624,7 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
 
     /* Verify they match */
     /* TODO : verify if that's what we really want : if the first n bytes match, but the input is longer, does it tell it ?*/
-    result = strncmp(ctx->options->authorised_peer_process_name, peer_binary_name, sizeof(ctx->options->authorised_peer_process_name));
+    result = strncmp(ctx->parameters->authorised_peer_process_name, peer_binary_name, sizeof(ctx->parameters->authorised_peer_process_name));
 
     free(peer_binary_name);
 
@@ -677,8 +677,8 @@ bool ipc_validate_peer(server_context *ctx){
     }
 
     /* Test against authorised values */
-    if(ctx->options->authorised_peer_pid){
-        if( ctx->options->authorised_peer_pid != peer_pid) {
+    if(ctx->parameters->authorised_peer_pid){
+        if( ctx->parameters->authorised_peer_pid != peer_pid) {
             LOG_BUILD("Peer pid %d is not authorised.", peer_pid)
             LOG(LOG_INFO, NULL, errno, 2, ctx->log)
             return false;
@@ -688,8 +688,8 @@ bool ipc_validate_peer(server_context *ctx){
         LOG(LOG_INFO, NULL, errno, 0, ctx->log)
     }
 
-    if(ctx->options->authorised_peer_uid){
-        if( ctx->options->authorised_peer_uid != peer_uid) {
+    if(ctx->parameters->authorised_peer_uid){
+        if( ctx->parameters->authorised_peer_uid != peer_uid) {
             LOG_BUILD("Peer uid %d, is not authorised.", peer_uid)
             LOG(LOG_INFO, NULL, errno, 2, ctx->log)
             return false;
@@ -699,8 +699,8 @@ bool ipc_validate_peer(server_context *ctx){
         LOG(LOG_INFO, NULL, errno, 0, ctx->log)
     }
 
-    if(ctx->options->authorised_peer_gid){
-        if( ctx->options->authorised_peer_gid != peer_gid){
+    if(ctx->parameters->authorised_peer_gid){
+        if( ctx->parameters->authorised_peer_gid != peer_gid){
             LOG_BUILD("Peer gid %d is not authorised.", peer_gid)
             LOG(LOG_INFO, NULL, errno, 2, ctx->log)
             return false;
@@ -711,13 +711,13 @@ bool ipc_validate_peer(server_context *ctx){
     }
 
 
-    if( ctx->options->authorised_peer_process_name[0] != '\0'){
+    if( ctx->parameters->authorised_peer_process_name[0] != '\0'){
         if(!ipc_validate_proc(ctx, peer_pid)){
             LOG(LOG_ERROR, "Peer process name does not match the authorised one. Process not authenticated.", errno, 2, ctx->log)
             return false;
         }
 
-        LOG_BUILD("Peer authenticated by process name '%s'.", ctx->options->authorised_peer_process_name)
+        LOG_BUILD("Peer authenticated by process name '%s'.", ctx->parameters->authorised_peer_process_name)
         LOG(LOG_INFO, NULL, errno, 0, ctx->log)
     }
 

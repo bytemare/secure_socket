@@ -14,7 +14,7 @@
 #include <values.h>
 #include <log.h>
 
-typedef struct _ipc_options{
+typedef struct _ipc_parameters{
 
     /* Logging related parameters */
     int8_t verbosity;
@@ -37,7 +37,7 @@ typedef struct _ipc_options{
     char authorised_peer_process_name[NAME_MAX];
     char authorised_peer_cli_args[PATH_MAX];
 
-} ipc_options;
+} ipc_parameters;
 
 typedef struct _secure_socket{
 
@@ -75,7 +75,7 @@ typedef struct _server_context{
     logging *log;
 
     /* Instance options and parameters */
-    ipc_options *options;
+    ipc_parameters *parameters;
 } server_context;
 
 #endif /*secure_socket_TSM_TYPES_H*/

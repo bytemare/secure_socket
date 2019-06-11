@@ -68,53 +68,53 @@ bool is_valid_integer(char *number, size_t authorised_length){
  * Initialises the programs options with data from vars.h
  * @param options
  */
-ipc_options* initialise_options(){
+ipc_parameters* initialise_parameters(){
 
     char rand_buffer[IPC_RAND_LENGTH + 1];
 
     LOG_INIT
 
     /* Allocate memory */
-    ipc_options *options = malloc(sizeof(ipc_options));
-    if ( !options ){
-        LOG_STDOUT(LOG_FATAL, "malloc failed for ipc_options", errno, 3, NULL)
+    ipc_parameters *parameters = malloc(sizeof(ipc_parameters));
+    if ( !parameters ){
+        LOG_STDOUT(LOG_FATAL, "malloc failed for ipc_parameters", errno, 3, NULL)
         return NULL;
     }
 
     /* Set message queue name */
-    memset(options->mq_name, 0, sizeof(options->mq_name));
-    strlcpy(options->mq_name, IPC_MQ_NAME, sizeof(options->mq_name) - sizeof(rand_buffer));
+    memset(parameters->mq_name, 0, sizeof(parameters->mq_name));
+    strlcpy(parameters->mq_name, IPC_MQ_NAME, sizeof(parameters->mq_name) - sizeof(rand_buffer));
     secure_random_string(rand_buffer, sizeof(rand_buffer));
-    strlcat(options->mq_name, rand_buffer, sizeof(options->mq_name) - sizeof(IPC_MQ_NAME));
+    strlcat(parameters->mq_name, rand_buffer, sizeof(parameters->mq_name) - sizeof(IPC_MQ_NAME));
 
     /* Set log file */
-    memset(options->log_file, 0, sizeof(options->log_file));
-    strlcpy(options->log_file, IPC_LOG_FILE, sizeof(options->log_file) - sizeof(rand_buffer));
+    memset(parameters->log_file, 0, sizeof(parameters->log_file));
+    strlcpy(parameters->log_file, IPC_LOG_FILE, sizeof(parameters->log_file) - sizeof(rand_buffer));
     secure_random_string(rand_buffer, sizeof(rand_buffer));
-    strlcat(options->log_file, rand_buffer, sizeof(options->log_file) - sizeof(IPC_LOG_FILE));
+    strlcat(parameters->log_file, rand_buffer, sizeof(parameters->log_file) - sizeof(IPC_LOG_FILE));
 
     /* Set socket data */
-    memset(options->socket_path, 0, sizeof(options->socket_path));
-    strlcpy(options->socket_path, IPC_SOCKET_PATH_BASE, sizeof(options->socket_path) - sizeof(rand_buffer));
+    memset(parameters->socket_path, 0, sizeof(parameters->socket_path));
+    strlcpy(parameters->socket_path, IPC_SOCKET_PATH_BASE, sizeof(parameters->socket_path) - sizeof(rand_buffer));
     secure_random_string(rand_buffer, sizeof(rand_buffer));
-    strlcat(options->socket_path, rand_buffer, sizeof(options->socket_path) - sizeof(IPC_SOCKET_PATH_BASE));
+    strlcat(parameters->socket_path, rand_buffer, sizeof(parameters->socket_path) - sizeof(IPC_SOCKET_PATH_BASE));
 
-    options->domain = IPC_DOMAIN;
-    options->protocol = IPC_PROTOCOL;
-    options->port = IPC_PORT;
-    options->max_connections = IPC_NB_CNX;
-    strlcpy(options->socket_permissions, IPC_SOCKET_PERMS, sizeof(options->socket_permissions));
+    parameters->domain = IPC_DOMAIN;
+    parameters->protocol = IPC_PROTOCOL;
+    parameters->port = IPC_PORT;
+    parameters->max_connections = IPC_NB_CNX;
+    strlcpy(parameters->socket_permissions, IPC_SOCKET_PERMS, sizeof(parameters->socket_permissions));
 
     /* Socket oriented security */
-    strlcpy(options->authorised_peer_username, IPC_AUTHORIZED_PEER_USERNAME, sizeof(options->authorised_peer_username));
-    options->authorised_peer_uid = IPC_AUTHORIZED_PEER_UID;
-    options->authorised_peer_pid = IPC_AUTHORIZED_PEER_PID;
-    options->authorised_peer_gid = IPC_AUTHORIZED_PEER_GID;
+    strlcpy(parameters->authorised_peer_username, IPC_AUTHORIZED_PEER_USERNAME, sizeof(parameters->authorised_peer_username));
+    parameters->authorised_peer_uid = IPC_AUTHORIZED_PEER_UID;
+    parameters->authorised_peer_pid = IPC_AUTHORIZED_PEER_PID;
+    parameters->authorised_peer_gid = IPC_AUTHORIZED_PEER_GID;
 
-    memset(options->authorised_peer_process_name, 0, sizeof(options->authorised_peer_process_name));
-    memset(options->authorised_peer_cli_args, 0, sizeof(options->authorised_peer_cli_args));
+    memset(parameters->authorised_peer_process_name, 0, sizeof(parameters->authorised_peer_process_name));
+    memset(parameters->authorised_peer_cli_args, 0, sizeof(parameters->authorised_peer_cli_args));
 
-    return options;
+    return parameters;
 }
 
 
@@ -125,7 +125,7 @@ ipc_options* initialise_options(){
  * @param argv
  * @return
  */
-bool parse_options(ipc_options *options, int argc, char **argv){
+bool parse_options(ipc_parameters *options, int argc, char **argv){
 
     int i;
 
@@ -363,7 +363,7 @@ bool parse_options(ipc_options *options, int argc, char **argv){
 }
 
 
-server_context* make_server_context(ipc_options *params, logging *log){
+server_context* make_server_context(ipc_parameters *params, logging *log){
 
     server_context *ctx;
 
@@ -379,8 +379,8 @@ server_context* make_server_context(ipc_options *params, logging *log){
     /* Link Logging */
     ctx->log = log;
 
-    /* Link options */
-    ctx->options = params;
+    /* Link parameters */
+    ctx->parameters = params;
 
     /* secure_socket */
     ctx->socket = secure_socket_allocate(ctx);
@@ -434,8 +434,8 @@ server_context* free_server_context(server_context *ctx){
     if (ctx) {
         secure_socket_free_from_context(ctx);
 
-        free(ctx->options);
-        ctx->options= NULL;
+        free(ctx->parameters);
+        ctx->parameters= NULL;
 
         free(ctx);
     }

@@ -11,13 +11,13 @@
 #include <unistd.h>
 #include <secure_socket_types.h>
 
-ipc_options* initialise_options();
+ipc_parameters* initialise_parameters();
 
-bool parse_options(ipc_options *options, int argc, char **argv);
+bool parse_options(ipc_parameters *options, int argc, char **argv);
 
 thread_context* make_thread_context(secure_socket *socket, server_context *ctx);
 
-server_context* make_server_context(ipc_options *params, logging *log);
+server_context* make_server_context(ipc_parameters *params, logging *log);
 
 thread_context* free_thread_context(thread_context *ctx);
 

@@ -5,7 +5,7 @@
 - General
 
   - [x] General clean-up.
-  - [x] ability to manage command line arguments : parsing, validating and adapt code to handle it : ipc_options.
+  - [x] ability to manage command line arguments : parsing, validating and adapt code to handle it : ipc_parameters.
   - [x] corrected a buffer overflow vulnerability : macro for maximal length of script name was wrong
 
 - Sockets
@@ -13,7 +13,7 @@
   - [x] Adaptive Sockets : depending on the need (unix or internet based communication) uses the **_correct_** type of socket (using an union on structs) and initialises it.
   - [x] Added ability to set socket access rights. set_socket_owner_and_permissions() adds given group id to socket file and applies given permissions.
   - [x] access restriction to socket based on peer username applying [current-user]:[peer_user] access rights to socket.
-  - [x] peer validation based on criteria. Given specified criteria (by pid, uid or gid), validates or not the connection peer : ipc_validate_peer() and ipc_options.
+  - [x] peer validation based on criteria. Given specified criteria (by pid, uid or gid), validates or not the connection peer : ipc_validate_peer() and ipc_parameters.
   - [x] If default values are used, add a random value at end of filenames
 
 - Logging
@@ -57,7 +57,7 @@ Security Mechanisms
 
 Socket configuratation
 
-- See other* socket options
+- See other* socket parameters
 - change ctx->socket to non-pointer ?
 
 Testing
