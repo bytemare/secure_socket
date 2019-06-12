@@ -18,6 +18,7 @@
 /* BSD */
 #include <sys/fcntl.h>
 #include <bsd/libutil.h>
+#include <tools.h>
 
 
 /**
@@ -69,14 +70,26 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
     /*
      * Use of a BSD function here with a lock to prevent a race condition, since the function is used to open a PID file, among others
      */
-    file = flopen(filename, O_RDONLY);
-    if(file == -1){
-        LOG_BUILD("Unable to open file '%s', open() failed. ", filename)
-        LOG(LOG_ALERT, NULL, errno, 3, log)
+    file = secure_file_exclusive_open(filename, O_RDONLY, 0);
+
+    if ( log->fd == -1 ){
+        if( errno == EWOULDBLOCK){
+            LOG_BUILD("Unable to open file '%s', the log file is locked by another process. Free the file and try again.", filename)
+            LOG(LOG_ALERT, NULL, errno, 5, log)
+        } else {
+            LOG_BUILD("Error in opening '%s'for reading.", filename)
+            LOG(LOG_TRACE, NULL, 0, 0, log)
+        }
         return NULL;
     }
 
-    LOG(LOG_TRACE, "Successfully opened file for reading.", 0, 9, log)
+    if ( log->fd == 0 ){
+        LOG_STDOUT(LOG_FATAL, "Symlinks for file opening are forbidden (this is either an error or a TOCTOU race condition).", errno, 6, log)
+        return NULL;
+    }
+
+    LOG_BUILD("Successfully opened file '%s' for reading.", filename)
+    LOG(LOG_TRACE, NULL, 0, 0, log)
 
     fstat(file, &file_info);
 

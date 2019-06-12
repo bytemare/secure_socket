@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <log.h>
 #include <sys/stat.h>
+#include <tools.h>
 
 
 /**
@@ -100,54 +101,35 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
     return true;
 }
 
-
 /**
  * Opens the specified file for writing and tries to obtain an exclusive write lock.
  * @param fd
- * @return 0, 1 on failure with stdout logging
+ * @return 0 on success, 1 on failure with stdout logging
  */
 uint8_t log_util_open_file_lock(logging *log, const char *filename){
 
     LOG_INIT
-    struct stat lstat_info;
-    struct stat fstat_info;
 
-    /* Check if file is not a symbolic link */
-    if ( lstat(filename, &lstat_info) == -1 ){
-        /* Todo : handle error */
-    }
+    log->fd = secure_file_exclusive_open(filename, O_CREAT|O_WRONLY|O_APPEND|O_SYNC|O_NONBLOCK, S_IRUSR|S_IWUSR);
 
-    /* Open log file with BSD function to obtain exclusive lock on file */
-    /* This may not be the best idea. TODO: study what, between BSD and POSIX locks, is better suited. We may want to detect a lock and kill another process to get it."*/
-    log->fd = flopen(filename, O_CREAT|O_WRONLY|O_APPEND|O_SYNC|O_NONBLOCK, S_IRUSR|S_IWUSR);
-    if( log->fd == -1 ){
+    if ( log->fd == -1 ){
         if( errno == EWOULDBLOCK){
             LOG_STDOUT(LOG_FATAL, "The log file is locked by another process. Free the file and try again.", errno, 3, log)
-        }
-        else{
+        } else {
             LOG_STDOUT(LOG_FATAL, "Error in opening log file.", errno, 6, log)
         }
         return 1;
     }
 
-    if ( fstat(log->fd, &fstat_info) == -1 ){
-        /* todo : handle error */
-    }
-
-    if (lstat_info.st_mode == fstat_info.st_mode &&
-        lstat_info.st_ino == fstat_info.st_ino  &&
-        lstat_info.st_dev == fstat_info.st_dev) {
-
-        /* File descriptor is cleared for secure eusage */
-        return 0;
-    } else {
-        /* Todo :  handle error
-         * Here, a TOCTOU race condition was detected*/
-        close(log->fd);
+    if ( log->fd == 0 ){
+        LOG_STDOUT(LOG_FATAL, "Symlinks for the logging file are forbidden (this is either an error or a TOCTOU race condition).", errno, 6, log)
         return 1;
     }
-}
 
+    LOG_STDOUT(LOG_TRACE, "Log file successfully opened.", 0, 0, log)
+
+    return 0;
+}
 
 /**
  * Closes the message queue and unlinks the associated name
@@ -299,6 +281,7 @@ uint8_t log_util_open_aio(logging *log){
  */
 long int get_mq_max_message_size(logging *log){
 
+    int fd;
     FILE *fp;
     int max_size = 0;
 
@@ -308,8 +291,26 @@ long int get_mq_max_message_size(logging *log){
 
     LOG_FILE(LOG_TRACE, "Logging Thread : getting maximum message size from system", errno, 0, log)
 
-    /* TODO : use a more secure alternative */
-    fp = fopen(mq_max_message_size_source, "r");
+
+    fd = secure_file_exclusive_open(mq_max_message_size_source, O_RDONLY, 0);
+
+    if ( log->fd == -1 ){
+        if( errno == EWOULDBLOCK){
+            LOG_BUILD("Unable to open file '%s', the log file is locked by another process. Free the file and try again.", mq_max_message_size_source)
+            LOG(LOG_ALERT, NULL, errno, 5, log)
+        } else {
+            LOG_BUILD("Error in opening '%s'for reading.", mq_max_message_size_source)
+            LOG(LOG_TRACE, NULL, 0, 0, log)
+        }
+        return LOG_MQ_MAX_MESSAGE_SIZE;
+    }
+
+    if ( log->fd == 0 ){
+        LOG_STDOUT(LOG_FATAL, "Symlinks for file opening are forbidden (this is either an error or a TOCTOU race condition).", errno, 6, log)
+        return LOG_MQ_MAX_MESSAGE_SIZE;
+    }
+
+    fp = fdopen(fd, "r");
     if (fp == NULL) {
         LOG_BUILD("Logging Thread : Could not open '%s'. Taking default max value %d.", mq_max_message_size_source, LOG_MQ_MAX_MESSAGE_SIZE)
         LOG_FILE(LOG_TRACE, NULL, errno, 3, log)
