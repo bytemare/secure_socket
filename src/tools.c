@@ -50,7 +50,6 @@ void secure_random_string(char *rand, uint32_t size){
 int secure_file_open(const char *path, int flags, mode_t mode){
 
     int fd;
-    int serrno;
     struct stat lstat_info;
     struct stat fstat_info;
 
@@ -79,6 +78,7 @@ int secure_file_open(const char *path, int flags, mode_t mode){
     /* Get attributes of file through the file descriptor */
     if ( fstat(fd, &fstat_info) == -1 ){
         /* todo : handle error */
+        int serrno;
         serrno = errno;
         close(fd);
         errno = serrno;
@@ -110,7 +110,6 @@ int secure_file_open(const char *path, int flags, mode_t mode){
 int secure_file_exclusive_open(const char *path, int flags, mode_t mode){
 
     int fd;
-    int serrno;
     struct stat lstat_info;
     struct stat fstat_info;
 
@@ -139,6 +138,7 @@ int secure_file_exclusive_open(const char *path, int flags, mode_t mode){
     /* Get attributes of file through the file descriptor */
     if ( fstat(fd, &fstat_info) == -1 ){
         /* todo : handle error */
+        int serrno;
         serrno = errno;
         close(fd);
         errno = serrno;
