@@ -35,9 +35,11 @@ matrix:
         - shellcheck -x build.sh
         - build-wrapper-linux-x86-64 --out-dir bw-output ./build.sh Coverage && ls -al bw-output/
         - ./run.sh
+        - ls -l Coverage/CMakeFiles/secure_socket.dir/src/
         - sonar-scanner
-      after_success:
         - bash <(curl -s https://codecov.io/bash) -s Coverage/CMakeFiles/secure_socket.dir/src/
+      #after_success:
+      #  - bash <(curl -s https://codecov.io/bash) -s Coverage/CMakeFiles/secure_socket.dir/src/
 
 notifications:
   email: false
