@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
     if( !log_start(&log, params->verbosity, params->mq_name, params->log_file) ){
         LOG_STDOUT(LOG_FATAL, "Couldn't not start logging. Shutting down.", errno, 1, &log)
         free(params);
-        return EXIT_SUCCESS;
+        return EXIT_FAILURE;
     }
 
     /* Build the main threads server context */
@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
     threaded_server(ctx, params->max_connections);
 
     /* Inform for shut down */
-    LOG_FILE(LOG_INFO, "Server now shutting down.", 0, 0, ctx->log)
+    LOG_FILE(LOG_INFO, "Server now shutting down and terminating logging.", 0, 0, ctx->log)
 
     /* Close server connection */
     free_server_context(ctx);
