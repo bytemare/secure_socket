@@ -32,16 +32,13 @@
  * Allocates memory for an ipc_socket instance, calling an error when failing
  * @return allocated non-instanciated ipc_socket, NULL if failed
  */
-secure_socket *secure_socket_allocate(server_context *ctx) {
+secure_socket *secure_socket_allocate() {
 
     secure_socket *sock;
-
-    LOG_INIT
 
     sock = malloc(sizeof(secure_socket));
 
     if( sock == NULL){
-        LOG(LOG_FATAL, "malloc() failed for : secure_socket. ", errno, 3, ctx->log)
         return NULL;
     }
 
@@ -259,11 +256,11 @@ secure_socket* ipc_accept_connection(server_context *ctx){
 
     client_socket = secure_socket_allocate(ctx);
     if (client_socket == NULL) {
-        LOG(LOG_ALERT, "accept_connection() could not allocate socket : ", errno, 2, ctx->log)
+        LOG(LOG_ALERT, "accept_connection() could not allocate memory for socket.", errno, 2, ctx->log)
         return NULL;
     }
 
-    LOG(LOG_INFO, "Allocated memory for communication secure_socket : ", errno, 0, ctx->log)
+    LOG(LOG_TRACE, "Allocated secure_socket memory next communication.", errno, 0, ctx->log)
 
     if (ctx->parameters->domain) {
         client_socket->address.un.sun_family = AF_UNIX;
