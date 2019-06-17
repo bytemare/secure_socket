@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
     if( !log_start(&log, params->verbosity, params->mq_name, params->log_file) ){
         LOG_STDOUT(LOG_FATAL, "Couldn't not start logging. Shutting down.", errno, 1, &log)
         free(params);
-        return EXIT_FAILURE;
+        return EXIT_SUCCESS;
     }
 
     /* Build the main threads server context */
