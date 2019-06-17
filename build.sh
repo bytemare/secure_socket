@@ -110,7 +110,7 @@ s=$s" domain=$DOMAIN"
 s=$s" protocol=$PROTOCOL"
 s=$s" max_connections=$MAX_CONNECTIONS"
 s=$s" socket_permissions=$SOCKET_PERMISSIONS"
-s=$s" authorised_peer_username=$AUTHORISED_PEER_NAME"
+s=$s" authorised_peer_username=$(whoami)"
 s=$s" verbosity=$VERBOSITY"
 
 
