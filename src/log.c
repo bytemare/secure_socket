@@ -164,8 +164,7 @@ uint8_t log_util_open_server_mq(logging *log){
     LOG_INIT
 
     // TODO : check arguments here
-    //printf("maxmsg %lu\nmax_msg_size %lu\n", log->mq_attr.mq_maxmsg, log->mq_attr.mq_msgsize);
-    if( (log->mq_recv = mq_open(log->mq_name, O_RDONLY | O_CREAT | O_EXCL | O_CLOEXEC , S_IRUSR | S_IWUSR, log->mq_attr)) == (mqd_t)-1) {
+    if( (log->mq_recv = mq_open(log->mq_name, O_RDONLY | O_CREAT | O_EXCL | O_CLOEXEC , S_IRUSR | S_IWUSR, NULL)) == (mqd_t)-1) {
         LOG_STDOUT(LOG_FATAL, "Error in opening the receiver logging messaging queue.", errno, 1, log)
         return 1;
     }
@@ -188,7 +187,7 @@ uint8_t log_util_open_client_mq(logging *log){
     }
 
     /* If creating a mq succeeds with O_EXCL flag, it means that message queue was not set up before, and we don't want that */
-    if ( (log->mq_send = mq_open(log->mq_name, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, log->mq_attr)) != (mqd_t)-1 ) {
+    if ( (log->mq_send = mq_open(log->mq_name, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, NULL)) != (mqd_t)-1 ) {
         LOG_STDOUT(LOG_FATAL, "Trying to open the sender message queue, but receiver message queue was not opened. This code should not be reached.", 0, 1, log)
         log_close_single_mq(log->mq_send, log->mq_name);
         return 1;
@@ -285,7 +284,7 @@ long int get_mq_max_message_size(logging *log){
 
     int fd;
     FILE *fp;
-    int max_size = 0;
+    int data = 0;
 
     const char *mq_max_message_size_source = LOG_MQ_SOURCE_MAX_MESSAGE_SIZE_FILE;
 
@@ -321,26 +320,26 @@ long int get_mq_max_message_size(logging *log){
         int ret;
         errno = 0;
 
-        ret = fscanf(fp, "%d", &max_size); /* TODO clean this here up, there should be a better way of doing this*/
+        ret = fscanf(fp, "%d", &data); /* TODO clean this here up, there should be a better way of doing this*/
 
         if (ret == 1){
             fclose(fp);
-            LOG_BUILD("Maximum size message for messaging queue is %d.", max_size)
+            LOG_BUILD("Maximum size message for messaging queue is %d.", data)
             LOG_FILE(LOG_INFO, NULL, errno, 5, log)
         }
         else if ( errno != 0){
             LOG_FILE(LOG_WARNING, "Error in fscanf(). Message size set to default.", errno, 8, log)
-            max_size = LOG_MQ_MAX_MESSAGE_SIZE;
+            data = LOG_MQ_MAX_MESSAGE_SIZE;
         }
         else{
             LOG_FILE(LOG_WARNING, "Message queue : no matching pattern to an integer in file for message size. Message size set to default.", errno, 12, log)
-            max_size = LOG_MQ_MAX_MESSAGE_SIZE;
+            data = LOG_MQ_MAX_MESSAGE_SIZE;
         }
     }
 
     LOG_FILE(LOG_TRACE, "Size for message in mq is set.", errno, 0, log)
 
-    return max_size;
+    return data;
 }
 
 
@@ -360,11 +359,11 @@ __always_inline void log_init_log_params(logging *log, int8_t verbosity){
 
     log->mq_send = -1;
     log->mq_recv = -1;
-    log->mq_attr.mq_flags = 0;
-    log->mq_attr.mq_maxmsg = LOG_MQ_MAX_NB_MESSAGES;
-    log->mq_attr.mq_curmsgs = 0;
+    //log->mq_attr.mq_flags = 0;
+    //log->mq_attr.mq_maxmsg = 5; //LOG_MQ_MAX_NB_MESSAGES;
+    //log->mq_attr.mq_curmsgs = 0;
     memset(log->mq_name, 0, sizeof(log->mq_name));
-    log->mq_attr.mq_msgsize = LOG_MQ_MAX_MESSAGE_SIZE;
+    //log->mq_attr.mq_msgsize = 2048; //LOG_MQ_MAX_MESSAGE_SIZE;
 }
 
 
@@ -500,21 +499,22 @@ void* logging_thread(void *args){
 
     LOG_FILE(LOG_TRACE, "Logging thread started.", 0, 0, log)
 
+    if ( mq_getattr(log->mq_recv, &log->mq_attr) == -1 ){
+        //TODO : handle this error
+        printf("error in mq_getattr\n");
+    }
+
     mq_max_size = log->mq_attr.mq_msgsize;
     prio = 0;
 
     buffer = calloc((size_t )mq_max_size+1, sizeof(char));
     if(!buffer){
-        LOG_FILE(LOG_ALERT, "calloc() failed for buffer. Logging thread is not working !!! Exiting now.", errno, 2, log)
+        LOG_FILE(LOG_ALERT, "calloc() failed for buffer. Logging thread is not working. Exiting now.", errno, 2, log)
     }
 
     else {
 
         pthread_mutex_lock(&log->mutex);
-
-        if ( mq_getattr(log->mq_recv, &log->mq_attr) == -1 ){
-            //TODO : handle this error
-        }
 
         LOG_FILE(LOG_TRACE, "Logging ready.", 0, 0, log)
 
