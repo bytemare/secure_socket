@@ -95,7 +95,8 @@ set(SOURCE_FILES
         src/main.c
         src/ipc_socket.c
         src/context.c
-        src/threaded_server.c src/log.c src/tools.c src/secure_socket_base.c)
+        src/handler.c
+        src/threaded_server.c src/log.c src/tools.c src/secure_socket_base.c include/handler.h)
 
 include_directories(include/ src/)
 

@@ -46,7 +46,7 @@ static void* handle_client(void *args){
 
     LOG(LOG_TRACE, "Connexion closed. Thread now exiting.", 0, 0, ctx->log)
 
-    // TODO : what happens with the context, does this thread need to clean up everything or does the server do something ?
+    free_thread_context(ctx);
 
     pthread_exit((void*)0);
 }
@@ -165,7 +165,7 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
     LOG_INIT
 
     count = 0;
-    nb_authorised_errors = 50; /* TODO : study how this situation can be handled in a more appropriate way */
+    nb_authorised_errors = 1; /* TODO : study how this situation can be handled in a more appropriate way */
 
     client_ctx = malloc(nb_cnx * sizeof(thread_context*));
     if( client_ctx == NULL){
@@ -177,7 +177,7 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
     LOG(LOG_INFO, "Server now ready and awaiting incoming connections.", 0, 0, ctx->log)
 
     /* Enter Daemon mode */
-    while(nb_authorised_errors) {
+    while(nb_authorised_errors--) {
 
         /* get_next_available_offset() */
 
@@ -207,6 +207,16 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
             continue;
         }
 
+    }
+
+    int join_ret;
+    void *join_res;
+
+    if ( (join_ret = pthread_join(tid, &join_res)) == -1 ){
+        LOG(LOG_ERROR, "Could not join client thread.", join_ret, 1, ctx->log)
+    } else {
+        LOG_BUILD("Joined client thread, which returned %s.", (char *)join_res)
+        LOG(LOG_INFO, NULL, 0, 4, ctx->log)
     }
 
     LOG(LOG_INFO, "Thread Server is quitting daemon mode. Now cleaning up.", 0, 0, ctx->log)

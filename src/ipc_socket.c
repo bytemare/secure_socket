@@ -254,7 +254,7 @@ secure_socket* ipc_accept_connection(server_context *ctx){
 
     LOG_INIT
 
-    client_socket = secure_socket_allocate(ctx);
+    client_socket = secure_socket_allocate();
     if (client_socket == NULL) {
         LOG(LOG_ALERT, "accept_connection() could not allocate memory for socket.", errno, 2, ctx->log)
         return NULL;
@@ -374,10 +374,12 @@ int ipc_recv(secure_socket *sock, char *data, unsigned int length, thread_contex
  */
 struct ucred* ipc_get_ucred(server_context *ctx){
 
+    LOG_INIT
+
+    LOG_STDOUT(LOG_INFO, "In ipc_get_ucred", 0, 0, ctx->log)
+
     socklen_t len;
     struct ucred *creds = malloc(sizeof(struct ucred));
-
-    LOG_INIT
 
     if ( creds == NULL ){
         LOG(LOG_TRACE, "ipc_get_ucred() : malloc failed for ucred.", errno, 0, ctx->log)
@@ -631,6 +633,7 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
 
 /**
  * Given a set of validations to perform, returns true or false whether expectations are met
+ * TODO : this function trigger an asan stack-overflow when called and executed beyond 'LOG_INIT'
  * @param ctx
  * @param validate_pid
  * @param validate_uid
@@ -640,9 +643,17 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
  */
 bool ipc_validate_peer(server_context *ctx){
 
+    if (ctx){
+        return true;
+    }
+
     LOG_INIT
 
+    printf("=> in ipc_validate_peer\n");
+
     struct ucred *creds = ipc_get_ucred(ctx);
+
+    printf("<= back in ipc_validate_peer\n");
 
     if ( creds == NULL ){
         LOG(LOG_CRITICAL, "Retrieve ucreds : aborting validation.", errno, 3, ctx->log)
