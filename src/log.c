@@ -164,6 +164,7 @@ uint8_t log_util_open_server_mq(logging *log){
     LOG_INIT
 
     // TODO : check arguments here
+    //printf("maxmsg %lu\nmax_msg_size %lu\n", log->mq_attr.mq_maxmsg, log->mq_attr.mq_msgsize);
     if( (log->mq_recv = mq_open(log->mq_name, O_RDONLY | O_CREAT | O_EXCL | O_CLOEXEC , S_IRUSR | S_IWUSR, log->mq_attr)) == (mqd_t)-1) {
         LOG_STDOUT(LOG_FATAL, "Error in opening the receiver logging messaging queue.", errno, 1, log)
         return 1;

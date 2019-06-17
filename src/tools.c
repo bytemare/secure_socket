@@ -55,11 +55,12 @@ int secure_file_open(const char *path, int flags, mode_t mode){
 
     /* Add additional security flags */
     flags |= O_CLOEXEC;
-    //flags |= (O_CREAT | O_EXCL); /* Don't follow symbolic links, but fails if file already exists */
+    /*flags |= (O_CREAT | O_EXCL); // Don't follow symbolic links, but fails if file already exists */
 
     /* Get attributes on file and check if file is not a symbolic link */
     if ( lstat(path, &lstat_info) == -1 ){
         /* Todo : handle error */
+        printf("failed on lstat\n");
         return -1;
     }
 
@@ -72,6 +73,7 @@ int secure_file_open(const char *path, int flags, mode_t mode){
 
     /* Quit on error */
     if ( fd == -1 ){
+        printf("failed on open\n");
         return -1;
     }
 
@@ -82,6 +84,7 @@ int secure_file_open(const char *path, int flags, mode_t mode){
         serrno = errno;
         close(fd);
         errno = serrno;
+        printf("failed on fstat\n");
         return -1;
     }
 
@@ -115,7 +118,7 @@ int secure_file_exclusive_open(const char *path, int flags, mode_t mode){
 
     /* Add additional security flags */
     flags |= O_CLOEXEC;
-    //flags |= (O_CREAT | O_EXCL); /* Don't follow symbolic links, but fails if file already exists */
+    /*flags |= (O_CREAT | O_EXCL); // Don't follow symbolic links, but fails if file already exists */
 
     /* Get attributes on file and check if file is not a symbolic link */
     if ( lstat(path, &lstat_info) == -1 ){
