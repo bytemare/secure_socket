@@ -376,8 +376,6 @@ struct ucred* ipc_get_ucred(server_context *ctx){
 
     LOG_INIT
 
-    LOG_STDOUT(LOG_INFO, "In ipc_get_ucred", 0, 0, ctx->log)
-
     socklen_t len;
     struct ucred *creds = malloc(sizeof(struct ucred));
 
