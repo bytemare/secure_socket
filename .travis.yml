@@ -34,7 +34,7 @@ matrix:
       script:
         - shellcheck -x build.sh
         - build-wrapper-linux-x86-64 --out-dir bw-output ./build.sh Coverage && ls -al bw-output/
-        - ./run.sh
+        - ./run.sh & python3 src/client_test.py
         - sonar-scanner -X
         - bash <(curl -s https://codecov.io/bash) -s Coverage/CMakeFiles/secure_socket.dir/src/
       #after_success:
