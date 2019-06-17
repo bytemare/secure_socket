@@ -116,7 +116,8 @@ uint8_t log_util_open_file_lock(logging *log, const char *filename){
         if( errno == EWOULDBLOCK){
             LOG_STDOUT(LOG_FATAL, "The log file is locked by another process. Free the file and try again.", errno, 3, log)
         } else {
-            LOG_STDOUT(LOG_FATAL, "Error in opening log file.", errno, 6, log)
+            LOG_BUILD("Error in opening log file '%s'.", filename)
+            LOG_STDOUT(LOG_FATAL, NULL, errno, 3, log)
         }
         return 1;
     }
