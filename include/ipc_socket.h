@@ -19,7 +19,7 @@
 #define IPC_PEER_BINARY_NAME_FILE_ROOT "/proc/"
 #define IPC_PEER_BINARY_NAME_FILE "comm"
 
-secure_socket* secure_socket_allocate(server_context *ctx);
+secure_socket* secure_socket_allocate();
 
 bool secure_socket_create_socket(server_context *ctx);
 

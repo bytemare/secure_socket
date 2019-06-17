@@ -19,6 +19,7 @@
 #include <sys/fcntl.h>
 #include <bsd/libutil.h>
 #include <tools.h>
+#include <handler.h>
 
 
 /**
@@ -41,8 +42,11 @@ static void* handle_client(void *args){
      * - handle_client_connection(client)
      * - handler(ctx)
      */
+    handler(ctx);
 
     LOG(LOG_TRACE, "Connexion closed. Thread now exiting.", 0, 0, ctx->log)
+
+    // TODO : what happens with the context, does this thread need to clean up everything or does the server do something ?
 
     pthread_exit((void*)0);
 }
@@ -105,7 +109,6 @@ char* read_data_from_source(const char *filename, int *size, logging *log){
     LOG_BUILD("File '%s' is '%d' bytes long.", filename, (int)length)
     LOG(LOG_TRACE, NULL, errno, 0, log)
 
-
     destination = calloc((unsigned long) (length + 1), sizeof(char));
     if( !destination ){
         // TODO : give filename and buffer size in error
@@ -162,7 +165,7 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
     LOG_INIT
 
     count = 0;
-    nb_authorised_errors = 50; /* TODO : study how this situtation can be handled in a more appropriate way */
+    nb_authorised_errors = 50; /* TODO : study how this situation can be handled in a more appropriate way */
 
     client_ctx = malloc(nb_cnx * sizeof(thread_context*));
     if( client_ctx == NULL){
