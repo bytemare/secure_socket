@@ -393,11 +393,11 @@ __always_inline uint8_t log_initialise_logging_s(logging *log, char *mq_name, ch
     }
 
     /* Initialise asynchronous I/O structure */
-    if ( log_util_open_aio(log) ) {
+    /*if ( log_util_open_aio(log) ) {
         close(log->fd);
         log_close_mqs(log);
         return 1;
-    }
+    }*/
 
     LOG_FILE(LOG_INFO, "Initialised logging structure.", 0, 0, log)
 
