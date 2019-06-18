@@ -36,7 +36,6 @@ matrix:
         - build-wrapper-linux-x86-64 --out-dir bw-output ./build.sh Coverage && ls -al bw-output/
         - touch /tmp/secure_socket_logs
         - ./run.sh & python3 src/client_test.py
-        - sonar-scanner -X
       after_success:
         - ./coverage.sh
         - sonar-scanner
