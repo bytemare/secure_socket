@@ -110,7 +110,7 @@ uint8_t log_util_open_file_lock(logging *log, const char *filename){
 
     LOG_INIT
 
-    log->fd = secure_file_exclusive_open(filename, O_CREAT|O_WRONLY|O_APPEND|O_SYNC|O_NONBLOCK, S_IRUSR|S_IWUSR);
+    log->fd = secure_file_open(filename, O_CREAT | O_WRONLY | O_APPEND | O_SYNC | O_NONBLOCK, S_IRUSR | S_IWUSR, true);
 
     if ( log->fd == -1 ){
         if( errno == EWOULDBLOCK){
@@ -293,7 +293,7 @@ long int get_mq_max_message_size(logging *log){
     LOG_FILE(LOG_TRACE, "Logging Thread : getting maximum message size from system", errno, 0, log)
 
 
-    fd = secure_file_exclusive_open(mq_max_message_size_source, O_RDONLY, 0);
+    fd = secure_file_open(mq_max_message_size_source, O_RDONLY, 0, true);
 
     if ( log->fd == -1 ){
         if( errno == EWOULDBLOCK){
