@@ -642,6 +642,7 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
 bool ipc_validate_peer(server_context *ctx){
 
     if (ctx){
+        // TODO : bypass
         return true;
     }
 
