@@ -32,7 +32,7 @@ matrix:
           token:
             secure: ${SONAR_TOKEN}
       script:
-        - shellcheck -x build.sh coverage.sh
+        - shellcheck -x build.sh
         - build-wrapper-linux-x86-64 --out-dir bw-output ./build.sh Coverage && ls -al bw-output/
         - touch /tmp/secure_socket_logs
         - ./run.sh & python3 src/client_test.py
