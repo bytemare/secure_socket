@@ -155,12 +155,13 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
      * Track number of effectively created threads with unsigned int nb_threads = 0
      */
     unsigned int nb_authorised_errors; /* Number of errors before exiting daemon mode */
+    int pthread_ret = 0;
 
     thread_context **client_ctx; /* Contexts with logging queue and ipc_sockets to deal with clients */
     secure_socket *new_client;
 
     /* Initialise variables */
-    pthread_t tid;
+    pthread_t tid = 0;
 
     LOG_INIT
 
@@ -199,9 +200,9 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
         client_ctx[offset]->socket = new_client;
 
         /* (void*)handle_client */
-        if( pthread_create(&tid, &ctx->attr, &handle_client, client_ctx[offset]) != 0 ){
+        if( ( pthread_ret = pthread_create(&tid, &ctx->attr, &handle_client, client_ctx[offset])) != 0 ){
             //TODO give more context on why thread could not be created
-            LOG(LOG_ALERT, "error creating thread. Connection closed.", errno, 1, ctx->log)
+            LOG(LOG_ALERT, "error creating thread. Connection closed.", pthread_ret, 1, ctx->log)
             client_ctx[offset] = free_thread_context(client_ctx[offset]);
             nb_authorised_errors--;
             continue;
@@ -209,6 +210,7 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
 
     }
 
+    // TODO : this here is a workaround to make the demo work
     int join_ret;
     void *join_res;
 
