@@ -32,12 +32,12 @@ matrix:
           token:
             secure: ${SONAR_TOKEN}
       script:
-        - shellcheck -x build.sh
+        - shellcheck -x build.sh coverage.sh
         - build-wrapper-linux-x86-64 --out-dir bw-output ./build.sh Coverage && ls -al bw-output/
         - touch /tmp/secure_socket_logs
         - ./run.sh & python3 src/client_test.py
+        - chmod +x coverage.sh && ./coverage.sh
       after_success:
-        - ./coverage.sh
         - sonar-scanner
         - bash <(curl -s https://codecov.io/bash) -s gcov/
 
