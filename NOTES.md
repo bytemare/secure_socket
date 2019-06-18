@@ -45,6 +45,7 @@
 
 Security Mechanisms
 
+- check socket opening with lstat/fstat
 - check whether SO_PASSCRED credentials are verified by the kernel
 - check SO_PEERSEC mechanism
 - document use of SCM_CREDENTIALS and SCM_SECURITY
