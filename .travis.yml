@@ -37,9 +37,10 @@ matrix:
         - touch /tmp/secure_socket_logs
         - ./run.sh & python3 src/client_test.py
         - sonar-scanner -X
-        - bash <(curl -s https://codecov.io/bash) -s Coverage/CMakeFiles/secure_socket.dir/src/
-      #after_success:
-      #  - bash <(curl -s https://codecov.io/bash) -s Coverage/CMakeFiles/secure_socket.dir/src/
+      after_success:
+        - ./coverage.sh
+        - sonar-scanner
+        - bash <(curl -s https://codecov.io/bash) -s gcov/
 
 notifications:
   email: false
