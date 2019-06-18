@@ -26,6 +26,7 @@
 #include <threaded_server.h>
 #include <vars.h>
 #include <log.h>
+#include <tools.h>
 
 
 /**
@@ -580,22 +581,18 @@ bool set_socket_owner_and_permissions(server_context *ctx, char *group_name, gid
  */
 bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
 
-    char *peer_binary_name;
-    int peer_binary_name_length;
+    char peer_binary_name[NAME_MAX] = {0};
+    ssize_t peer_binary_name_length;
     char *peer_pid_string = NULL;
 
     int result;
-    char proc_file[NAME_MAX]= {0};
+    char proc_file[NAME_MAX] = {0};
 
     int asprintf_printed = 0;
 
     LOG_INIT
 
-    /* Build the filepath that holds the name of the binary linked to a pid */
-    if ( strlcpy(proc_file, IPC_PEER_BINARY_NAME_FILE_ROOT, sizeof(proc_file)) < strnlen(IPC_PEER_BINARY_NAME_FILE_ROOT, NAME_MAX) ){
-        // TODO handle error : strlcpy truncated, copied less than full name
-        return  false;
-    }
+   /* Put the peer_pid in a string buffer */
     asprintf_printed = asprintf(&peer_pid_string, "%d", peer_pid);
     if ( asprintf_printed == -1 || peer_pid_string == NULL){
         // TODO handle error
@@ -606,14 +603,20 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
         free(peer_pid_string);
         return false;
     }
+
+    /* Build the filepath that holds the name of the binary linked to a pid */
+    if ( strlcpy(proc_file, IPC_PEER_BINARY_NAME_FILE_ROOT, sizeof(proc_file)) < strnlen(IPC_PEER_BINARY_NAME_FILE_ROOT, NAME_MAX) ){
+        // TODO handle error : strlcpy truncated, copied less than full name
+        return  false;
+    }
     strlcat(proc_file, peer_pid_string, sizeof(proc_file) - sizeof(IPC_PEER_BINARY_NAME_FILE_ROOT));
     free(peer_pid_string);
     strlcat(proc_file, "/",  2);
     strlcat(proc_file, IPC_PEER_BINARY_NAME_FILE, sizeof(proc_file) - strnlen(proc_file, sizeof(proc_file)));
 
     /* Now that the full path to the file is build, read from it */
-    peer_binary_name = read_data_from_source(proc_file, &peer_binary_name_length, ctx->log);
-    if( peer_binary_name == NULL ){
+    peer_binary_name_length = read_data_from_file(proc_file, peer_binary_name, sizeof(peer_binary_name), true);
+    if( peer_binary_name_length <= 0 ){
         LOG_BUILD("Could not read process file '%s'. Process not authenticated.", proc_file)
         LOG(LOG_INFO, NULL, errno, 3, ctx->log)
         return false;
@@ -622,8 +625,6 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
     /* Verify they match */
     /* TODO : verify if that's what we really want : if the first n bytes match, but the input is longer, does it tell it ?*/
     result = strncmp(ctx->parameters->authorised_peer_process_name, peer_binary_name, sizeof(ctx->parameters->authorised_peer_process_name));
-
-    free(peer_binary_name);
 
     return result == 0;
 }
@@ -640,11 +641,6 @@ bool ipc_validate_proc(server_context *ctx, pid_t peer_pid){
  * @return
  */
 bool ipc_validate_peer(server_context *ctx){
-
-    if (ctx){
-        // TODO : bypass
-        return true;
-    }
 
     LOG_INIT
 

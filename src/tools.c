@@ -41,7 +41,7 @@ void secure_random_string(char *rand, uint32_t size){
 /**
  * Attempts to open a file with given flags and mode, protecting against a symlink attack.
  * If precised, attempts to obtain an exlusive lock on file.
- * On failure, returns 0 if TOCTOU race condition was detected, or -1 with errno set from failing function.
+ * On failure, returns 0 if TOCTOU race condition was detected or if file is not a regular file, or -1 with errno set from failing function.
  *
  * @param path
  * @param flags
@@ -94,6 +94,13 @@ int secure_file_open(const char *path, int flags, mode_t mode, bool lock){
         return -1;
     }
 
+    /* Test if file is regular file */
+    if (!S_ISREG(fstat_info.st_mode)) {
+        /* TODO : handle error */
+        close(fd);
+        return 0;
+    }
+
     /* Compare attributes and fail if they diverge */
     if (lstat_info.st_mode == fstat_info.st_mode &&
         lstat_info.st_ino == fstat_info.st_ino  &&
@@ -107,4 +114,66 @@ int secure_file_open(const char *path, int flags, mode_t mode, bool lock){
         close(fd);
         return 0;
     }
+}
+
+
+/**
+ * Given a path to filename, reads at most max_length bytes from file, fills buffer dest_buffer with its content and
+ * returns the number of bytes read.
+ * @param filename
+ * @param length
+ * @return
+ */
+ssize_t read_data_from_file(const char *filename, char *dest_buffer, int max_length, bool lock){
+
+    int file;
+    ssize_t disk_file_length;
+    ssize_t read_length;
+    struct stat file_info;
+
+    /*
+     * Use of a BSD function here with a lock to prevent a race condition, since the function is used to open a PID file, among others
+     */
+    file = secure_file_open(filename, O_RDONLY, 0, lock);
+
+    if ( file == -1 ){
+        if( errno == EWOULDBLOCK){
+            /* TODO : handle error */
+            printf("Unable to open file '%s', the log file is locked by another process. Free the file and try again.\n", filename);
+        } else {
+            /* TODO : handle error */
+            printf("Error in opening '%s'for reading.", filename);
+        }
+        return -1;
+    }
+
+    if ( file == 0 ){
+        /* TODO : handle error */
+        printf("Symlinks for file opening are forbidden (this is either an error or a TOCTOU race condition).\n");
+        return -1;
+    }
+
+    /* Check if file size exceeds the authorised maximum length */
+
+    fstat(file, &file_info);
+    disk_file_length = file_info.st_size;
+
+    if ( disk_file_length >= max_length ){
+        /* TODO : handle error */
+        printf("file length exceed authorised max limit.\n");
+        return -1;
+    }
+
+    read_length = read(file, dest_buffer, sizeof(max_length) - 1);
+    if ( read_length == -1 ) {
+        // TODO handle error
+        close(file);
+        return -1;
+    }
+
+    dest_buffer[read_length] = '\0';
+
+    close(file);
+
+    return read_length;
 }
