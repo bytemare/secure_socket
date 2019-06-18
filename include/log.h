@@ -494,8 +494,8 @@ __always_inline void log_build(logging_buffs *log_buffs, int8_t message_level, c
     }
 
     /*TODO : print this only in log debugging mode
-     * printf("LOGGING MESSAGE : '%s'\n", message);
-     * printf("errno : %d - Verbosity : %d - Message Level : %d - Location : file %s @fun %s at line %d\n", error_number, verbosity, message_level, file, function, line); */
+     * printf("\033[0;31mLOGGING MESSAGE : '%s'\033[0m;\n", message);
+     * printf("\t\t\033[0;31merrno : %d - Verbosity : %d - Message Level : %d - Location : file %s @fun %s at line %d\033[0m;\n", error_number, verbosity, message_level, file, function, line); */
 
     // TODO : handle return values relayed from vasprintf wrapper
     log_reset(log_buffs);
