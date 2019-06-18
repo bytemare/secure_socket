@@ -8,7 +8,7 @@ sources="$(ls $source_dir/*.c)"
 
 for s in $sources; do
     echo "[i] gcov on $s"
-    gcov $s -b -f -l -u -o $object_dir/$(basename $s).gcno
+    gcov $s -b -f -o $object_dir/$(basename $s).gcno
 done
 
 mkdir gcov
