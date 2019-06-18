@@ -25,6 +25,7 @@ Coverage
        src="https://scan.coverity.com/projects/18404/badge.svg"/>
 </a>
 
+[![codecov](https://codecov.io/gh/bytemare/secure_socket/branch/master/graph/badge.svg)](https://codecov.io/gh/bytemare/secure_socket)
 
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=bytemare_secure_socket&metric=coverage)](https://sonarcloud.io/dashboard?id=bytemare_secure_socket)
 
