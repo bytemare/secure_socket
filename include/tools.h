@@ -11,8 +11,6 @@
 
 void secure_random_string(char *rand, uint32_t size);
 
-int secure_file_open(const char *path, int flags, mode_t mode);
-
-int secure_file_exclusive_open(const char *path, int flags, mode_t mode);
+int secure_file_open(const char *path, int flags, mode_t mode, bool lock);
 
 #endif //SECURE_SOCKET_TOOLS_H
