@@ -388,6 +388,7 @@ struct ucred* ipc_get_ucred(server_context *ctx){
 
     if ( getsockopt(ctx->socket->socket_fd, SOL_SOCKET, SO_PEERCRED, creds, &len) < 0 ){
         LOG(LOG_TRACE, "ipc_get_ucred() : could not retrieve ucred.", errno, 0, ctx->log)
+        free(creds);
         return NULL;
     }
 
@@ -658,6 +659,8 @@ bool ipc_validate_peer(server_context *ctx){
     pid_t peer_pid = creds->pid;
     uid_t peer_uid = creds->uid;
     gid_t peer_gid = creds->gid;
+
+    free(creds);
 
     /* BSD function for test and checking */
     uid_t peer_uid_bsd = 0;
