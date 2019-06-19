@@ -4,7 +4,6 @@
  * Copyright (C) 2015-2019 Bytemare <d@bytema.re>. All Rights Reserved.
  */
 
-#include <string.h>
 #include <stdint.h>
 
 #include <sys/types.h>
@@ -16,6 +15,10 @@
 #include <unistd.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <libgen.h>
+#include <limits.h>
+
+#include <bsd/string.h>
 
 /**
  * Fills the buffer pointed to by *rand with size - 1 random alphanumerical values, terminating with a null character.
@@ -51,8 +54,11 @@ void secure_random_string(char *rand, uint32_t size){
 int secure_file_open(const char *path, int flags, mode_t mode, bool lock){
 
     int fd;
+    bool new_file = false;
     struct stat lstat_info;
     struct stat fstat_info;
+    char filepath[NAME_MAX] = {0};
+    strlcpy(filepath, path, NAME_MAX);
 
     /* Add additional security flags */
     flags |= O_CLOEXEC;
@@ -60,8 +66,13 @@ int secure_file_open(const char *path, int flags, mode_t mode, bool lock){
 
     /* Get attributes on file and check if file is not a symbolic link */
     if ( lstat(path, &lstat_info) == -1 ){
-        /* Todo : handle error */
-        return -1;
+
+        /* Check if file is maybe not on disk, in which case we verify if at least the path is valid */
+        if ( errno != ENOENT || lstat(dirname(filepath), &lstat_info) == -1 ) {
+            /* Todo : handle error */
+            return -1;
+        }
+        new_file = true;
     }
 
     /* Open the file with exclusive lock to avoid race condition on operations */
@@ -99,6 +110,11 @@ int secure_file_open(const char *path, int flags, mode_t mode, bool lock){
         /* TODO : handle error */
         close(fd);
         return 0;
+    }
+
+    /* If we created a new file, we don't check for race condition (since there was no file) */
+    if ( new_file ){
+        return fd;
     }
 
     /* Compare attributes and fail if they diverge */
