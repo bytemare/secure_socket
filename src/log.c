@@ -114,10 +114,10 @@ uint8_t log_util_open_file_lock(logging *log, const char *filename){
 
     if ( log->fd == -1 ){
         if( errno == EWOULDBLOCK){
-            LOG_STDOUT(LOG_FATAL, "The log file is locked by another process. Free the file and try again.", errno, 3, log)
+            LOG_STDOUT(LOG_FATAL, "The log file is locked by another process. Free the file and try again.", errno, 5, log)
         } else {
             LOG_BUILD("Error in opening log file '%s'.", filename)
-            LOG_STDOUT(LOG_FATAL, NULL, errno, 3, log)
+            LOG_STDOUT(LOG_FATAL, NULL, errno, 7, log)
         }
         return 1;
     }
@@ -161,14 +161,10 @@ __always_inline void log_close_mqs(logging *log){
  * @return
  */
 uint8_t log_util_open_server_mq(logging *log){
-    LOG_INIT
-
     // TODO : check arguments here
     if( (log->mq_recv = mq_open(log->mq_name, O_RDONLY | O_CREAT | O_EXCL | O_CLOEXEC , S_IRUSR | S_IWUSR, NULL)) == (mqd_t)-1) {
-        LOG_STDOUT(LOG_FATAL, "Error in opening the receiver logging messaging queue.", errno, 1, log)
         return 1;
     }
-
     return 0;
 }
 
@@ -240,6 +236,7 @@ uint8_t log_util_open_mq(logging *log, const char *mq_name){
 
     /* Opening Message Queues */
     if ( log_util_open_server_mq(log) ){
+        LOG_STDOUT(LOG_FATAL, "Error in opening the receiver logging messaging queue.", errno, 1, log)
         return 1;
     }
 
@@ -259,11 +256,8 @@ uint8_t log_util_open_mq(logging *log, const char *mq_name){
  */
 uint8_t log_util_open_aio(logging *log){
 
-    LOG_INIT
-
     log->aio = malloc(sizeof(struct aiocb));
     if(!log->aio){
-        LOG_FILE(LOG_ALERT, "malloc failed allocating space for the logging aiocb structure.", errno, 2, log)
         return 1;
     }
 
@@ -325,11 +319,12 @@ __always_inline uint8_t log_initialise_logging_s(logging *log, char *mq_name, ch
     }
 
     /* Initialise asynchronous I/O structure */
-    /*if ( log_util_open_aio(log) ) {
+    if ( log_util_open_aio(log) ) {
+        LOG_FILE(LOG_ALERT, "malloc failed allocating space for the logging aiocb structure.", errno, 2, log)
         close(log->fd);
         log_close_mqs(log);
         return 1;
-    }*/
+    }
 
     LOG_FILE(LOG_INFO, "Initialised logging structure.", 0, 0, log)
 
