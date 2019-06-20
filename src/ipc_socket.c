@@ -68,11 +68,9 @@ void ipc_close_socket(secure_socket *sock){
  * @param log
  * @return NULL
  */
-secure_socket* secure_socket_free(secure_socket *sock, logging *log){
-    LOG_INIT
+secure_socket *secure_socket_free(secure_socket *sock) {
     ipc_close_socket(sock);
     free(sock);
-    LOG(LOG_INFO, "Closed socket and freed structure.", errno, 0, log)
     return NULL;
 }
 
@@ -268,8 +266,8 @@ secure_socket* ipc_accept_connection(server_context *ctx){
         client_socket->bind_address = (struct sockaddr*)&client_socket->address.un;
     } else {
         LOG(LOG_ALERT, "Other domains than AF_UNIX are not handled yet !", errno, 0, ctx->log)
-        client_socket = secure_socket_free(client_socket, ctx->log);
-        secure_socket_free(client_socket, ctx->log);
+        client_socket = secure_socket_free(client_socket);
+        secure_socket_free(client_socket);
         return NULL;
     }
 
@@ -280,7 +278,7 @@ secure_socket* ipc_accept_connection(server_context *ctx){
     client_socket->socket_fd = accept(ctx->socket->socket_fd, client_socket->bind_address, &len);
     if (client_socket->socket_fd < 0) {
         LOG(LOG_ERROR, "accept() connection failed : ", errno, 0, ctx->log)
-        secure_socket_free(client_socket, ctx->log);
+        secure_socket_free(client_socket);
         return NULL;
     }
 
@@ -421,7 +419,7 @@ pid_t ipc_get_peer_pid(secure_socket *sock){
  */
 void secure_socket_free_from_context(server_context *ctx){
     if( ctx->socket ){
-        ctx->socket = secure_socket_free(ctx->socket, ctx->log);
+        ctx->socket = secure_socket_free(ctx->socket);
     }
 }
 
