@@ -223,9 +223,7 @@ typedef struct _logging_buffs{
     char log_errno_message[LOG_MAX_ERRNO_LENGTH];\
     char log_debug_suffix_buffer[LOG_DEBUG_SUFFIX_MAX_LENGTH];\
     char log_full_line_buffer[LOG_MAX_DEBUG_LINE_LENGTH];\
-    bool log_build;\
-    time_t log_t;\
-    struct tm log_timer;
+    bool log_build;
 } logging_buffs;
 
 /**
@@ -305,9 +303,15 @@ __always_inline void log_reset(logging_buffs *log_buffs) {
         memset(log_buffs->log_message_buffer, 0, LOG_MAX_ERROR_MESSAGE_LENGTH);
     }
     memset(log_buffs->log_full_line_buffer, 0, LOG_MAX_DEBUG_LINE_LENGTH);
-    log_buffs->log_t = time(NULL);
-    log_buffs->log_timer = *localtime_r(&log_buffs->log_t, &log_buffs->log_timer);
 
+
+}
+
+/**
+ * Insert in date_buffer the string in a format giving date precision to the millisecond
+ * @param date_buffer
+ */
+__always_inline void log_gettime(char *date_buffer){
     struct tm gmtval = {0};
     struct timespec curtime = {0};
     char timestamp[LOG_MAX_TIMESTAMP_BASE_LENGTH] = {0};
@@ -316,28 +320,10 @@ __always_inline void log_reset(logging_buffs *log_buffs) {
 
     if (gmtime_r(&curtime.tv_sec, &gmtval) != NULL) {
         strftime(timestamp, LOG_MAX_TIMESTAMP_BASE_LENGTH, LOG_FORMAT_DATE_BASE, &gmtval);
-        snprintf(log_buffs->log_date_buffer, LOG_MAX_TIMESTAMP_MS_LENGTH, LOG_FORMAT_DATE_MS, timestamp,
+        snprintf(date_buffer, LOG_MAX_TIMESTAMP_MS_LENGTH, LOG_FORMAT_DATE_MS, timestamp,
                  lround((double) (curtime.tv_nsec / ((long int) 1.0e6))));
     }
 }
-
-
-/**
- * Store current date and time at start of buffer
- * @param log_entry_buffer
- * @param log_timer
- */
-__always_inline bool log_get_date_time(logging_buffs *log_buffs){
-    memset(log_buffs->log_date_buffer, 0, LOG_MAX_TIMESTAMP_MS_LENGTH);
-    return log_s_vsnprintf(log_buffs->log_date_buffer, LOG_MAX_TIMESTAMP_MS_LENGTH, LOG_FORMAT_DATE,
-                           log_buffs->log_timer.tm_year + 1900,
-                           log_buffs->log_timer.tm_mon + 1,
-                           log_buffs->log_timer.tm_mday,
-                           log_buffs->log_timer.tm_hour,
-                           log_buffs->log_timer.tm_min,
-                           log_buffs->log_timer.tm_sec);
-}
-
 
 /**
  * Builds the debug prefix containing the pid and thread id, and stores it in given buffer
@@ -522,7 +508,7 @@ __always_inline void log_build(logging_buffs *log_buffs, int8_t message_level, c
 
     // TODO : handle return values relayed from vasprintf wrapper
     log_reset(log_buffs);
-    log_get_date_time(log_buffs);
+    log_gettime(log_buffs->log_date_buffer);
     log_debug_get_process_thread_id(log_buffs->log_debug_prefix_buffer, message_level, verbosity);
     log_get_err_message(log_buffs, error_number, message_level);
     log_debug_get_bug_location(log_buffs->log_debug_suffix_buffer, file, function, line, message_level,
