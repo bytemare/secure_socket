@@ -23,7 +23,9 @@
  */
 int log_start_thread(logging *log, int8_t verbosity, char *mq_name, char *log_file){
 
-    int ret;
+    int create_ret;
+    int join_ret;
+    void *join_res;
 
     /* Initialise logging structure with default parameters and current verbosity */
     log_init_log_params(log, verbosity);
@@ -36,9 +38,34 @@ int log_start_thread(logging *log, int8_t verbosity, char *mq_name, char *log_fi
         return -1;
     }
 
-    if ( (ret = pthread_create(&log->thread, &log->attr, &logging_thread, log) ) ){
-        return ret;
+    pthread_mutex_lock(&log->mutex);
+
+    if ( (create_ret = pthread_create(&log->thread, &log->attr, &logging_thread, log) ) ){
+        return create_ret;
     }
+
+    pthread_cond_wait(&log->cond, &log->mutex);
+    if ( log->quit_logging == true ){
+
+        printf("Logging thread failed setup, waiting to join it.\n");
+
+        join_ret = pthread_join(log->thread, &join_res);
+
+        /* If the flag has not been changed, the logging thread was not set up correctly and terminates itself */
+        if ( join_ret == -1 ){
+            /* TODO : handle this error ?*/
+            //LOG_STDOUT(LOG_ERROR, "Could not join logging thread.", join_ret, 1, log)
+            printf("Logging thread failed but couldn't join it.\n");
+        } else {
+            /* Todo : somehow handle this case */
+            //LOG_BUILD("Joined logging thread, which returned %s.", (char *) join_res)
+            //LOG_FILE(LOG_INFO, NULL, 0, 4, log)
+            printf("Joined failed logging thread, which returned %s.", (char *) join_res);
+        }
+
+        return join_ret;
+    }
+    pthread_mutex_unlock(&log->mutex);
 
     return 0;
 }
@@ -326,7 +353,7 @@ __always_inline void log_init_log_params(logging *log, int8_t verbosity){
     log->verbosity = verbosity;
     log->fd = -1;
     log->aio = NULL;
-    log->quit_logging = false;
+    log->quit_logging = true;
 
     log->thread = 0;
     set_thread_attributes(&log->attr, log);
@@ -489,9 +516,13 @@ void* logging_thread(void *args){
 
     else {
 
+        LOG_FILE(LOG_TRACE, "Logging ready.", 0, 0, log)
+
         pthread_mutex_lock(&log->mutex);
 
-        LOG_FILE(LOG_TRACE, "Logging ready.", 0, 0, log)
+        /* Signify creating thread that logging is set up and ready */
+        log->quit_logging = false;
+        pthread_cond_signal(&log->cond);
 
         while (log->mq_attr.mq_curmsgs || !log->quit_logging ) {
 
@@ -512,19 +543,19 @@ void* logging_thread(void *args){
 
             if ( mq_getattr(log->mq_recv, &log->mq_attr) == -1 ){
                 //TODO : handle this error
+                printf("error in mq_getattr\n");
             }
         }
 
+        pthread_mutex_unlock(&log->mutex);
         free(buffer);
     }
 
     LOG_FILE(LOG_TRACE, "Logging thread now quitting.", errno, 0, log)
 
-    log->quit_logging = false;
+    // log->quit_logging = true; /* The main thread will check is this value is set to false to know setup succeeded */
 
     pthread_cond_signal(&log->cond);
-
-    pthread_mutex_unlock(&log->mutex);
 
     pthread_exit((void*)0);
 }
