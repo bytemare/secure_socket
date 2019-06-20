@@ -127,7 +127,9 @@ typedef struct _logging{
  * Date format
  *
  */
-#define LOG_FORMAT_DATE "%04d-%d-%d - %02d:%02d:%02d"
+#define LOG_FORMAT_DATE "%04d-%d-%d - %02d:%02d:%02d" /* 21 chars */
+#define LOG_FORMAT_DATE_BASE "%Y-%m-%d - %H:%M:%S" /* 21 chars */
+#define LOG_FORMAT_DATE_MS "%s:%03ld" /* 21 + 1 + 3 */
 
 /*
  * Log format
@@ -144,7 +146,7 @@ typedef struct _logging{
 
 /*
  * To avoid potential vulnerabilities in usage of ellipsis notation by giving a malformed format string to vasprintf,
- * each LOG_FORMAT_* is to be identified, so that log_s_vasprintf will select a valid, pre-defined format string.
+ * each LOG_FORMAT_* is to be identified, so that log_s_vsnprintf will select a valid, pre-defined format string.
  * TODO : find a better system to maintain and that has less overhead
  * TODO : Actually, this idea doesn't work since we want that freedom that the developer can use a custom string format
  */
@@ -175,7 +177,8 @@ typedef struct _logging{
 #define LOG_MAX_LVL_LENGTH              8
 /*#define LOG_DATE_LENGTH                 11*/
 /*#define LOG_TIME_LENGTH                 8*/
-#define LOG_MAX_TIMESTAMP_LENGTH        22
+#define LOG_MAX_TIMESTAMP_BASE_LENGTH      22
+#define LOG_MAX_TIMESTAMP_MS_LENGTH        26
 #define LOG_MAX_ERRNO_LENGTH            100
 #define LOG_MAX_ERROR_MESSAGE_LENGTH    (150 + NAME_MAX)
 
@@ -188,7 +191,7 @@ typedef struct _logging{
 #define LOG_DEBUG_PREFIX_MAX_LENGTH (21 + LOG_DEBUG_MAX_PID_LENGTH + LOG_DEBUG_MAX_THREAD_ID_LENGTH)
 #define LOG_DEBUG_SUFFIX_MAX_LENGTH (33 + LOG_DEBUG_MAX_FILE_NAME_LENGTH + LOG_DEBUG_MAX_FUNCTION_NAME_LENGTH + LOG_DEBUG_MAX_LINE_NUMBER_LENGTH)
 
-#define LOG_MAX_LINE_LENGTH (LOG_MAX_TIMESTAMP_LENGTH + 4 + LOG_MAX_LVL_LENGTH + 2 + LOG_MAX_ERROR_MESSAGE_LENGTH + LOG_MAX_ERRNO_LENGTH + 3)
+#define LOG_MAX_LINE_LENGTH (LOG_MAX_TIMESTAMP_MS_LENGTH + 4 + LOG_MAX_LVL_LENGTH + 2 + LOG_MAX_ERROR_MESSAGE_LENGTH + LOG_MAX_ERRNO_LENGTH + 3)
 #define LOG_MAX_DEBUG_LINE_LENGTH (LOG_MAX_LINE_LENGTH + LOG_DEBUG_PREFIX_MAX_LENGTH + LOG_DEBUG_SUFFIX_MAX_LENGTH) /* 637 */
 
 #if LOG_MAX_LINE_LENGTH >= LOG_MQ_MAX_MESSAGE_SIZE
@@ -214,7 +217,7 @@ typedef struct _logging{
  * or ASAN will throw a stack overflow detection.
  */
 typedef struct _logging_buffs{
-    char log_date_buffer[LOG_MAX_TIMESTAMP_LENGTH];\
+    char log_date_buffer[LOG_MAX_TIMESTAMP_MS_LENGTH];\
     char log_debug_prefix_buffer[LOG_DEBUG_PREFIX_MAX_LENGTH];\
     char log_message_buffer[LOG_MAX_ERROR_MESSAGE_LENGTH];\
     char log_errno_message[LOG_MAX_ERRNO_LENGTH];\
@@ -235,7 +238,7 @@ void set_thread_attributes(pthread_attr_t *attr, logging *log);
 
 void log_init_log_params(logging *log, int8_t verbosity);
 
-bool log_start_thread(logging *log, int8_t verbosity, char *mq_name, char *log_file) __attribute__ ((warn_unused_result));
+int log_start_thread(logging *log, int8_t verbosity, char *mq_name, char *log_file) __attribute__ ((warn_unused_result));
 
 bool log_start(logging *log, int8_t verbosity, char *mq_name, char *log_file) __attribute__ ((warn_unused_result));
 
@@ -247,7 +250,7 @@ void log_close(logging *log);
 
 void* logging_thread(void *args);
 
-bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const char *format, ...) __attribute__ ((warn_unused_result));
+bool log_s_vsnprintf(char *target, size_t max_buf_size, const char *format, ...) __attribute__ ((warn_unused_result));
 
 /**
  * Initialises variables and buffers for building the log line in the scope of calling function
@@ -257,6 +260,7 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
 #define LOG_INIT\
     errno = 0;\
     logging_buffs log_buffs;\
+    log_buffs.log_build = false;\
 /*#pragma GCC diagnostic pop*/
 
 /**
@@ -270,7 +274,7 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
  * Build a log entry with runtime values
  */
 #define LOG_BUILD(error_message_format, ...)\
-    if ( log_s_vasprintf(log_buffs.log_message_buffer, sizeof(log_buffs.log_message_buffer), 0, error_message_format, ##__VA_ARGS__) ){ log_buffs.log_build = true; };\
+    if ( log_s_vsnprintf(log_buffs.log_message_buffer, sizeof(log_buffs.log_message_buffer), error_message_format, ##__VA_ARGS__) ){ log_buffs.log_build = true; };\
 
 /**
  * Same as LOG, but writes directly to log file
@@ -294,15 +298,27 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
  * @param log_t
  * @param log_timer
  */
-__always_inline void log_reset(logging_buffs *log_buffs){
+__always_inline void log_reset(logging_buffs *log_buffs) {
     memset(log_buffs->log_errno_message, 0, LOG_MAX_ERRNO_LENGTH);
-    memset(log_buffs->log_date_buffer, 0, LOG_MAX_TIMESTAMP_LENGTH);
-    if ( !log_buffs->log_build ){
+    memset(log_buffs->log_date_buffer, 0, LOG_MAX_TIMESTAMP_MS_LENGTH);
+    if (!log_buffs->log_build) {
         memset(log_buffs->log_message_buffer, 0, LOG_MAX_ERROR_MESSAGE_LENGTH);
     }
-    memset(log_buffs->log_full_line_buffer, 0, LOG_MAX_DEBUG_LINE_LENGTH );
+    memset(log_buffs->log_full_line_buffer, 0, LOG_MAX_DEBUG_LINE_LENGTH);
     log_buffs->log_t = time(NULL);
     log_buffs->log_timer = *localtime_r(&log_buffs->log_t, &log_buffs->log_timer);
+
+    struct tm gmtval = {0};
+    struct timespec curtime = {0};
+    char timestamp[LOG_MAX_TIMESTAMP_BASE_LENGTH] = {0};
+
+    clock_gettime(CLOCK_REALTIME, &curtime);
+
+    if (gmtime_r(&curtime.tv_sec, &gmtval) != NULL) {
+        strftime(timestamp, LOG_MAX_TIMESTAMP_BASE_LENGTH, LOG_FORMAT_DATE_BASE, &gmtval);
+        snprintf(log_buffs->log_date_buffer, LOG_MAX_TIMESTAMP_MS_LENGTH, LOG_FORMAT_DATE_MS, timestamp,
+                 lround((double) (curtime.tv_nsec / ((long int) 1.0e6))));
+    }
 }
 
 
@@ -312,13 +328,14 @@ __always_inline void log_reset(logging_buffs *log_buffs){
  * @param log_timer
  */
 __always_inline bool log_get_date_time(logging_buffs *log_buffs){
-    return log_s_vasprintf(log_buffs->log_date_buffer, sizeof(log_buffs->log_date_buffer), 0, LOG_FORMAT_DATE,
-            log_buffs->log_timer.tm_year + 1900,
-            log_buffs->log_timer.tm_mon + 1,
-            log_buffs->log_timer.tm_mday,
-            log_buffs->log_timer.tm_hour,
-            log_buffs->log_timer.tm_min,
-            log_buffs->log_timer.tm_sec);
+    memset(log_buffs->log_date_buffer, 0, LOG_MAX_TIMESTAMP_MS_LENGTH);
+    return log_s_vsnprintf(log_buffs->log_date_buffer, LOG_MAX_TIMESTAMP_MS_LENGTH, LOG_FORMAT_DATE,
+                           log_buffs->log_timer.tm_year + 1900,
+                           log_buffs->log_timer.tm_mon + 1,
+                           log_buffs->log_timer.tm_mday,
+                           log_buffs->log_timer.tm_hour,
+                           log_buffs->log_timer.tm_min,
+                           log_buffs->log_timer.tm_sec);
 }
 
 
@@ -332,7 +349,8 @@ __always_inline bool log_debug_get_process_thread_id(char *log_debug_prefix_buff
                                                      const int verbosity){
     memset(log_debug_prefix_buffer, 0, LOG_DEBUG_PREFIX_MAX_LENGTH);
     if(message_level >= verbosity){
-        return log_s_vasprintf(log_debug_prefix_buffer, LOG_DEBUG_PREFIX_MAX_LENGTH, 0, LOG_FORMAT_DEBUG_PREFIX, (int) getpid(), (unsigned long int)pthread_self());
+        return log_s_vsnprintf(log_debug_prefix_buffer, LOG_DEBUG_PREFIX_MAX_LENGTH, LOG_FORMAT_DEBUG_PREFIX,
+                               (int) getpid(), (unsigned long int) pthread_self());
     }
     return true;
 }
@@ -351,7 +369,8 @@ __always_inline bool log_debug_get_bug_location(char *log_debug_suffix_buffer, c
                                                 const int line, int8_t message_level, const int verbosity){
     memset(log_debug_suffix_buffer, 0, LOG_DEBUG_SUFFIX_MAX_LENGTH);
     if(message_level >= verbosity){
-        return log_s_vasprintf(log_debug_suffix_buffer, LOG_DEBUG_SUFFIX_MAX_LENGTH, 0, LOG_FORMAT_DEBUG_SUFFIX, file, function, line);
+        return log_s_vsnprintf(log_debug_suffix_buffer, LOG_DEBUG_SUFFIX_MAX_LENGTH, LOG_FORMAT_DEBUG_SUFFIX, file,
+                               function, line);
     }
     return true;
 }
@@ -367,7 +386,9 @@ __always_inline bool log_debug_get_bug_location(char *log_debug_suffix_buffer, c
  */
 __always_inline bool log_get_err_message(logging_buffs *log_buffs, const int error_number, int8_t message_level){
     if(error_number && message_level > LOG_OFF){
-        bool ret = log_s_vasprintf(log_buffs->log_errno_message, LOG_MAX_ERRNO_LENGTH, 0, LOG_FORMAT_ERRNO, strerror_r(error_number, log_buffs->log_errno_message, sizeof(log_buffs->log_errno_message) - 4), error_number);
+        bool ret = log_s_vsnprintf(log_buffs->log_errno_message, LOG_MAX_ERRNO_LENGTH, LOG_FORMAT_ERRNO,
+                                   strerror_r(error_number, log_buffs->log_errno_message,
+                                              sizeof(log_buffs->log_errno_message) - 4), error_number);
         errno = 0;
         return ret;
     }
@@ -437,21 +458,23 @@ __always_inline bool log_assemble(logging_buffs *log_buffs, int8_t message_level
 */
     // TODO : this logic here is broken, need rethink
     if(verbosity >= LOG_FATAL && verbosity < LOG_DEBUG) {
-        return log_s_vasprintf(log_buffs->log_full_line_buffer, sizeof(log_buffs->log_full_line_buffer), 0, LOG_FORMAT_LINE,
-                        log_buffs->log_date_buffer,
-                        message_level_ch,
-                        log_buffs->log_debug_prefix_buffer,
-                        message,
-                        log_buffs->log_errno_message,
-                        log_buffs->log_debug_suffix_buffer);
+        return log_s_vsnprintf(log_buffs->log_full_line_buffer, sizeof(log_buffs->log_full_line_buffer),
+                               LOG_FORMAT_LINE,
+                               log_buffs->log_date_buffer,
+                               message_level_ch,
+                               log_buffs->log_debug_prefix_buffer,
+                               message,
+                               log_buffs->log_errno_message,
+                               log_buffs->log_debug_suffix_buffer);
     } else {
-        return log_s_vasprintf(log_buffs->log_full_line_buffer, sizeof(log_buffs->log_full_line_buffer), 0, LOG_FORMAT_LINE,
-                        log_buffs->log_date_buffer,
-                        message_level_ch,
-                        log_buffs->log_debug_prefix_buffer,
-                        message,
-                        log_buffs->log_errno_message,
-                        log_buffs->log_debug_suffix_buffer);
+        return log_s_vsnprintf(log_buffs->log_full_line_buffer, sizeof(log_buffs->log_full_line_buffer),
+                               LOG_FORMAT_LINE,
+                               log_buffs->log_date_buffer,
+                               message_level_ch,
+                               log_buffs->log_debug_prefix_buffer,
+                               message,
+                               "",
+                               "");
     }
 }
 

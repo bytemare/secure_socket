@@ -21,28 +21,26 @@
  * Starts the logging thread.
  * @param log
  */
-bool log_start_thread(logging *log, int8_t verbosity, char *mq_name, char *log_file){
+int log_start_thread(logging *log, int8_t verbosity, char *mq_name, char *log_file){
 
-    LOG_INIT
     int ret;
 
     /* Initialise logging structure with default parameters and current verbosity */
     log_init_log_params(log, verbosity);
 
     if( log->verbosity == LOG_OFF ){
-        return true;
+        return 0;
     }
 
     if ( log_initialise_logging_s(log, mq_name, log_file) ){
-        return false;
+        return -1;
     }
 
     if ( (ret = pthread_create(&log->thread, &log->attr, &logging_thread, log) ) ){
-        LOG_STDOUT(LOG_FATAL, "Error creating logging thread : ", ret, 1, log)
-        return false;
+        return ret;
     }
 
-    return true;
+    return 0;
 }
 
 
@@ -51,8 +49,54 @@ bool log_start_thread(logging *log, int8_t verbosity, char *mq_name, char *log_f
  * @param log
  */
 bool log_start(logging *log, int8_t verbosity, char *mq_name, char *log_file){
-    return log_start_thread(log, verbosity, mq_name, log_file);
+    LOG_INIT
+    int ret = log_start_thread(log, verbosity, mq_name, log_file);
+    if (ret != 0 ){
+        if (ret == -1){
+            LOG_STDOUT(LOG_FATAL, "Could not initialise logging parameters.", 0, 1, log)
+        } else {
+            LOG_STDOUT(LOG_FATAL, "Could not launch logging thread.", ret, 1, log)
+        }
+        return false;
+    }
+
+    return true;
 }
+
+
+bool log_s_vsnprintf(char *target, size_t max_buf_size, const char *format, ...) {
+
+    int bytes = 0;
+    memset(target, 0, max_buf_size);
+    va_list va;
+    //printf("thread %lu trying to vsnprintf\r", (unsigned long int)pthread_self());
+    //printf(" \r");
+    va_start(va, format);
+    bytes = vsnprintf(target, max_buf_size, format, va);
+    va_end(va);
+
+    if ( bytes == -1 ){
+        // TODO handle error
+        perror("error vsnprintf : bytes == -1\n");
+        return false;
+    }
+
+    if ( strnlen(target, max_buf_size) == 0 ){
+        // TODO handle error
+        perror("error vsnprintf: nothing was written\n");
+        return false;
+    }
+
+    if ( bytes >= (int) max_buf_size ){
+        // TODO handle error
+        perror("error vsnprintf: output was truncated\n");
+        return false;
+    }
+
+    return true;
+
+}
+
 
 
 /**
@@ -70,7 +114,7 @@ bool log_start(logging *log, int8_t verbosity, char *mq_name, char *log_file){
  * @param ...
  * @return
  */
-bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const char *format, ...){
+bool log_s_vasprintf_old(char *target, size_t max_buf_size, const char *format, ...){
 
     int bytes = 0;
     char *buffer = NULL;
@@ -84,6 +128,7 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
         printf("error : bytes == -1 || buffer == NULL\n");
         return false;
     }
+
     if ( strnlen(buffer, max_buf_size) == max_buf_size || (size_t) bytes > max_buf_size - 1 ){
         // TODO handle this error
         printf("error on strnlen\n"
@@ -96,7 +141,7 @@ bool log_s_vasprintf(char *target, size_t max_buf_size, size_t size_dec, const c
         return false;
     }
     memset(target, 0, max_buf_size);
-    strlcpy(target, buffer, max_buf_size - size_dec);
+    strlcpy(target, buffer, max_buf_size);
     free(buffer);
     return true;
 }
@@ -174,24 +219,20 @@ uint8_t log_util_open_server_mq(logging *log){
  * @return
  */
 uint8_t log_util_open_client_mq(logging *log){
-    LOG_INIT
 
     /* Double check if message queue already exist */
     if ( log->mq_recv == -1 ) {
-        LOG_STDOUT(LOG_FATAL, "Trying to open the sender message queue, but receiver message queue was not opened. This code should not be reached.", 0, 1, log)
         return 1;
     }
 
     /* If creating a mq succeeds with O_EXCL flag, it means that message queue was not set up before, and we don't want that */
     if ( (log->mq_send = mq_open(log->mq_name, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, NULL)) != (mqd_t)-1 ) {
-        LOG_STDOUT(LOG_FATAL, "Trying to open the sender message queue, but receiver message queue was not opened. This code should not be reached.", 0, 1, log)
         log_close_single_mq(log->mq_send, log->mq_name);
         return 1;
     }
 
     /* Open the queue in read only mode */
     if( (log->mq_send = mq_open(log->mq_name, O_WRONLY | O_CLOEXEC )) == (mqd_t)-1) {
-        LOG_STDOUT(LOG_FATAL, "Error in opening the sender logging messaging queue.", errno, 1, log)
         return 1;
     }
 
@@ -240,7 +281,14 @@ uint8_t log_util_open_mq(logging *log, const char *mq_name){
         return 1;
     }
 
+    errno = 0;
     if ( log_util_open_client_mq(log) ){
+        if ( errno ){
+            LOG_STDOUT(LOG_FATAL, "Error in opening the sender logging messaging queue.", errno, 1, log)
+        } else {
+            LOG_STDOUT(LOG_FATAL, "Error in opening the sender logging messaging queue. Open server mq first", errno, 1, log)
+        }
+
         log_close_single_mq(log->mq_recv, log->mq_name);
         return 1;
     }
@@ -373,7 +421,7 @@ void terminate_logging_thread_blocking(logging *log){
     if ( (join_ret = pthread_join(log->thread, &join_res)) == -1 ){
         LOG_STDOUT(LOG_ERROR, "Could not join logging thread.", join_ret, 1, log)
     } else {
-        LOG_BUILD("Joined logging thread, which returned %s.", (char *)join_res)
+        LOG_BUILD("Joined logging thread, which returned %s.", (char *) join_res)
         LOG_FILE(LOG_INFO, NULL, 0, 4, log)
     }
 }
