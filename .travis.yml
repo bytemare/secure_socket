@@ -25,12 +25,17 @@ matrix:
         depth: false # Sonar doesn't like shallow clones
       addons:
         apt:
+          sources:
+            - ubuntu-toolchain-r-test
           packages: &default_packages
             - libbsd-dev
+            - gcc-7
         sonarcloud:
           organization: "bytemare-github"
           token:
             secure: ${SONAR_TOKEN}
+      env:
+        - MATRIX_EVAL="CC=gcc-7"
       script:
         - shellcheck -x build.sh
         - build-wrapper-linux-x86-64 --out-dir bw-output ./build.sh Coverage && ls -al bw-output/
