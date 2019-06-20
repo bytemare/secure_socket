@@ -68,21 +68,22 @@ void ipc_close_socket(secure_socket *sock){
  * @param log
  * @return NULL
  */
-secure_socket *secure_socket_free(secure_socket *sock) {
+secure_socket * secure_socket_free(secure_socket *sock) {
     ipc_close_socket(sock);
     free(sock);
     return NULL;
 }
 
 
-
+/**
+ * Creates a socket with parameters given in server_context
+ * @param ctx
+ * @return
+ */
 bool secure_socket_create_socket(server_context *ctx){
-
-    LOG_INIT
 
     ctx->socket->socket_fd = socket(ctx->parameters->domain, ctx->parameters->protocol, 0);
     if( ctx->socket->socket_fd < -1 ){
-        LOG(LOG_FATAL, "socket() failed : ", errno, 2, ctx->log)
         secure_socket_free_from_context(ctx);
         return false;
     }
@@ -104,13 +105,11 @@ bool secure_socket_create_socket(server_context *ctx){
  */
 uint8_t set_bind_address(server_context *ctx, in_addr_t address){
 
-    secure_socket *server;
-
     LOG_INIT
 
-    server = ctx->socket;
+    secure_socket *server = ctx->socket;
 
-    LOG(LOG_TRACE, "Setting up address to bind on ...", errno, 0, ctx->log)
+    LOG_STDOUT(LOG_INFO, "Setting up address to bind on", 0, 0, ctx->log)
 
     if ( ctx->parameters->domain == AF_UNIX ){
         server->bind_address = socket_bind_unix(&server->address.un, ctx->parameters->socket_path, &ctx->socket->addrlen);
@@ -195,16 +194,11 @@ bool ipc_server_bind(in_addr_t address, server_context *ctx){
  */
 bool ipc_server_listen(server_context *ctx, const unsigned int nb_cnx){
 
-    LOG_INIT
-
     /* Listen for connections */
     if (listen(ctx->socket->socket_fd, (int)nb_cnx) != 0) {
-        LOG(LOG_FATAL, "error on listening : ", errno, 1, ctx->log)
         secure_socket_free_from_context(ctx);
         return false;
     }
-
-    LOG(LOG_INFO, "Server now listening on socket.", errno, 0, ctx->log)
 
     return true;
 }
@@ -216,6 +210,8 @@ bool ipc_server_listen(server_context *ctx, const unsigned int nb_cnx){
  * @return
  */
 bool ipc_bind_set_and_listen(in_addr_t address, server_context *ctx) {
+
+    LOG_INIT
 
     /* TODO
      * Create directory in which to place the socket file */
@@ -233,8 +229,11 @@ bool ipc_bind_set_and_listen(in_addr_t address, server_context *ctx) {
 
     /* Listen for connections */
     if ( !ipc_server_listen(ctx, ctx->parameters->max_connections) ){
+        LOG(LOG_FATAL, "error on listening on socket.", errno, 1, ctx->log)
         return false;
     }
+
+    LOG(LOG_INFO, "Server now listening on socket.", errno, 0, ctx->log)
 
     return true;
 }
@@ -267,7 +266,6 @@ secure_socket* ipc_accept_connection(server_context *ctx){
     } else {
         LOG(LOG_ALERT, "Other domains than AF_UNIX are not handled yet !", errno, 0, ctx->log)
         client_socket = secure_socket_free(client_socket);
-        secure_socket_free(client_socket);
         return NULL;
     }
 
@@ -278,23 +276,20 @@ secure_socket* ipc_accept_connection(server_context *ctx){
     client_socket->socket_fd = accept(ctx->socket->socket_fd, client_socket->bind_address, &len);
     if (client_socket->socket_fd < 0) {
         LOG(LOG_ERROR, "accept() connection failed : ", errno, 0, ctx->log)
-        secure_socket_free(client_socket);
+        client_socket = secure_socket_free(client_socket);
         return NULL;
     }
 
     LOG(LOG_INFO, "Connection initated.", errno, 0, ctx->log)
 
-    /* TODO : this function causes a segfault by simply calling it. It is not even entered.
+    /* TODO : this function causes a segfault by simply calling it. It is not even entered. */
     if( !ipc_validate_peer(ctx)){
         LOG(LOG_ALERT, "Peer has not been authenticated. Dropping connection.", errno, 0, ctx->log)
-        secure_socket_free(client_socket, ctx->log);
+        client_socket = secure_socket_free(client_socket);
         return NULL;
     }
 
     LOG(LOG_INFO, "Peer successfully authenticated. Connection accepted.", errno, 0, ctx->log)
-    */
-
-    LOG(LOG_INFO, "Authenticated skipped. Connection accepted.", errno, 0, ctx->log)
 
     return client_socket;
 }
