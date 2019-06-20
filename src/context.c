@@ -398,7 +398,8 @@ server_context* make_server_context(ipc_parameters *params, logging *log){
 
     /* Socket creation */
     if( secure_socket_create_socket(ctx) == false ){
-        secure_socket_free(ctx->socket, ctx->log);
+        LOG(LOG_FATAL, "socket() failed : ", errno, 2, ctx->log)
+        ctx->socket = secure_socket_free(ctx->socket);
         free(ctx);
         return false;
     }
@@ -421,7 +422,7 @@ server_context* make_server_context(ipc_parameters *params, logging *log){
 thread_context* free_thread_context(thread_context *ctx){
 
     if(ctx){
-        ctx->socket = secure_socket_free(ctx->socket, ctx->log);
+        ctx->socket = secure_socket_free(ctx->socket);
         free(ctx);
     }
 
