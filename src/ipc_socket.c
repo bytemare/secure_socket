@@ -560,7 +560,8 @@ bool set_socket_owner_and_permissions(server_context *ctx, char *group_name, gid
      * Thus, if an attacker moves the file, we avoid a malicious race condition.
      */
     if (fchown(ctx->socket->socket_fd, uid, real_gid) == -1) {
-        LOG_BUILD("Could not chown for owner '%u' and group '%s' on socket '%s'. Access to group will not be applied.", uid, group_name, ctx->parameters->socket_path)
+        LOG_BUILD("Could not chown for owner '%u' and group '%s' on socket '%s'. Access to group will not be applied.",
+                  uid, group_name, ctx->parameters->socket_path)
         LOG(LOG_ALERT, NULL, errno, 2, ctx->log)
         return false;
     }
@@ -569,7 +570,8 @@ bool set_socket_owner_and_permissions(server_context *ctx, char *group_name, gid
      * Change file permissions
      */
     if( fchmod(ctx->socket->socket_fd, perms) < 0){
-        LOG_BUILD("Could not chmod '%u' on socket '%s'. Permissions will not be applied.", perms, ctx->parameters->socket_path)
+        LOG_BUILD("Could not chmod '%u' on socket '%s'. Permissions will not be applied.", perms,
+                  ctx->parameters->socket_path)
         LOG(LOG_ALERT, NULL, errno, 2, ctx->log)
         return false;
     }

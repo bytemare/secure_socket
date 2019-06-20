@@ -4,6 +4,8 @@
  * Copyright (C) 2017-2018 Bytemare <d@bytema.re>. All Rights Reserved.
  */
 
+#define __STDC_WANT_LIB_EXT1__ 1
+
 #include <pthread.h>
 #include <string.h>
 #include <stdlib.h>
@@ -147,7 +149,9 @@ bool parse_options(ipc_parameters *options, int argc, char **argv){
             uint16_t mq_name_max_size = sizeof(options->mq_name);
             if( q[0] != '/' && strnlen(q, mq_name_max_size) == mq_name_max_size ){
                 //TODO : check all conditions of mq_name, cf 'man mq_overview'
-                LOG_BUILD("Invalid name for message queue. First character must be '/' and must be shorter than %d characters.", mq_name_max_size)
+                LOG_BUILD(
+                        "Invalid name for message queue. First character must be '/' and must be shorter than %d characters.",
+                        mq_name_max_size)
                 LOG_STDOUT(LOG_FATAL, NULL, 0, 2, NULL)
                 return false;
             }
@@ -341,7 +345,7 @@ bool parse_options(ipc_parameters *options, int argc, char **argv){
 
         if (strcmp(p, "verbosity") == 0){
             if(is_valid_integer(q, 2)){
-                long int verbosity = strtol(q, NULL, 10);
+                long int verbosity = strtol(q, NULL, 10); /* TODO avoid use of strtol */
                 if (verbosity >= LOG_OFF && verbosity <= LOG_UNKNWON) {
                     options->verbosity = (int8_t) verbosity;
                     continue;

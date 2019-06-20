@@ -130,7 +130,7 @@ void threaded_server(server_context *ctx, const unsigned int nb_cnx){
     if ( (join_ret = pthread_join(tid, &join_res)) == -1 ){
         LOG(LOG_ERROR, "Could not join client thread.", join_ret, 1, ctx->log)
     } else {
-        LOG_BUILD("Joined client thread, which returned %s.", (char *)join_res)
+        LOG_BUILD("Joined client thread, which returned %s.", (char *) join_res)
         LOG(LOG_INFO, NULL, 0, 4, ctx->log)
     }
 
