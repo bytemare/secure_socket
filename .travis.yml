@@ -37,6 +37,7 @@ matrix:
       env:
         - MATRIX_EVAL="CC=gcc-7"
       script:
+        - sudo ln -s /usr/bin/gcc-6 /usr/local/bin/gcc
         - shellcheck -x build.sh
         - build-wrapper-linux-x86-64 --out-dir bw-output ./build.sh Coverage && ls -al bw-output/
         - ./run.sh & python3 src/client_test.py
