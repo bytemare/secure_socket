@@ -23,7 +23,8 @@ set(COVERAGE_FLAGS "-fprofile-arcs -ftest-coverage")
 #set(COVERAGE_FLAGS "--coverage") # synonym for -fprofile-arcs -ftest-coverage (when compiling)
 
 # C version flags
-set(VERSION_FLAGS "-D_GNU_SOURCE -D_XOPEN_SOURCE=700 -std=gnu11")
+# -D_XOPEN_SOURCE=700
+set(VERSION_FLAGS "-D_GNU_SOURCE -std=gnu11")
 
 # Link to librairies
 # For libbsd, install libbsd-dev or use $(pkg-config --libs libbsd)
@@ -37,8 +38,10 @@ set(LINKER_LIBRARIES "-pthread -lbsd -lm -lrt")
 ### Security Flags
 ###
 
-# Sanitiser flags
-set(SECURITY_SANITISER_FLAGS "-fsanitize=address -fsanitize=leak -fsanitize=undefined")
+# Address Sanitiser flags
+#set(SECURITY_SANITISER_FLAGS "-fsanitize=address -fsanitize=leak -fsanitize=undefined")
+set(SECURITY_SANITISER_FLAGS "-fsanitize=address -fsanitize=leak ")
+
 
 # -fstack-protector-all
 set(SECURITY_STACK_FLAGS "-fstack-protector-strong --param ssp-buffer-size=1 -fstack-check -fsplit-stack")
@@ -70,15 +73,13 @@ set(PERFORMANCE_FLAGS "-finline-functions -O2 ")
 message([STATUS] " Build type: " ${CMAKE_BUILD_TYPE})
 
 if ( CMAKE_BUILD_TYPE STREQUAL "Release" )
-set(CMAKE_C_FLAGS "${WARNING_FLAGS} ${SECURITY_FLAGS} ${VERSION_FLAGS} ${PERFORMANCE_FLAGS}")
-#endif ( CMAKE_BUILD_TYPE STREQUAL "Release" )
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WARNING_FLAGS} ${SECURITY_FLAGS} ${VERSION_FLAGS} ${PERFORMANCE_FLAGS}")
 
 elseif ( CMAKE_BUILD_TYPE STREQUAL "Coverage" )
-    set(CMAKE_C_FLAGS "${DEBUG_FLAGS} ${WARNING_FLAGS} ${SECURITY_FLAGS} ${VERSION_FLAGS} ${COVERAGE_FLAGS}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${DEBUG_FLAGS} ${WARNING_FLAGS} ${SECURITY_FLAGS} ${VERSION_FLAGS} ${COVERAGE_FLAGS}")
 
 elseif ( CMAKE_BUILD_TYPE STREQUAL "Debug" )
-    set(CMAKE_C_FLAGS "${DEBUG_FLAGS} ${WARNING_FLAGS} ${SECURITY_FLAGS} ${VERSION_FLAGS} ${PERFORMANCE_FLAGS} ")
-    #endif ( CMAKE_BUILD_TYPE STREQUAL "Debug" )
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${DEBUG_FLAGS} ${WARNING_FLAGS} ${SECURITY_FLAGS} ${VERSION_FLAGS} ${PERFORMANCE_FLAGS} ")
 endif()
 
 #####################
@@ -105,13 +106,10 @@ include_directories(include/ src/)
 ### Build
 ###
 
-SET(CMAKE_EXE_LINKER_FLAGS="-fprofile-arcs -ftest-coverage")
-
 add_executable(secure_socket ${SOURCE_FILES} ${HEADERS})
 
 if ( CMAKE_BUILD_TYPE STREQUAL "Coverage" )
     target_link_libraries(secure_socket -lgcov ${LINKER_LIBRARIES})
-    #target_link_libraries(secure_socket --coverage ${LINKER_LIBRARIES})
 else()
     target_link_libraries(secure_socket ${LINKER_LIBRARIES})
 endif()
