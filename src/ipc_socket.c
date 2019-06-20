@@ -286,6 +286,7 @@ secure_socket* ipc_accept_connection(server_context *ctx){
 
     LOG(LOG_INFO, "Connection initated.", errno, 0, ctx->log)
 
+    /* TODO : this function causes a segfault by simply calling it. It is not even entered.
     if( !ipc_validate_peer(ctx)){
         LOG(LOG_ALERT, "Peer has not been authenticated. Dropping connection.", errno, 0, ctx->log)
         secure_socket_free(client_socket, ctx->log);
@@ -293,6 +294,9 @@ secure_socket* ipc_accept_connection(server_context *ctx){
     }
 
     LOG(LOG_INFO, "Peer successfully authenticated. Connection accepted.", errno, 0, ctx->log)
+    */
+
+    LOG(LOG_INFO, "Authenticated skipped. Connection accepted.", errno, 0, ctx->log)
 
     return client_socket;
 }
@@ -645,11 +649,7 @@ bool ipc_validate_peer(server_context *ctx){
 
     LOG_INIT
 
-    printf("=> in ipc_validate_peer\n");
-
     struct ucred *creds = ipc_get_ucred(ctx);
-
-    printf("<= back in ipc_validate_peer\n");
 
     if ( creds == NULL ){
         LOG(LOG_CRITICAL, "Retrieve ucreds : aborting validation.", errno, 3, ctx->log)
