@@ -141,7 +141,7 @@ typedef struct _logging{
 #define LOG_FORMAT_LINE "%s - [%s] %s%s%s%s.\n" /* datetime + log level + debug prefix + message + errno + debug suffix*/
 #define LOG_FORMAT_ERRNO " > %s (%d)" /* Interpreted errno + number */
 #define LOG_FORMAT_DEBUG_PREFIX "pid %d - pthread %lu ::: " /* 21 chars */
-#define LOG_FORMAT_DEBUG_SUFFIX " - in file %s, function %s at line %d." /* Length of 33 characters without inserted strings */
+#define LOG_FORMAT_DEBUG_SUFFIX " - in file %s, function %s at line %d" /* Length of 33 characters without inserted strings */
 /*#define LOG_FORMAT_DEFAULT "ERROR - INVALID LOG FORMAT" *//* When log format is not valid, default to this */
 
 /*
@@ -335,8 +335,10 @@ __always_inline bool log_debug_get_process_thread_id(char *log_debug_prefix_buff
                                                      const int verbosity){
     memset(log_debug_prefix_buffer, 0, LOG_DEBUG_PREFIX_MAX_LENGTH);
     if(message_level >= verbosity){
-        return log_s_vsnprintf(log_debug_prefix_buffer, LOG_DEBUG_PREFIX_MAX_LENGTH, LOG_FORMAT_DEBUG_PREFIX,
-                               (int) getpid(), (unsigned long int) pthread_self());
+        int pid = getpid();
+        unsigned long int tid = pthread_self();
+        return log_s_vsnprintf(log_debug_prefix_buffer, (size_t) LOG_DEBUG_PREFIX_MAX_LENGTH, LOG_FORMAT_DEBUG_PREFIX,
+                               pid, tid);
     }
     return true;
 }
@@ -502,9 +504,9 @@ __always_inline void log_build(logging_buffs *log_buffs, int8_t message_level, c
         }
     }
 
-    /*TODO : print this only in log debugging mode
-     * printf("\033[0;31mLOGGING MESSAGE : '%s'\033[0m;\n", message);
-     * printf("\t\t\033[0;31merrno : %d - Verbosity : %d - Message Level : %d - Location : file %s @fun %s at line %d\033[0m;\n", error_number, verbosity, message_level, file, function, line); */
+    /*TODO : print this only in log debugging mode */
+     //printf("\033[0;31mLOGGING MESSAGE : '%s'\033[0m;\n", message);
+     //printf("\t\t\033[0;31merrno : %d - Verbosity : %d - Message Level : %d - Location : file %s @fun %s at line %d\033[0m;\n", error_number, verbosity, message_level, file, function, line);
 
     // TODO : handle return values relayed from vasprintf wrapper
     log_reset(log_buffs);
@@ -533,8 +535,8 @@ __always_inline void log_to_stdout(logging_buffs *log_buffs, int8_t message_leve
         verbosity = message_level;
     }
 
-    /*TODO : print this only in log debugging mode
-     * printf("verbosity %d - %d - %s - %d - %s - %s - %d\n", verbosity, message_level, message, error_number, file, function, line);*/
+    /*TODO : print this only in log debugging mode */
+     //printf("verbosity %d - %d - %s - %d - %s - %s - %d\n", verbosity, message_level, message, error_number, file, function, line);
 
     if ( verbosity != -1 ){
         log_build(log_buffs, message_level, message, error_number, file, function, line, verbosity);
