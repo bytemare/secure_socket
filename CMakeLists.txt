@@ -13,7 +13,8 @@ project(secure_socket)
 ###
 
 # Warning Flags
-set(WARNING_FLAGS "-W -Wall -Wextra -Werror -ansi -pedantic -Wwrite-strings -Wconversion -Wuninitialized -Wcast-align -Wmissing-braces -Wunused-result -Wpointer-arith -Wchkp -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -Wstack-protector -Wformat -Wformat-security -Wstrict-aliasing -Wunused-parameter")
+set(WARNING_FLAGS "-W -Wall -Wextra -ansi -pedantic -Wwrite-strings -Wconversion -Wuninitialized -Wcast-align -Wmissing-braces -Wunused-result -Wpointer-arith -Wchkp -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -Wstack-protector -Wformat -Wformat-security -Wstrict-aliasing -Wunused-parameter")
+#set(WARNING_FLAGS "-W -Wall -Wextra -Werror -ansi -pedantic -Wwrite-strings -Wconversion -Wuninitialized -Wcast-align -Wmissing-braces -Wunused-result -Wpointer-arith -Wchkp -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -Wstack-protector -Wformat -Wformat-security -Wstrict-aliasing -Wunused-parameter")
 
 # Debug Flags
 set(DEBUG_FLAGS "-g -D DEBUG -frecord-gcc-switches")
@@ -23,8 +24,7 @@ set(COVERAGE_FLAGS "-fprofile-arcs -ftest-coverage")
 #set(COVERAGE_FLAGS "--coverage") # synonym for -fprofile-arcs -ftest-coverage (when compiling)
 
 # C version flags
-# -D_XOPEN_SOURCE=700
-set(VERSION_FLAGS "-D_GNU_SOURCE -std=gnu11")
+set(VERSION_FLAGS "-D_GNU_SOURCE -D_XOPEN_SOURCE=700 -std=gnu11")
 
 # Link to librairies
 # For libbsd, install libbsd-dev or use $(pkg-config --libs libbsd)
@@ -39,12 +39,20 @@ set(LINKER_LIBRARIES "-pthread -lbsd -lm -lrt")
 ###
 
 # Address Sanitiser flags
-#set(SECURITY_SANITISER_FLAGS "-fsanitize=address -fsanitize=leak -fsanitize=undefined")
-set(SECURITY_SANITISER_FLAGS "-fsanitize=address -fsanitize=leak ")
+set(SECURITY_SANITISER_FLAGS "-fsanitize=address -fsanitize=leak -fsanitize=undefined")
+#set(SECURITY_SANITISER_FLAGS "-fsanitize=address -fsanitize=leak ")
 
 
 # -fstack-protector-all
-set(SECURITY_STACK_FLAGS "-fstack-protector-strong --param ssp-buffer-size=1 -fstack-check -fsplit-stack")
+set(SECURITY_STACK_FLAGS "-fstack-protector-strong --param ssp-buffer-size=1 -fstack-check")
+#set(SECURITY_STACK_FLAGS "-fstack-protector-strong --param ssp-buffer-size=1 -fstack-check -fsplit-stack")
+
+
+# -fsplit-stack
+# => sometimes provokes segfault in different locations
+
+
+
 
 # -fpic is for shared libraries
 set(SECURITY_PLUS "-pie -fPIE -D_FORTIFY_SOURCE=2")
