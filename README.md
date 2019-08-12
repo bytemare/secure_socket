@@ -1,6 +1,7 @@
 # secure_socket
 
-[![Build Status](https://travis-ci.com/bytemare/secure_socket.svg?branch=master)](https://travis-ci.com/bytemare/secure_socket)  
+[![Build Status](https://travis-ci.com/bytemare/secure_socket.svg?branch=master)](https://travis-ci.com/bytemare/secure_socket) [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbytemare%2Fsecure_socket.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbytemare%2Fsecure_socket?ref=badge_shield)
+ 
 <!---
 ![Badges](https://img.shields.io/badge/It%20has%20so%20many-badges-success.svg)
 --->
@@ -96,3 +97,7 @@ script or launch the binary manually, with :
 To automate running with your default values, insert them in the `parameters.conf` script with the others.
 
 For now, no stopping procedure has been implemented, even though graceful soft-fail is implemented.
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbytemare%2Fsecure_socket.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbytemare%2Fsecure_socket?ref=badge_large)
